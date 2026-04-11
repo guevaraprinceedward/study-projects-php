@@ -1,0 +1,12 @@
+body {
+  background:#f8f9fa;
+}
+
+.card {
+  border-radius:12px;
+  transition:0.3s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
