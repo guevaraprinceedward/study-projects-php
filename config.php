@@ -1,9 +1,11 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-$conn = mysqli_connect("localhost", "root", "", "restaurant_db");
+$conn = new mysqli("localhost", "root", "", "restaurant_db");
 
-if (!$conn) {
-    die("Connection failed: " . mysqli_connect_error());
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
 }
 ?>
