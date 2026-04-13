@@ -667,7 +667,7 @@ if (empty($products)) {
 
 <!-- ═══════════════════════ FOOTER ═══════════════════════ -->
 <footer>
-    <p>© 2026 <span>My Restaurant</span> — All rights reserved.</p>
+    <p>© 2026 <span>My AyosCoffeeNegosyo</span> — All rights reserved.</p>
 </footer>
 
 <script>

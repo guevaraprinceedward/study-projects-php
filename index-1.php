@@ -75,6 +75,7 @@ if (empty($products)) {
 
 ?>
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -568,33 +569,6 @@ if (empty($products)) {
             .menu-section { padding: 0 16px 60px; }
             .menu-grid { grid-template-columns: 1fr; gap: 16px; }
         }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            padding: 30px 0;
-        }
-
-        .pagination a {
-            padding: 8px 14px;
-            border: 1px solid var(--border);
-            color: var(--muted);
-            text-decoration: none;
-            border-radius: 4px;
-            transition: 0.2s;
-        }
-
-        .pagination a:hover {
-            border-color: var(--gold);
-            color: var(--gold);
-        }
-
-        .pagination a.active {
-            background: var(--gold);
-            color: #000;
-            border-color: var(--gold);
-        }
     </style>
 </head>
 <body>
@@ -658,7 +632,7 @@ if (empty($products)) {
         </div>
     <?php else: ?>
         <div class="menu-grid" id="menuGrid">
-            <?php foreach ($productsPaginated as $row): ?>
+            <?php foreach ($products as $row): ?>
             <div class="menu-card" data-category="<?= htmlspecialchars($row['category'] ?? 'mains') ?>">
 
                 <div class="card-img-wrap">
@@ -715,22 +689,6 @@ if (empty($products)) {
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
-
-    <div class="pagination">
-    <?php if ($page > 1): ?>
-        <a href="?page=<?= $page - 1 ?>">&laquo; Prev</a>
-    <?php endif; ?>
-
-    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-        <a href="?page=<?= $i ?>" class="<?= $i == $page ? 'active' : '' ?>">
-            <?= $i ?>
-        </a>
-    <?php endfor; ?>
-
-    <?php if ($page < $totalPages): ?>
-        <a href="?page=<?= $page + 1 ?>">Next &raquo;</a>
-    <?php endif; ?>
-</div>
 </main>
 
 <!-- ═══════════════════════ TOAST ═══════════════════════ -->

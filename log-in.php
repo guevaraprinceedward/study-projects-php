@@ -13,9 +13,8 @@ if ($conn->connect_error) {
 }
 
 $error  = "";
-$debug  = false; // ← Palitan ng TRUE para makita ang column names ng users table
+$debug  = false;
 
-// ─── DEBUG MODE: SHOW TABLE COLUMNS ───────────────────────────────────────
 if ($debug) {
     $result = $conn->query("DESCRIBE users");
     echo "<pre style='background:#111;color:lime;padding:20px;'>";
@@ -51,43 +50,36 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             $user = $result->fetch_assoc();
 
-            // ✅ AUTO-DETECT: Case-insensitive password column search
             $dbPassword = null;
-            $foundCol   = "";
-
-            // Convert all keys to lowercase map para ma-handle ang PASSWORD, Password, password, etc.
-            $userLower = array_change_key_case($user, CASE_LOWER);
-
+            $userLower  = array_change_key_case($user, CASE_LOWER);
             $possibleCols = ["password", "pass", "passwd", "user_password", "pwd", "user_pass"];
 
             foreach ($possibleCols as $col) {
                 if (array_key_exists($col, $userLower)) {
                     $dbPassword = $userLower[$col];
-                    $foundCol   = $col;
                     break;
                 }
             }
 
             if ($dbPassword === null) {
-                // Wala sa listahan — ipakita lahat ng columns para malaman
                 $cols = implode(", ", array_keys($user));
-                die("❌ Hindi mahanap ang password column!<br>Available columns: <strong>$cols</strong><br>I-update ang \$possibleCols array sa code.");
+                die("❌ Hindi mahanap ang password column!<br>Available columns: <strong>$cols</strong>");
             }
 
-            // ✅ SUPPORT BOTH: Hashed (password_hash) at plain text
             $loginOk = false;
 
             if (password_get_info($dbPassword)['algo'] !== null) {
-                // Hashed password
                 $loginOk = password_verify($password, $dbPassword);
             } else {
-                // Plain text password
                 $loginOk = ($password === $dbPassword);
             }
 
             if ($loginOk) {
-                $_SESSION["user"]     = $user["username"];
-                $_SESSION["user_id"]  = $user["id"] ?? null;
+                // ✅ FIXED — array na ang naka-store sa session
+                $_SESSION["user"] = [
+                    'id'       => $user["id"],
+                    'username' => $user["username"]
+                ];
 
                 header("Location: index.php");
                 exit();
@@ -145,7 +137,6 @@ $conn->close();
             overflow: hidden;
         }
 
-        /* Background texture */
         body::before {
             content: '';
             position: fixed;
@@ -156,7 +147,6 @@ $conn->close();
             pointer-events: none;
         }
 
-        /* Decorative grid lines */
         body::after {
             content: '';
             position: fixed;
@@ -180,7 +170,6 @@ $conn->close();
             animation: fadeUp 0.5s ease both;
         }
 
-        /* Gold corner accent */
         .card::before {
             content: '';
             position: absolute;
@@ -330,12 +319,6 @@ $conn->close();
             box-shadow: 0 0 0 3px rgba(122,173,74,0.12);
         }
 
-        input[type="text"]:focus ~ svg,
-        input[type="password"]:focus ~ svg {
-            color: var(--green-lt);
-        }
-
-        /* Show password toggle */
         .toggle-pw {
             position: absolute;
             right: 14px;
@@ -374,7 +357,6 @@ $conn->close();
         button[type="submit"]:hover  { background: var(--green-lt); }
         button[type="submit"]:active { transform: scale(0.98); }
 
-        /* Shimmer on hover */
         button[type="submit"]::after {
             content: '';
             position: absolute;
@@ -408,7 +390,6 @@ $conn->close();
 
     <div class="logo-area">
         <div class="logo-icon">
-            <!-- Fork & Knife SVG icon -->
             <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="24" cy="24" r="23" stroke="#c9a84c" stroke-width="1.5"/>
                 <path d="M17 10v8a4 4 0 0 0 4 4v14" stroke="#7aad4a" stroke-width="2" stroke-linecap="round"/>

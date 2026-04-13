@@ -21,8 +21,9 @@ $stmt->close();
 
 if (!$user) {
     $user = ['id' => $user_id, 'username' => $username, 'password' => ''];
+} else {
+    $user = array_change_key_case($user, CASE_LOWER);
 }
-
 $success = "";
 $error   = "";
 
@@ -66,18 +67,34 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["change_password"])) {
         $error = "All password fields are required.";
     } elseif (strlen($new_pw) < 6) {
         $error = "New password must be at least 6 characters.";
-    } elseif (!password_verify($current, $user["password"])) {
-        $error = "Current password is incorrect.";
     } else {
-        $hashed = password_hash($new_pw, PASSWORD_DEFAULT);
-        $upd = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
-        $upd->bind_param("si", $hashed, $user_id);
-        if ($upd->execute()) {
-            $success = "Password changed successfully!";
+        $db_password = $user["password"] ?? "";
+
+        // ✅ Support both hashed and plain text passwords
+        $password_info = password_get_info($db_password);
+        if ($password_info['algo'] !== null && $password_info['algo'] !== 0) {
+            // Hashed password — gamitin ang password_verify
+            $password_ok = password_verify($current, $db_password);
         } else {
-            $error = "Something went wrong. Please try again.";
+            // Plain text password — direct compare
+            $password_ok = ($current === $db_password);
         }
-        $upd->close();
+
+        if (!$password_ok) {
+            $error = "Current password is incorrect.";
+        } else {
+            $hashed = password_hash($new_pw, PASSWORD_DEFAULT);
+            $upd = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
+            $upd->bind_param("si", $hashed, $user_id);
+            if ($upd->execute()) {
+                $success = "Password changed successfully!";
+                // I-update ang $user array para consistent
+                $user["password"] = $hashed;
+            } else {
+                $error = "Something went wrong. Please try again.";
+            }
+            $upd->close();
+        }
     }
 }
 
