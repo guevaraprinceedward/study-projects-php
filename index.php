@@ -21,22 +21,61 @@ while ($row = $result->fetch_assoc()) {
 // ── SAMPLE COFFEE PRODUCTS (shown only if database is empty) ──
 if (empty($products)) {
     $products = [
-        ["id"=>1,  "name"=>"Espresso",           "price"=>85,  "category"=>"mains",    "image"=>"", "description"=>"Bold and concentrated shot of pure espresso, brewed from freshly ground arabica beans."],
-        ["id"=>2,  "name"=>"Americano",           "price"=>100, "category"=>"mains",    "image"=>"", "description"=>"Espresso diluted with hot water for a smooth, full-bodied black coffee experience."],
-        ["id"=>3,  "name"=>"Cappuccino",          "price"=>130, "category"=>"mains",    "image"=>"", "description"=>"Equal parts espresso, steamed milk, and thick velvety foam — a classic Italian favourite."],
-        ["id"=>4,  "name"=>"Caffè Latte",         "price"=>140, "category"=>"mains",    "image"=>"", "description"=>"Silky steamed milk poured over a double shot of espresso with a light layer of foam."],
-        ["id"=>5,  "name"=>"Flat White",          "price"=>145, "category"=>"mains",    "image"=>"", "description"=>"Stronger and creamier than a latte — micro-foamed milk over a rich ristretto shot."],
-        ["id"=>6,  "name"=>"Caramel Macchiato",   "price"=>155, "category"=>"mains",    "image"=>"", "description"=>"Vanilla-infused steamed milk, espresso, and a generous drizzle of rich caramel."],
-        ["id"=>7,  "name"=>"Mocha",               "price"=>150, "category"=>"mains",    "image"=>"", "description"=>"Espresso blended with chocolate syrup and steamed milk, topped with whipped cream."],
-        ["id"=>8,  "name"=>"Cold Brew",           "price"=>160, "category"=>"drinks",   "image"=>"", "description"=>"Steeped 18 hours in cold water for a smooth, naturally sweet concentrate over ice."],
-        ["id"=>9,  "name"=>"Iced Americano",      "price"=>110, "category"=>"drinks",   "image"=>"", "description"=>"Double espresso pulled over ice and chilled water — clean, crisp, and refreshing."],
-        ["id"=>10, "name"=>"Iced Caramel Latte",  "price"=>165, "category"=>"drinks",   "image"=>"", "description"=>"Chilled latte with caramel syrup and milk poured over a glass of crushed ice."],
-        ["id"=>11, "name"=>"Matcha Latte",        "price"=>150, "category"=>"drinks",   "image"=>"", "description"=>"Ceremonial-grade matcha whisked with oat milk — earthy, smooth, and lightly sweet."],
-        ["id"=>12, "name"=>"Croissant",           "price"=>95,  "category"=>"sides",    "image"=>"", "description"=>"Buttery, flaky all-butter croissant baked fresh every morning."],
-        ["id"=>13, "name"=>"Banana Bread",        "price"=>80,  "category"=>"sides",    "image"=>"", "description"=>"Moist homemade banana bread with a golden crust, perfect with your morning coffee."],
-        ["id"=>14, "name"=>"Blueberry Muffin",    "price"=>85,  "category"=>"sides",    "image"=>"", "description"=>"Fluffy muffin bursting with fresh blueberries and a crumbly sugar topping."],
-        ["id"=>15, "name"=>"Tiramisu",            "price"=>130, "category"=>"desserts", "image"=>"", "description"=>"Classic Italian dessert with espresso-soaked ladyfingers and mascarpone cream."],
-        ["id"=>16, "name"=>"Chocolate Lava Cake", "price"=>145, "category"=>"desserts", "image"=>"", "description"=>"Warm dark chocolate cake with a molten centre, served with a dusting of cocoa powder."],
+    // MAINS (12)
+    ["id"=>1,  "name"=>"Espresso",              "price"=>85,  "category"=>"mains", "image"=>"", "description"=>"Bold and concentrated shot of pure espresso, brewed from freshly ground arabica beans."],
+    ["id"=>2,  "name"=>"Americano",             "price"=>100, "category"=>"mains", "image"=>"", "description"=>"Espresso diluted with hot water for a smooth, full-bodied black coffee experience."],
+    ["id"=>3,  "name"=>"Cappuccino",            "price"=>130, "category"=>"mains", "image"=>"", "description"=>"Equal parts espresso, steamed milk, and thick velvety foam — a classic Italian favourite."],
+    ["id"=>4,  "name"=>"Caffè Latte",           "price"=>140, "category"=>"mains", "image"=>"", "description"=>"Silky steamed milk poured over a double shot of espresso with a light layer of foam."],
+    ["id"=>5,  "name"=>"Flat White",            "price"=>145, "category"=>"mains", "image"=>"", "description"=>"Stronger and creamier than a latte — micro-foamed milk over a rich ristretto shot."],
+    ["id"=>6,  "name"=>"Caramel Macchiato",     "price"=>155, "category"=>"mains", "image"=>"", "description"=>"Vanilla-infused steamed milk, espresso, and a generous drizzle of rich caramel."],
+    ["id"=>7,  "name"=>"Mocha",                 "price"=>150, "category"=>"mains", "image"=>"", "description"=>"Espresso blended with chocolate syrup and steamed milk, topped with whipped cream."],
+    ["id"=>8,  "name"=>"Hazelnut Latte",        "price"=>155, "category"=>"mains", "image"=>"", "description"=>"Smooth latte infused with rich hazelnut syrup and topped with silky milk foam."],
+    ["id"=>9,  "name"=>"White Chocolate Mocha", "price"=>160, "category"=>"mains", "image"=>"", "description"=>"Espresso blended with creamy white chocolate and steamed milk, topped with whipped cream."],
+    ["id"=>10, "name"=>"Spanish Latte",         "price"=>150, "category"=>"mains", "image"=>"", "description"=>"Sweet and creamy latte made with condensed milk for a richer flavor profile."],
+    ["id"=>11, "name"=>"Vanilla Latte",         "price"=>145, "category"=>"mains", "image"=>"", "description"=>"Classic latte enhanced with smooth vanilla syrup and steamed milk."],
+    ["id"=>12, "name"=>"Cortado",               "price"=>135, "category"=>"mains", "image"=>"", "description"=>"Equal parts espresso and warm milk, cutting the acidity for a balanced, velvety sip."],
+
+    // DRINKS (12)
+    ["id"=>13, "name"=>"Cold Brew",             "price"=>160, "category"=>"drinks", "image"=>"", "description"=>"Steeped 18 hours in cold water for a smooth, naturally sweet concentrate over ice."],
+    ["id"=>14, "name"=>"Iced Americano",        "price"=>110, "category"=>"drinks", "image"=>"", "description"=>"Double espresso pulled over ice and chilled water — clean, crisp, and refreshing."],
+    ["id"=>15, "name"=>"Iced Caramel Latte",   "price"=>165, "category"=>"drinks", "image"=>"", "description"=>"Chilled latte with caramel syrup and milk poured over a glass of crushed ice."],
+    ["id"=>16, "name"=>"Matcha Latte",          "price"=>150, "category"=>"drinks", "image"=>"", "description"=>"Ceremonial-grade matcha whisked with oat milk — earthy, smooth, and lightly sweet."],
+    ["id"=>17, "name"=>"Iced Mocha",            "price"=>155, "category"=>"drinks", "image"=>"", "description"=>"Chilled blend of espresso, chocolate syrup, and milk served over ice."],
+    ["id"=>18, "name"=>"Dirty Matcha",          "price"=>165, "category"=>"drinks", "image"=>"", "description"=>"Layered drink of matcha and espresso with milk for a bold, earthy caffeine kick."],
+    ["id"=>19, "name"=>"Espresso Tonic",        "price"=>150, "category"=>"drinks", "image"=>"", "description"=>"Refreshing mix of espresso and tonic water served over ice with citrus notes."],
+    ["id"=>20, "name"=>"Iced Hazelnut Latte",   "price"=>165, "category"=>"drinks", "image"=>"", "description"=>"Chilled hazelnut-infused latte poured over ice for a nutty, refreshing treat."],
+    ["id"=>21, "name"=>"Strawberry Lemonade",   "price"=>120, "category"=>"drinks", "image"=>"", "description"=>"Freshly squeezed lemonade blended with sweet strawberry purée over ice."],
+    ["id"=>22, "name"=>"Sparkling Water",       "price"=>80,  "category"=>"drinks", "image"=>"", "description"=>"Chilled sparkling mineral water, perfectly refreshing on its own or with a meal."],
+    ["id"=>23, "name"=>"Mango Soda Float",      "price"=>145, "category"=>"drinks", "image"=>"", "description"=>"Sweet mango soda topped with a scoop of vanilla ice cream for a tropical float."],
+    ["id"=>24, "name"=>"Hot Chocolate",         "price"=>130, "category"=>"drinks", "image"=>"", "description"=>"Rich and creamy hot chocolate made with real dark cocoa and steamed milk."],
+
+    // SIDES (12)
+    ["id"=>25, "name"=>"Croissant",             "price"=>95,  "category"=>"sides", "image"=>"", "description"=>"Buttery, flaky all-butter croissant baked fresh every morning."],
+    ["id"=>26, "name"=>"Banana Bread",          "price"=>80,  "category"=>"sides", "image"=>"", "description"=>"Moist homemade banana bread with a golden crust, perfect with your morning coffee."],
+    ["id"=>27, "name"=>"Blueberry Muffin",      "price"=>85,  "category"=>"sides", "image"=>"", "description"=>"Fluffy muffin bursting with fresh blueberries and a crumbly sugar topping."],
+    ["id"=>28, "name"=>"Cinnamon Roll",         "price"=>110, "category"=>"sides", "image"=>"", "description"=>"Soft, sweet pastry swirled with cinnamon sugar and topped with light icing."],
+    ["id"=>29, "name"=>"Chocolate Chip Cookie", "price"=>70,  "category"=>"sides", "image"=>"", "description"=>"Freshly baked cookie loaded with rich chocolate chips and a soft chewy center."],
+    ["id"=>30, "name"=>"Ham & Cheese Panini",   "price"=>140, "category"=>"sides", "image"=>"", "description"=>"Grilled panini stuffed with savory ham and melted cheese."],
+    ["id"=>31, "name"=>"Breakfast Sandwich",    "price"=>150, "category"=>"sides", "image"=>"", "description"=>"Toasted sandwich with egg, cheese, and choice of ham or bacon for a filling start."],
+    ["id"=>32, "name"=>"Avocado Toast",         "price"=>160, "category"=>"sides", "image"=>"", "description"=>"Toasted sourdough topped with smashed avocado, sea salt, and a drizzle of olive oil."],
+    ["id"=>33, "name"=>"Cheese Danish",         "price"=>95,  "category"=>"sides", "image"=>"", "description"=>"Flaky pastry filled with sweet cream cheese and a light vanilla glaze."],
+    ["id"=>34, "name"=>"Granola Bar",           "price"=>65,  "category"=>"sides", "image"=>"", "description"=>"House-made oat granola bar packed with honey, seeds, and dried fruits."],
+    ["id"=>35, "name"=>"Egg Salad Sandwich",    "price"=>130, "category"=>"sides", "image"=>"", "description"=>"Creamy egg salad on soft white bread, seasoned with herbs and a touch of mustard."],
+    ["id"=>36, "name"=>"Spinach & Feta Wrap",   "price"=>145, "category"=>"sides", "image"=>"", "description"=>"Whole wheat wrap filled with sautéed spinach, feta cheese, and sun-dried tomatoes."],
+
+    // DESSERTS (12)
+    ["id"=>37, "name"=>"Tiramisu",              "price"=>130, "category"=>"desserts", "image"=>"", "description"=>"Classic Italian dessert with espresso-soaked ladyfingers and mascarpone cream."],
+    ["id"=>38, "name"=>"Chocolate Lava Cake",   "price"=>145, "category"=>"desserts", "image"=>"", "description"=>"Warm dark chocolate cake with a molten centre, served with a dusting of cocoa powder."],
+    ["id"=>39, "name"=>"Affogato",              "price"=>140, "category"=>"desserts", "image"=>"", "description"=>"Vanilla ice cream drowned in a hot shot of espresso for a perfect hot-and-cold dessert."],
+    ["id"=>40, "name"=>"Cheesecake",            "price"=>135, "category"=>"desserts", "image"=>"", "description"=>"Creamy baked cheesecake with a buttery graham crust."],
+    ["id"=>41, "name"=>"Brownies",              "price"=>90,  "category"=>"desserts", "image"=>"", "description"=>"Fudgy chocolate brownies with a crackly top and rich cocoa flavor."],
+    ["id"=>42, "name"=>"Crème Brûlée",          "price"=>150, "category"=>"desserts", "image"=>"", "description"=>"Silky vanilla custard topped with a perfectly caramelised sugar crust."],
+    ["id"=>43, "name"=>"Mango Panna Cotta",     "price"=>130, "category"=>"desserts", "image"=>"", "description"=>"Silky Italian panna cotta crowned with a vibrant fresh mango coulis."],
+    ["id"=>44, "name"=>"Strawberry Shortcake",  "price"=>140, "category"=>"desserts", "image"=>"", "description"=>"Light sponge cake layered with fresh strawberries and whipped cream."],
+    ["id"=>45, "name"=>"Macarons (3 pcs)",      "price"=>120, "category"=>"desserts", "image"=>"", "description"=>"Delicate French macarons in assorted flavours — crisp shell, chewy centre."],
+    ["id"=>46, "name"=>"Chocolate Mousse",      "price"=>125, "category"=>"desserts", "image"=>"", "description"=>"Airy dark chocolate mousse served chilled with a dusting of cocoa."],
+    ["id"=>47, "name"=>"Leche Flan",            "price"=>95,  "category"=>"desserts", "image"=>"", "description"=>"Classic Filipino-style caramel custard flan, silky smooth with a golden caramel top."],
+    ["id"=>48, "name"=>"Ube Cheesecake",        "price"=>145, "category"=>"desserts", "image"=>"", "description"=>"Creamy ube-flavoured cheesecake with a rich purple hue and buttery biscuit base."],
     ];
 }
 ?>
@@ -76,7 +115,6 @@ if (empty($products)) {
             overflow-x: hidden;
         }
 
-        /* ── Ambient background ── */
         body::before {
             content: '';
             position: fixed;
@@ -147,7 +185,6 @@ if (empty($products)) {
         }
 
         nav a:hover { color: var(--cream); background: rgba(255,255,255,0.04); }
-
         nav a.active { color: var(--gold); }
 
         .nav-cart {
@@ -218,10 +255,7 @@ if (empty($products)) {
             margin-bottom: 18px;
         }
 
-        .hero h1 em {
-            font-style: italic;
-            color: var(--gold);
-        }
+        .hero h1 em { font-style: italic; color: var(--gold); }
 
         .hero p {
             font-size: 15px;
@@ -253,7 +287,7 @@ if (empty($products)) {
             background: transparent;
             color: var(--muted);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.25s ease;
         }
 
         .filter-btn:hover,
@@ -269,14 +303,18 @@ if (empty($products)) {
             z-index: 1;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 0 32px 100px;
+            padding: 0 32px 60px;
         }
 
+        /* Grid wrapper handles fade during filter/page change */
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 24px;
+            transition: opacity 0.25s ease;
         }
+
+        .menu-grid.fading { opacity: 0; }
 
         /* ─────────────────────── CARD ─────────────────────── */
         .menu-card {
@@ -286,31 +324,31 @@ if (empty($products)) {
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-            animation: cardIn 0.5s ease both;
+            /* Card entrance animation */
+            opacity: 0;
+            transform: translateY(18px);
+            transition:
+                opacity 0.35s ease,
+                transform 0.35s ease,
+                border-color 0.3s ease,
+                box-shadow 0.3s ease;
+        }
+
+        /* Visible state — added by JS */
+        .menu-card.visible {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .menu-card:hover {
-            transform: translateY(-6px);
             border-color: var(--gold-dim);
             box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(201,168,76,0.08);
         }
 
-        @keyframes cardIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to   { opacity: 1; transform: translateY(0); }
+        /* Lift only when already visible (avoids fighting entrance anim) */
+        .menu-card.visible:hover {
+            transform: translateY(-6px);
         }
-
-        /* Stagger animation delays */
-        .menu-card:nth-child(1)  { animation-delay: 0.05s; }
-        .menu-card:nth-child(2)  { animation-delay: 0.10s; }
-        .menu-card:nth-child(3)  { animation-delay: 0.15s; }
-        .menu-card:nth-child(4)  { animation-delay: 0.20s; }
-        .menu-card:nth-child(5)  { animation-delay: 0.25s; }
-        .menu-card:nth-child(6)  { animation-delay: 0.30s; }
-        .menu-card:nth-child(7)  { animation-delay: 0.35s; }
-        .menu-card:nth-child(8)  { animation-delay: 0.40s; }
-        .menu-card:nth-child(9)  { animation-delay: 0.45s; }
 
         .card-img-wrap {
             position: relative;
@@ -327,23 +365,15 @@ if (empty($products)) {
             display: block;
         }
 
-        .menu-card:hover .card-img-wrap img {
-            transform: scale(1.06);
-        }
+        .menu-card:hover .card-img-wrap img { transform: scale(1.06); }
 
-        /* Gold shimmer overlay on hover */
         .card-img-wrap::after {
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(
-                180deg,
-                transparent 50%,
-                rgba(0,0,0,0.5) 100%
-            );
+            background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.5) 100%);
         }
 
-        /* No image placeholder */
         .img-placeholder {
             width: 100%;
             height: 100%;
@@ -357,9 +387,7 @@ if (empty($products)) {
             letter-spacing: 0.05em;
         }
 
-        .img-placeholder svg {
-            opacity: 0.3;
-        }
+        .img-placeholder svg { opacity: 0.3; }
 
         .card-body {
             padding: 22px 24px 24px;
@@ -443,7 +471,6 @@ if (empty($products)) {
         .add-btn:hover  { background: var(--green-lt); }
         .add-btn:active { transform: scale(0.95); }
 
-        /* Ripple on click */
         .add-btn .ripple {
             position: absolute;
             border-radius: 50%;
@@ -453,15 +480,9 @@ if (empty($products)) {
             pointer-events: none;
         }
 
-        @keyframes ripple {
-            to { transform: scale(4); opacity: 0; }
-        }
+        @keyframes ripple { to { transform: scale(4); opacity: 0; } }
 
-        /* ─── Added feedback ─── */
-        .add-btn.added {
-            background: var(--gold);
-            color: #000;
-        }
+        .add-btn.added { background: var(--gold); color: #000; }
 
         /* ─────────────────────── EMPTY STATE ─────────────────────── */
         .empty-state {
@@ -477,6 +498,74 @@ if (empty($products)) {
             font-size: 26px;
             color: var(--text);
             margin-bottom: 8px;
+        }
+
+        /* ─────────────────────── PAGINATION ─────────────────────── */
+        .pagination-wrap {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            padding: 32px 32px 80px;
+        }
+
+        .pagination-info {
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .pagination {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .page-btn {
+            font-family: 'Jost', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            min-width: 38px;
+            height: 38px;
+            padding: 0 12px;
+            border-radius: 3px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            border-color: var(--gold-dim);
+            color: var(--gold);
+            background: rgba(201,168,76,0.07);
+        }
+
+        .page-btn.active {
+            border-color: var(--gold);
+            color: var(--gold);
+            background: rgba(201,168,76,0.12);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .page-ellipsis {
+            color: var(--muted);
+            padding: 0 4px;
+            font-size: 14px;
+            line-height: 38px;
         }
 
         /* ─────────────────────── TOAST ─────────────────────── */
@@ -501,11 +590,7 @@ if (empty($products)) {
             pointer-events: none;
         }
 
-        #toast.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
+        #toast.show { transform: translateY(0); opacity: 1; }
         #toast svg { color: var(--green-lt); flex-shrink: 0; }
 
         /* ─────────────────────── FOOTER ─────────────────────── */
@@ -517,12 +602,7 @@ if (empty($products)) {
             text-align: center;
         }
 
-        footer p {
-            font-size: 12px;
-            color: var(--muted);
-            letter-spacing: 0.06em;
-        }
-
+        footer p { font-size: 12px; color: var(--muted); letter-spacing: 0.06em; }
         footer p span { color: var(--gold-dim); }
 
         /* ─────────────────────── RESPONSIVE ─────────────────────── */
@@ -531,8 +611,9 @@ if (empty($products)) {
             .brand-name { font-size: 18px; }
             nav a:not(.nav-cart) { display: none; }
             .hero { padding: 60px 20px 50px; }
-            .menu-section { padding: 0 16px 60px; }
+            .menu-section { padding: 0 16px 40px; }
             .menu-grid { grid-template-columns: 1fr; gap: 16px; }
+            .pagination-wrap { padding: 24px 16px 60px; }
         }
     </style>
 </head>
@@ -656,6 +737,12 @@ if (empty($products)) {
     <?php endif; ?>
 </main>
 
+<!-- ═══════════════════════ PAGINATION ═══════════════════════ -->
+<div class="pagination-wrap" id="paginationWrap" style="display:none;">
+    <div class="pagination-info" id="paginationInfo"></div>
+    <div class="pagination" id="pagination"></div>
+</div>
+
 <!-- ═══════════════════════ TOAST ═══════════════════════ -->
 <div id="toast">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -671,21 +758,144 @@ if (empty($products)) {
 </footer>
 
 <script>
-// ─── Cart badge — kuha sa SESSION via cart_handler.php ────────────────────
+// ─── Config ───────────────────────────────────────────────────────────────
+const ITEMS_PER_PAGE = 6;
+
+// ─── State ────────────────────────────────────────────────────────────────
+let currentPage   = 1;
+let currentFilter = 'all';
+
+const allCards = Array.from(document.querySelectorAll('.menu-card'));
+const grid     = document.getElementById('menuGrid');
+
+// ─── Main render ──────────────────────────────────────────────────────────
+function renderGrid(animate = true) {
+    // 1. Filter
+    const filtered = currentFilter === 'all'
+        ? allCards
+        : allCards.filter(c => c.dataset.category === currentFilter);
+
+    // 2. Pagination math
+    const totalItems  = filtered.length;
+    const totalPages  = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end   = start + ITEMS_PER_PAGE;
+    const pageCards = filtered.slice(start, end);
+
+    if (animate) {
+        // Fade grid out → update → fade in
+        grid.classList.add('fading');
+
+        setTimeout(() => {
+            applyVisibility(allCards, filtered, pageCards);
+            grid.classList.remove('fading');
+
+            // Stagger card entrance
+            pageCards.forEach((card, i) => {
+                card.classList.remove('visible');
+                setTimeout(() => card.classList.add('visible'), i * 60);
+            });
+        }, 250);
+    } else {
+        applyVisibility(allCards, filtered, pageCards);
+        pageCards.forEach((card, i) => {
+            setTimeout(() => card.classList.add('visible'), i * 60);
+        });
+    }
+
+    // 3. Pagination UI
+    renderPaginationUI(totalItems, totalPages, start, end);
+}
+
+function applyVisibility(all, filtered, pageCards) {
+    all.forEach(card => {
+        card.classList.remove('visible');
+        card.style.display = 'none';
+    });
+    pageCards.forEach(card => {
+        card.style.display = '';
+    });
+}
+
+// ─── Pagination UI ────────────────────────────────────────────────────────
+function renderPaginationUI(totalItems, totalPages, start, end) {
+    const wrap       = document.getElementById('paginationWrap');
+    const infoEl     = document.getElementById('paginationInfo');
+    const paginEl    = document.getElementById('pagination');
+
+    wrap.style.display = totalPages <= 1 ? 'none' : 'flex';
+
+    const showing = Math.min(end, totalItems);
+    infoEl.textContent = `Showing ${start + 1}–${showing} of ${totalItems} items`;
+
+    paginEl.innerHTML = '';
+
+    // Prev
+    const prev = pageBtn('←', currentPage === 1);
+    prev.title = 'Previous page';
+    prev.addEventListener('click', () => { currentPage--; renderGrid(); scrollToMenu(); });
+    paginEl.appendChild(prev);
+
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        if (totalPages > 7 && i > 2 && i < totalPages - 1 && Math.abs(i - currentPage) > 1) {
+            if (i === 3 || i === totalPages - 2) {
+                const el = document.createElement('span');
+                el.className = 'page-ellipsis';
+                el.textContent = '…';
+                paginEl.appendChild(el);
+            }
+            continue;
+        }
+        const btn = pageBtn(i, false, i === currentPage);
+        btn.addEventListener('click', () => { currentPage = i; renderGrid(); scrollToMenu(); });
+        paginEl.appendChild(btn);
+    }
+
+    // Next
+    const next = pageBtn('→', currentPage === totalPages);
+    next.title = 'Next page';
+    next.addEventListener('click', () => { currentPage++; renderGrid(); scrollToMenu(); });
+    paginEl.appendChild(next);
+}
+
+function pageBtn(label, disabled, active = false) {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (active ? ' active' : '');
+    btn.textContent = label;
+    btn.disabled = disabled;
+    return btn;
+}
+
+function scrollToMenu() {
+    document.querySelector('.filter-bar').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ─── Filter buttons ───────────────────────────────────────────────────────
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        currentPage   = 1;
+        renderGrid(true); // animate on filter change
+    });
+});
+
+// ─── Cart badge ───────────────────────────────────────────────────────────
 function updateCartBadge() {
     fetch('cart_handler.php?count=1')
         .then(r => r.json())
-        .then(data => {
-            document.getElementById('cartCount').textContent = data.count || 0;
-        })
+        .then(data => { document.getElementById('cartCount').textContent = data.count || 0; })
         .catch(() => {});
 }
 
-updateCartBadge(); // ipakita agad sa page load
+updateCartBadge();
 
 // ─── Add to cart ──────────────────────────────────────────────────────────
 function addToCart(id, btn) {
-    // Ripple
     const ripple = document.createElement('span');
     ripple.className = 'ripple';
     const rect = btn.getBoundingClientRect();
@@ -696,15 +906,11 @@ function addToCart(id, btn) {
 
     btn.disabled = true;
 
-    // ✅ I-save sa PHP SESSION — gagamitin ng cart.php
     fetch(`cart_handler.php?add=${id}`)
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                // Update badge gamit ang count mula sa server
                 document.getElementById('cartCount').textContent = data.count || 0;
-
-                // Button feedback
                 const orig = btn.innerHTML;
                 btn.classList.add('added');
                 btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Added`;
@@ -713,7 +919,6 @@ function addToCart(id, btn) {
                     btn.innerHTML = orig;
                     btn.disabled = false;
                 }, 1400);
-
                 showToast('Added to cart!');
             } else {
                 btn.disabled = false;
@@ -736,18 +941,8 @@ function showToast(msg) {
     toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
 }
 
-// ─── Filter buttons ───────────────────────────────────────────────────────
-document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const filter = btn.dataset.filter;
-        document.querySelectorAll('.menu-card').forEach(card => {
-            const match = filter === 'all' || card.dataset.category === filter;
-            card.style.display = match ? '' : 'none';
-        });
-    });
-});
+// ─── Initial render (no fade on first load) ───────────────────────────────
+renderGrid(false);
 </script>
 
 </body>
