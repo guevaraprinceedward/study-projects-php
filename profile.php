@@ -70,13 +70,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["change_password"])) {
     } else {
         $db_password = $user["password"] ?? "";
 
-        // ✅ Support both hashed and plain text passwords
-        $password_info = password_get_info($db_password);
-        if ($password_info['algo'] !== null && $password_info['algo'] !== 0) {
-            // Hashed password — gamitin ang password_verify
+        // Check kung hashed o plain text
+        if (password_get_info($db_password)['algo']) {
+            // Hashed — gamitin ang password_verify
             $password_ok = password_verify($current, $db_password);
         } else {
-            // Plain text password — direct compare
+            // Plain text — direct compare
             $password_ok = ($current === $db_password);
         }
 
