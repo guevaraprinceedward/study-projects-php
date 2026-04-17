@@ -78,7 +78,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 // ✅ FIXED — array na ang naka-store sa session
                 $_SESSION["user"] = [
                     'id'       => $user["id"],
-                    'username' => $user["username"]
+                    'username' => $user["username"],
+                    'name'     => $user["name"] ?? $user["username"]
                 ];
 
                 header("Location: index.php");
