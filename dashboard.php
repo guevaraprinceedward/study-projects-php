@@ -31,9 +31,6 @@ $stmtOrders->bind_param("ii", $month, $year);
 $stmtOrders->execute();
 $totalOrders = $stmtOrders->get_result()->fetch_assoc()['cnt'] ?? 0;
 
-// ── TOTAL CUSTOMERS (safe — computed after column check below) ──
-// Will be set after orderCols check
-
 // ── AVG ORDER VALUE ──
 $avgOrder = ($totalOrders > 0) ? ($totalSales / $totalOrders) : 0;
 
@@ -129,7 +126,7 @@ $lowStock = $conn->query("
 ")->fetch_all(MYSQLI_ASSOC);
 
 // ── CHECK users & orders columns ──
-$userCols  = [];
+$userCols = [];
 $r = $conn->query("SHOW COLUMNS FROM users");
 while ($c = $r->fetch_assoc()) $userCols[] = $c['Field'];
 
@@ -137,17 +134,13 @@ $orderCols = [];
 $r = $conn->query("SHOW COLUMNS FROM orders");
 while ($c = $r->fetch_assoc()) $orderCols[] = $c['Field'];
 
-// Pick best name column from users
 $nameCol = 'u.id';
 foreach (['name','full_name','username','email'] as $try) {
     if (in_array($try, $userCols)) { $nameCol = "u.$try"; break; }
 }
 
-// Pick best total column from orders
-$totalCol = in_array('total', $orderCols) ? 'o.total' :
-            (in_array('amount', $orderCols) ? 'o.amount' : '0');
-
-// Check if orders has user_id
+$totalCol  = in_array('total',  $orderCols) ? 'o.total'  :
+             (in_array('amount', $orderCols) ? 'o.amount' : '0');
 $hasUserId = in_array('user_id', $orderCols);
 
 // ── TOTAL CUSTOMERS ──
@@ -390,7 +383,7 @@ body.sidebar-collapsed #mainContent { margin-left: var(--sidebar-col); }
 }
 .section-sub { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; }
 
-/* ── TOP 6 PRODUCTS BAR ── */
+/* ── TOP 6 PRODUCTS ── */
 .top6-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 
 .top6-card {
@@ -423,7 +416,7 @@ body.sidebar-collapsed #mainContent { margin-left: var(--sidebar-col); }
 .chart-card-sub { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
 .chart-wrap { position: relative; }
 
-/* ── LOW STOCK TABLE ── */
+/* ── TABLES ── */
 .table-card {
     background: var(--card); border: 1px solid var(--border); border-radius: 6px;
     overflow: hidden;
@@ -439,7 +432,6 @@ body.sidebar-collapsed #mainContent { margin-left: var(--sidebar-col); }
     font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
     padding: 3px 8px; border-radius: 3px; text-transform: uppercase;
 }
-.alert-badge.amber { background: var(--amber-pale); color: var(--amber); }
 
 table { width: 100%; border-collapse: collapse; }
 thead th {
@@ -447,28 +439,53 @@ thead th {
     color: var(--muted); padding: 10px 16px; text-align: left;
     border-bottom: 1px solid var(--border); font-weight: 500;
 }
-tbody td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid rgba(44,44,36,0.5); }
+tbody td { padding: 11px 16px; font-size: 13px; border-bottom: 1px solid rgba(44,44,36,0.5); vertical-align: middle; }
 tbody tr:last-child td { border-bottom: none; }
 tbody tr { transition: background 0.15s; }
 tbody tr:hover { background: rgba(255,255,255,0.02); }
 
 .stock-bar-wrap { display: flex; align-items: center; gap: 8px; }
-.stock-bar-bg { flex: 1; height: 4px; background: var(--border); border-radius: 2px; min-width: 60px; }
-.stock-bar-fill { height: 100%; border-radius: 2px; background: var(--green); transition: width 0.3s; }
-.stock-bar-fill.warn { background: var(--amber); }
+.stock-bar-bg { flex: 1; height: 4px; background: var(--border); border-radius: 2px; min-width: 50px; }
+.stock-bar-fill { height: 100%; border-radius: 2px; background: var(--green); transition: width 0.4s, background 0.4s; }
+.stock-bar-fill.warn   { background: var(--amber); }
 .stock-bar-fill.danger { background: var(--red); }
 
 .status-pill {
     display: inline-flex; align-items: center;
     padding: 3px 8px; border-radius: 3px; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
 }
-.status-pill.critical { background: var(--red-pale); color: #e05a5a; }
-.status-pill.low      { background: var(--amber-pale); color: var(--amber); }
+.status-pill.critical { background: var(--red-pale);   color: #e05a5a; }
+.status-pill.low      { background: var(--amber-pale);  color: var(--amber); }
 .status-pill.ok       { background: rgba(74,122,58,0.1); color: var(--green-lt); }
 
 .empty-row td { text-align: center; color: var(--muted); padding: 32px 16px; font-size: 13px; }
 
-/* pagination */
+/* ── RESTOCK BUTTON ── */
+.restock-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 11px; border-radius: 3px;
+    border: 1px solid var(--green);
+    background: rgba(74,122,58,0.08);
+    color: var(--green-lt);
+    font-family: 'Jost', sans-serif;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: background 0.18s, border-color 0.18s, color 0.18s, opacity 0.18s;
+    white-space: nowrap;
+}
+.restock-btn:hover:not(:disabled) {
+    background: rgba(74,122,58,0.2);
+    border-color: var(--green-lt);
+    color: #fff;
+}
+.restock-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.restock-btn.done {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.08);
+    color: var(--gold);
+}
+
+/* ── PAGINATION ── */
 .table-footer {
     padding: 12px 16px; border-top: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between;
@@ -482,17 +499,31 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 .tbl-pg-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .tbl-pg-info { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; }
 
-/* ── RECENT ORDERS TABLE ── */
+/* ── TOAST ── */
+#restockToast {
+    position: fixed; bottom: 28px; right: 28px; z-index: 999;
+    background: var(--card); border: 1px solid var(--green);
+    border-radius: 5px; padding: 12px 18px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13.5px; color: var(--cream);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    transform: translateY(16px); opacity: 0;
+    transition: all 0.3s ease; pointer-events: none;
+}
+#restockToast.show { transform: translateY(0); opacity: 1; }
+#restockToast .toast-icon { color: var(--green-lt); flex-shrink: 0; }
+
+/* ── RECENT ORDERS ── */
 .orders-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
 .order-status {
     display: inline-flex; align-items: center;
     padding: 3px 8px; border-radius: 3px; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
 }
-.order-status.pending   { background: var(--amber-pale); color: var(--amber); }
-.order-status.completed { background: rgba(74,122,58,0.1); color: var(--green-lt); }
-.order-status.cancelled { background: var(--red-pale); color: #e05a5a; }
-.order-status.processing{ background: rgba(59,130,246,0.1); color: #60a5fa; }
+.order-status.pending    { background: var(--amber-pale); color: var(--amber); }
+.order-status.completed  { background: rgba(74,122,58,0.1); color: var(--green-lt); }
+.order-status.cancelled  { background: var(--red-pale); color: #e05a5a; }
+.order-status.processing { background: rgba(59,130,246,0.1); color: #60a5fa; }
 
 /* ── MOBILE ── */
 #sidebarOverlay {
@@ -560,7 +591,7 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
         </a>
         <a href="dashboard.php" class="nav-item active">
             <span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>
-            <span class="nav-label-text">Dashboard</span>
+            <span class="nav-label-text">Account Dashboard</span>
         </a>
         <a href="orders.php" class="nav-item">
             <span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
@@ -586,7 +617,6 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 <!-- ══════════ MAIN ══════════ -->
 <div id="mainContent">
 
-    <!-- Topbar -->
     <div class="topbar">
         <div class="topbar-left">
             <div>
@@ -683,31 +713,21 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
                 <div class="section-hd-line"></div>
             </div>
             <div class="chart-row">
-
                 <div class="chart-card">
                     <div class="chart-card-title">Sales by Category</div>
                     <div class="chart-card-sub">Category share of total sales</div>
-                    <div class="chart-wrap" style="height:200px">
-                        <canvas id="chartCategory"></canvas>
-                    </div>
+                    <div class="chart-wrap" style="height:200px"><canvas id="chartCategory"></canvas></div>
                 </div>
-
                 <div class="chart-card">
                     <div class="chart-card-title">Top 5 Products (Units)</div>
                     <div class="chart-card-sub">Highest unit sales this month</div>
-                    <div class="chart-wrap" style="height:200px">
-                        <canvas id="chartTop5"></canvas>
-                    </div>
+                    <div class="chart-wrap" style="height:200px"><canvas id="chartTop5"></canvas></div>
                 </div>
-
                 <div class="chart-card">
                     <div class="chart-card-title">Daily Transactions</div>
                     <div class="chart-card-sub">Transaction count trend this month</div>
-                    <div class="chart-wrap" style="height:200px">
-                        <canvas id="chartDaily"></canvas>
-                    </div>
+                    <div class="chart-wrap" style="height:200px"><canvas id="chartDaily"></canvas></div>
                 </div>
-
             </div>
         </div>
 
@@ -734,16 +754,16 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
                                 <th>ID</th>
                                 <th>Name</th>
                                 <th>On Hand</th>
-                                <th>Reorder Lvl</th>
                                 <th>Status</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody id="lowStockBody">
                         <?php if (empty($lowStock)): ?>
-                            <tr class="empty-row"><td colspan="5">No low stock products.</td></tr>
+                            <tr class="empty-row"><td colspan="5">✓ All products are well-stocked.</td></tr>
                         <?php else: ?>
                             <?php foreach ($lowStock as $s):
-                                $pct    = min(100, ($s['stock'] / max(1,$s['reorder_level'])) * 100);
+                                $pct    = min(100, ($s['stock'] / max(1, $s['reorder_level'])) * 100);
                                 $cls    = $s['stock'] == 0 ? 'danger' : ($s['stock'] <= 5 ? 'danger' : 'warn');
                                 $status = $s['stock'] == 0 ? 'Out of Stock' : ($s['stock'] <= 5 ? 'Critical' : 'Low');
                                 $pill   = $s['stock'] == 0 ? 'critical' : ($s['stock'] <= 5 ? 'critical' : 'low');
@@ -753,12 +773,21 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
                                 <td style="font-weight:500"><?= htmlspecialchars($s['name']) ?></td>
                                 <td>
                                     <div class="stock-bar-wrap">
-                                        <span><?= $s['stock'] ?></span>
-                                        <div class="stock-bar-bg"><div class="stock-bar-fill <?= $cls ?>" style="width:<?= $pct ?>%"></div></div>
+                                        <span class="stock-num"><?= $s['stock'] ?></span>
+                                        <div class="stock-bar-bg">
+                                            <div class="stock-bar-fill <?= $cls ?>" style="width:<?= $pct ?>%"></div>
+                                        </div>
                                     </div>
                                 </td>
-                                <td style="color:var(--muted)"><?= $s['reorder_level'] ?></td>
                                 <td><span class="status-pill <?= $pill ?>"><?= $status ?></span></td>
+                                <td>
+                                    <button class="restock-btn"
+                                            onclick="restockItem(<?= $s['id'] ?>, this)"
+                                            title="Refill stock to 100">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.54"/></svg>
+                                        Restock
+                                    </button>
+                                </td>
                             </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -801,7 +830,7 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
                             <tr>
                                 <td style="color:var(--muted)">#<?= $o['id'] ?></td>
                                 <td style="font-weight:500"><?= htmlspecialchars($o['customer']) ?></td>
-                                <td style="color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:15px">₱<?= number_format($o['total'],2) ?></td>
+                                <td style="color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:15px">₱<?= number_format($o['total'], 2) ?></td>
                                 <td><span class="order-status <?= htmlspecialchars($o['status']) ?>"><?= ucfirst($o['status']) ?></span></td>
                                 <td style="color:var(--muted);font-size:11px"><?= date('M d', strtotime($o['created_at'])) ?></td>
                             </tr>
@@ -817,9 +846,14 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
             </div>
 
         </div>
-
     </div><!-- end dash-body -->
 </div><!-- end mainContent -->
+
+<!-- ── RESTOCK TOAST ── -->
+<div id="restockToast">
+    <svg class="toast-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    <span id="restockToastMsg">Restocked successfully!</span>
+</div>
 
 <script>
 // ── Sidebar ──
@@ -833,7 +867,7 @@ function toggleSidebar() {
     document.body.classList.toggle('sidebar-collapsed', c);
     localStorage.setItem('sidebarCollapsed', c ? '1' : '0');
 }
-function openMobileSidebar()  { sidebar.classList.add('mobile-open'); overlay.classList.add('visible'); }
+function openMobileSidebar()  { sidebar.classList.add('mobile-open');    overlay.classList.add('visible'); }
 function closeMobileSidebar() { sidebar.classList.remove('mobile-open'); overlay.classList.remove('visible'); }
 
 if (!isMobile() && localStorage.getItem('sidebarCollapsed') === '1') {
@@ -850,7 +884,9 @@ handleResize();
 window.addEventListener('resize', handleResize);
 
 // ── Cart badge ──
-fetch('cart_handler.php?count=1').then(r=>r.json()).then(d=>{ document.getElementById('cartCount').textContent = d.count||0; }).catch(()=>{});
+fetch('cart_handler.php?count=1').then(r=>r.json()).then(d=>{
+    document.getElementById('cartCount').textContent = d.count || 0;
+}).catch(()=>{});
 
 // ── Chart.js defaults ──
 Chart.defaults.color = '#6b6b58';
@@ -858,7 +894,6 @@ Chart.defaults.font.family = "'Jost', sans-serif";
 Chart.defaults.font.size = 11;
 
 const GOLD   = '#c9a84c';
-const GREEN  = '#4a7a3a';
 const GREENS = ['#4a7a3a','#6aaa52','#8aba72','#aacb92','#c9a84c','#8a6f2e'];
 const AMBERS = ['#c9a84c','#d4820a','#4a7a3a','#6aaa52','#8a6f2e'];
 
@@ -872,8 +907,7 @@ if (catData.length) {
             datasets: [{ data: catData.map(d => d.revenue), backgroundColor: GREENS, borderColor: '#1a1a16', borderWidth: 3 }]
         },
         options: {
-            responsive: true, maintainAspectRatio: false,
-            cutout: '68%',
+            responsive: true, maintainAspectRatio: false, cutout: '68%',
             plugins: {
                 legend: { position: 'right', labels: { boxWidth: 10, padding: 12, color: '#6b6b58' } },
                 tooltip: { callbacks: { label: ctx => ' ₱' + Number(ctx.parsed).toLocaleString() } }
@@ -919,11 +953,8 @@ new Chart(document.getElementById('chartDaily'), {
             data: dailyData.values,
             borderColor: GOLD,
             backgroundColor: 'rgba(201,168,76,0.07)',
-            borderWidth: 2,
-            pointRadius: 3,
-            pointBackgroundColor: GOLD,
-            fill: true,
-            tension: 0.4
+            borderWidth: 2, pointRadius: 3, pointBackgroundColor: GOLD,
+            fill: true, tension: 0.4
         }]
     },
     options: {
@@ -937,23 +968,107 @@ new Chart(document.getElementById('chartDaily'), {
 });
 
 // ── Low Stock Pagination ──
-const lowRows   = document.querySelectorAll('#lowStockBody tr:not(.empty-row)');
-const PER_PAGE  = 5;
 let lowCurrentPage = 1;
-const totalLowPages = Math.ceil(lowRows.length / PER_PAGE);
+const PER_PAGE = 5;
+
+function getLowRows() {
+    return Array.from(document.querySelectorAll('#lowStockBody tr:not(.empty-row)'));
+}
 
 function renderLowTable() {
+    const rows = getLowRows();
+    const total = rows.length;
+    const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+    if (lowCurrentPage > totalPages) lowCurrentPage = totalPages;
     const start = (lowCurrentPage - 1) * PER_PAGE;
     const end   = start + PER_PAGE;
-    lowRows.forEach((r, i) => { r.style.display = (i >= start && i < end) ? '' : 'none'; });
-    document.getElementById('lowInfo').textContent =
-        lowRows.length ? `Page ${lowCurrentPage} of ${totalLowPages}` : '';
+    rows.forEach((r, i) => { r.style.display = (i >= start && i < end) ? '' : 'none'; });
+    document.getElementById('lowInfo').textContent = total ? `Page ${lowCurrentPage} of ${totalPages}` : '';
     document.getElementById('lowPrev').disabled = lowCurrentPage <= 1;
-    document.getElementById('lowNext').disabled = lowCurrentPage >= totalLowPages || !lowRows.length;
+    document.getElementById('lowNext').disabled = lowCurrentPage >= totalPages || !total;
 }
 
 function lowPage(dir) { lowCurrentPage += dir; renderLowTable(); }
 renderLowTable();
+
+// ── Toast ──
+let toastTimer;
+function showRestockToast(msg) {
+    const toast = document.getElementById('restockToast');
+    document.getElementById('restockToastMsg').textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+// ── Restock ──
+function restockItem(id, btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 0.7s linear infinite"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.54"/></svg> Working…`;
+
+    fetch('restock_handler.php?id=' + id)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const row = btn.closest('tr');
+
+                // Update stock number
+                const numEl = row.querySelector('.stock-num');
+                if (numEl) numEl.textContent = data.stock;
+
+                // Update bar to full green
+                const fill = row.querySelector('.stock-bar-fill');
+                if (fill) { fill.style.width = '100%'; fill.className = 'stock-bar-fill'; }
+
+                // Update status pill
+                const pill = row.querySelector('.status-pill');
+                if (pill) { pill.textContent = 'OK'; pill.className = 'status-pill ok'; }
+
+                // Mark button as done
+                btn.classList.add('done');
+                btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Done`;
+
+                // Show toast
+                showRestockToast((data.name || 'Product') + ' restocked to ' + data.stock + ' units.');
+
+                // Fade & remove row after short delay
+                setTimeout(() => {
+                    row.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                    row.style.opacity = '0';
+                    row.style.transform = 'translateX(10px)';
+                    setTimeout(() => {
+                        row.remove();
+                        renderLowTable(); // update pagination after row removed
+
+                        // If no rows left, show empty state
+                        const remaining = getLowRows();
+                        if (remaining.length === 0) {
+                            const tbody = document.getElementById('lowStockBody');
+                            tbody.innerHTML = '<tr class="empty-row"><td colspan="5">✓ All products are well-stocked.</td></tr>';
+                            document.getElementById('lowInfo').textContent = '';
+                            document.getElementById('lowPrev').disabled = true;
+                            document.getElementById('lowNext').disabled = true;
+                        }
+                    }, 500);
+                }, 1400);
+
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.54"/></svg> Restock`;
+                alert('Error: ' + (data.message || 'Could not restock.'));
+            }
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.54"/></svg> Restock`;
+            alert('Network error. Please try again.');
+        });
+}
 </script>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
 </body>
 </html>
