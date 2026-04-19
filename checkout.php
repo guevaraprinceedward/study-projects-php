@@ -1,76 +1,13 @@
 <?php
-// Safe session start
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-
-if (!isset($_SESSION["user"])) {
-    header("Location: log-in.php");
-    exit();
-}
-
+if (!isset($_SESSION["user"])) { header("Location: log-in.php"); exit(); }
 include 'config.php';
 
-// ── GUARD: empty cart ────────────────────────────────────────────────────────
-if (empty($_SESSION['cart'])) {
-    header("Location: cart.php");
-    exit();
-}
+if (empty($_SESSION['cart'])) { header("Location: cart.php"); exit(); }
 
-// ── SAMPLE PRODUCTS (fallback) ────────────────────────────────────────────────
-$sampleProducts = [
-    1=>["price"=>85,"name"=>"Espresso","category"=>"mains"],
-    2=>["price"=>100,"name"=>"Americano","category"=>"mains"],
-    3=>["price"=>130,"name"=>"Cappuccino","category"=>"mains"],
-    4=>["price"=>140,"name"=>"Caffè Latte","category"=>"mains"],
-    5=>["price"=>145,"name"=>"Flat White","category"=>"mains"],
-    6=>["price"=>155,"name"=>"Caramel Macchiato","category"=>"mains"],
-    7=>["price"=>150,"name"=>"Mocha","category"=>"mains"],
-    8=>["price"=>155,"name"=>"Hazelnut Latte","category"=>"mains"],
-    9=>["price"=>160,"name"=>"White Chocolate Mocha","category"=>"mains"],
-    10=>["price"=>150,"name"=>"Spanish Latte","category"=>"mains"],
-    11=>["price"=>145,"name"=>"Vanilla Latte","category"=>"mains"],
-    12=>["price"=>135,"name"=>"Cortado","category"=>"mains"],
-    13=>["price"=>160,"name"=>"Cold Brew","category"=>"drinks"],
-    14=>["price"=>110,"name"=>"Iced Americano","category"=>"drinks"],
-    15=>["price"=>165,"name"=>"Iced Caramel Latte","category"=>"drinks"],
-    16=>["price"=>150,"name"=>"Matcha Latte","category"=>"drinks"],
-    17=>["price"=>155,"name"=>"Iced Mocha","category"=>"drinks"],
-    18=>["price"=>165,"name"=>"Dirty Matcha","category"=>"drinks"],
-    19=>["price"=>150,"name"=>"Espresso Tonic","category"=>"drinks"],
-    20=>["price"=>165,"name"=>"Iced Hazelnut Latte","category"=>"drinks"],
-    21=>["price"=>120,"name"=>"Strawberry Lemonade","category"=>"drinks"],
-    22=>["price"=>80,"name"=>"Sparkling Water","category"=>"drinks"],
-    23=>["price"=>145,"name"=>"Mango Soda Float","category"=>"drinks"],
-    24=>["price"=>130,"name"=>"Hot Chocolate","category"=>"drinks"],
-    25=>["price"=>95,"name"=>"Croissant","category"=>"sides"],
-    26=>["price"=>80,"name"=>"Banana Bread","category"=>"sides"],
-    27=>["price"=>85,"name"=>"Blueberry Muffin","category"=>"sides"],
-    28=>["price"=>110,"name"=>"Cinnamon Roll","category"=>"sides"],
-    29=>["price"=>70,"name"=>"Chocolate Chip Cookie","category"=>"sides"],
-    30=>["price"=>140,"name"=>"Ham & Cheese Panini","category"=>"sides"],
-    31=>["price"=>150,"name"=>"Breakfast Sandwich","category"=>"sides"],
-    32=>["price"=>160,"name"=>"Avocado Toast","category"=>"sides"],
-    33=>["price"=>95,"name"=>"Cheese Danish","category"=>"sides"],
-    34=>["price"=>65,"name"=>"Granola Bar","category"=>"sides"],
-    35=>["price"=>130,"name"=>"Egg Salad Sandwich","category"=>"sides"],
-    36=>["price"=>145,"name"=>"Spinach & Feta Wrap","category"=>"sides"],
-    37=>["price"=>130,"name"=>"Tiramisu","category"=>"desserts"],
-    38=>["price"=>145,"name"=>"Chocolate Lava Cake","category"=>"desserts"],
-    39=>["price"=>140,"name"=>"Affogato","category"=>"desserts"],
-    40=>["price"=>135,"name"=>"Cheesecake","category"=>"desserts"],
-    41=>["price"=>90,"name"=>"Brownies","category"=>"desserts"],
-    42=>["price"=>150,"name"=>"Crème Brûlée","category"=>"desserts"],
-    43=>["price"=>130,"name"=>"Mango Panna Cotta","category"=>"desserts"],
-    44=>["price"=>140,"name"=>"Strawberry Shortcake","category"=>"desserts"],
-    45=>["price"=>120,"name"=>"Macarons (3 pcs)","category"=>"desserts"],
-    46=>["price"=>125,"name"=>"Chocolate Mousse","category"=>"desserts"],
-    47=>["price"=>95,"name"=>"Leche Flan","category"=>"desserts"],
-    48=>["price"=>145,"name"=>"Ube Cheesecake","category"=>"desserts"],
-    17
-];
-
-// ── BUILD CART ROWS ───────────────────────────────────────────────────────────
+// ── BUILD CART ROWS from DB (real qty, real price, real stock) ─────────────
 $cartRows = [];
 $total    = 0;
 
@@ -79,66 +16,74 @@ foreach ($_SESSION['cart'] as $id => $qty) {
     $qty = (int)$qty;
     if ($qty <= 0) continue;
 
-    $res = $conn->query("SELECT * FROM products WHERE id=$id");
-    if ($res && $row = $res->fetch_assoc()) {
-        // from DB
-    } elseif (isset($sampleProducts[$id])) {
-        $row = $sampleProducts[$id];
-    } else {
-        continue;
-    }
+    $res = $conn->query("SELECT * FROM products WHERE id = $id");
+    if (!$res || !($row = $res->fetch_assoc())) continue;
+
+    // Clamp qty sa actual DB stock para hindi makalagpas
+    $actualStock = (int)($row['stock'] ?? 0);
+    if ($actualStock <= 0) { unset($_SESSION['cart'][$id]); continue; }
+    $qty = min($qty, $actualStock);
+    $_SESSION['cart'][$id] = $qty;
 
     $subtotal   = $row['price'] * $qty;
     $total     += $subtotal;
     $cartRows[] = array_merge($row, ['qty' => $qty, 'subtotal' => $subtotal]);
 }
 
-if (empty($cartRows)) {
-    header("Location: cart.php");
-    exit();
-}
+if (empty($cartRows)) { header("Location: cart.php"); exit(); }
 
-// ── GET USER INFO ─────────────────────────────────────────────────────────────
-$user    = $_SESSION['user'];
-$userId  = (int)($user['id'] ?? 0);
+$user   = $_SESSION['user'];
+$userId = (int)($user['id'] ?? 0);
 $userName = htmlspecialchars($user['name'] ?? $user['username'] ?? 'Guest');
 
-// ── HANDLE FORM SUBMIT ────────────────────────────────────────────────────────
 $error   = '';
 $success = false;
+$successOrderId = null;
 
+// ── HANDLE FORM SUBMIT ────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
 
-    $notes = trim($_POST['notes'] ?? '');
-    $notes = $conn->real_escape_string($notes);
+    $notes = $conn->real_escape_string(trim($_POST['notes'] ?? ''));
 
-    // Use a transaction for safety
     $conn->begin_transaction();
     try {
-        // Insert order
+        // 1. Create the order
         $conn->query("INSERT INTO orders (user_id, total, notes, status, created_at)
                       VALUES ($userId, $total, '$notes', 'pending', NOW())");
         $orderId = $conn->insert_id;
-
         if (!$orderId) throw new Exception("Could not create order.");
 
-        // Insert order items
+        // 2. Insert each item into order_items AND deduct stock
         foreach ($cartRows as $item) {
             $pid   = (int)$item['id'];
             $qty   = (int)$item['qty'];
             $price = (float)$item['price'];
+
+            // Verify stock is still available
+            $stockCheck = $conn->query("SELECT stock FROM products WHERE id = $pid FOR UPDATE");
+            $stockRow   = $stockCheck->fetch_assoc();
+            if (!$stockRow || (int)$stockRow['stock'] < $qty) {
+                throw new Exception("Sorry, stock changed for: " . htmlspecialchars($item['name']));
+            }
+
+            // Insert into order_items
             $conn->query("INSERT INTO order_items (order_id, product_id, quantity, price)
                           VALUES ($orderId, $pid, $qty, $price)");
+
+            // ← Dito lang talaga babawas ang stock — pagkatapos ng confirmed order
+            $conn->query("UPDATE products SET stock = GREATEST(0, stock - $qty) WHERE id = $pid");
         }
 
         $conn->commit();
+
+        // Clear cart
         unset($_SESSION['cart']);
-        $success  = true;
+        $success        = true;
         $successOrderId = $orderId;
 
     } catch (Exception $e) {
         $conn->rollback();
-        $error = "Something went wrong. Please try again.";
+        $error = $e->getMessage();
     }
 }
 
@@ -149,387 +94,124 @@ $itemCount = array_sum(array_column($cartRows, 'qty'));
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout — My Restaurant</title>
+    <title>Checkout — AyosCoffeeNegosyo</title>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        :root{
+            --bg:#0b0b09;--surface:#131310;--card:#1a1a16;--border:#2c2c24;
+            --gold:#c9a84c;--gold-dim:#8a6f2e;--green:#4a7a3a;--green-lt:#6aaa52;
+            --red:#8b2e2e;--red-lt:#c0392b;--cream:#f0ead8;--muted:#6b6b58;--text:#e8e4d8;
+        }
+        html{scroll-behavior:smooth}
+        body{font-family:'Jost',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+        body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 10% 0%,rgba(201,168,76,0.06) 0%,transparent 55%),radial-gradient(ellipse 50% 70% at 90% 100%,rgba(74,122,58,0.07) 0%,transparent 55%);pointer-events:none;z-index:0}
 
-        :root {
-            --bg:       #0b0b09;
-            --surface:  #131310;
-            --card:     #1a1a16;
-            --border:   #2c2c24;
-            --gold:     #c9a84c;
-            --gold-dim: #8a6f2e;
-            --green:    #4a7a3a;
-            --green-lt: #6aaa52;
-            --red:      #8b2e2e;
-            --red-lt:   #c0392b;
-            --cream:    #f0ead8;
-            --muted:    #6b6b58;
-            --text:     #e8e4d8;
-        }
+        header{position:sticky;top:0;z-index:100;background:rgba(11,11,9,0.88);backdrop-filter:blur(18px);border-bottom:1px solid var(--border)}
+        .header-inner{max-width:1100px;margin:0 auto;padding:0 32px;height:68px;display:flex;align-items:center;justify-content:space-between}
+        .brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+        .brand-icon{width:36px;height:36px;border:1px solid var(--gold-dim);border-radius:50%;display:flex;align-items:center;justify-content:center}
+        .brand-name{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--cream);letter-spacing:0.04em}
+        .brand-name span{color:var(--gold)}
+        nav{display:flex;align-items:center;gap:6px}
+        nav a{font-size:12.5px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:8px 14px;border-radius:3px;transition:color 0.2s,background 0.2s}
+        nav a:hover{color:var(--cream);background:rgba(255,255,255,0.04)}
+        .nav-back{display:flex!important;align-items:center;gap:8px;padding:8px 18px!important;border:1px solid var(--border)!important;border-radius:3px;color:var(--muted)!important;transition:all 0.2s!important}
+        .nav-back:hover{border-color:var(--gold-dim)!important;color:var(--gold)!important;background:transparent!important}
 
-        html { scroll-behavior: smooth; }
+        .page-hero{position:relative;z-index:1;text-align:center;padding:60px 32px 48px}
+        .hero-eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:16px}
+        .hero-eyebrow::before,.hero-eyebrow::after{content:'';width:28px;height:1px;background:var(--gold-dim)}
+        .page-hero h1{font-family:'Cormorant Garamond',serif;font-size:clamp(36px,5vw,56px);font-weight:700;color:var(--cream)}
+        .page-hero h1 em{font-style:italic;color:var(--gold)}
 
-        body {
-            font-family: 'Jost', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+        .checkout-layout{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 32px 80px;display:grid;grid-template-columns:1fr 360px;gap:28px;align-items:start}
+        .form-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:32px}
+        .section-label{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--cream);display:flex;align-items:center;gap:12px;margin-bottom:22px}
+        .section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+        .field-row{margin-bottom:18px}
+        .field-row label{display:block;font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+        .field-row input,.field-row textarea,.field-row select{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:3px;color:var(--cream);font-family:'Jost',sans-serif;font-size:14px;padding:11px 14px;outline:none;transition:border-color 0.2s}
+        .field-row input:focus,.field-row textarea:focus{border-color:var(--gold-dim)}
+        .field-row input[readonly]{color:var(--muted);cursor:not-allowed}
+        .field-row textarea{resize:vertical;min-height:80px}
+        .pay-methods{display:flex;gap:10px;flex-wrap:wrap}
+        .pay-method{flex:1;min-width:130px;background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;color:var(--muted);transition:all 0.2s;user-select:none}
+        .pay-method input{display:none}
+        .pay-method:has(input:checked){border-color:var(--gold-dim);background:rgba(201,168,76,0.06);color:var(--cream)}
+        .pay-icon{width:28px;height:28px;background:var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--gold-dim)}
+        .error-banner{background:rgba(139,46,46,0.15);border:1px solid var(--red);border-radius:3px;padding:12px 16px;color:#e07b7b;font-size:13px;margin-bottom:20px;display:flex;align-items:center;gap:10px}
 
-        body::before {
-            content: '';
-            position: fixed; inset: 0;
-            background:
-                radial-gradient(ellipse 70% 50% at 10% 0%, rgba(201,168,76,0.06) 0%, transparent 55%),
-                radial-gradient(ellipse 50% 70% at 90% 100%, rgba(74,122,58,0.07) 0%, transparent 55%);
-            pointer-events: none; z-index: 0;
-        }
+        .summary-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:28px 26px;position:sticky;top:88px}
+        .summary-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--cream);padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:20px}
+        .order-item-row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:10px;gap:10px}
+        .order-item-row .name{flex:1}
+        .order-item-row .qty{color:var(--gold-dim);min-width:30px}
+        .order-item-row .price{font-weight:500;color:var(--text)}
+        .divider{height:1px;background:var(--border);margin:14px 0}
+        .summary-row{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;color:var(--muted);margin-bottom:10px}
+        .summary-row.total{font-size:15px;color:var(--cream);font-weight:500;padding-top:14px;border-top:1px solid var(--border);margin-top:6px;margin-bottom:0}
+        .summary-row .val{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--text);font-weight:600}
+        .summary-row.total .val{font-size:26px;color:var(--gold)}
+        .place-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px;margin-top:22px;background:var(--green);border:none;border-radius:3px;font-family:'Jost',sans-serif;font-size:13px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:#fff;cursor:pointer;transition:background 0.2s,transform 0.15s;position:relative;overflow:hidden}
+        .place-btn:hover{background:var(--green-lt)}
+        .place-btn:active{transform:scale(0.98)}
+        .place-btn::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);transition:left 0.4s ease}
+        .place-btn:hover::after{left:160%}
+        .back-link{display:block;text-align:center;margin-top:14px;font-size:12.5px;color:var(--muted);text-decoration:none;letter-spacing:0.06em;transition:color 0.2s}
+        .back-link:hover{color:var(--gold)}
+        .summary-note{margin-top:20px;padding-top:16px;border-top:1px solid var(--border);font-size:11.5px;color:var(--muted);line-height:1.6;text-align:center}
 
-        /* ── HEADER ── */
-        header {
-            position: sticky; top: 0; z-index: 100;
-            background: rgba(11,11,9,0.88);
-            backdrop-filter: blur(18px);
-            border-bottom: 1px solid var(--border);
-        }
-        .header-inner {
-            max-width: 1100px; margin: 0 auto;
-            padding: 0 32px; height: 68px;
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-        .brand-icon {
-            width: 36px; height: 36px;
-            border: 1px solid var(--gold-dim); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .brand-name {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 22px; font-weight: 600;
-            color: var(--cream); letter-spacing: 0.04em;
-        }
-        .brand-name span { color: var(--gold); }
-        nav { display: flex; align-items: center; gap: 6px; }
-        nav a {
-            font-size: 12.5px; font-weight: 500;
-            letter-spacing: 0.1em; text-transform: uppercase;
-            color: var(--muted); text-decoration: none;
-            padding: 8px 14px; border-radius: 3px;
-            transition: color 0.2s, background 0.2s;
-        }
-        nav a:hover { color: var(--cream); background: rgba(255,255,255,0.04); }
-        .nav-back {
-            display: flex; align-items: center; gap: 8px;
-            padding: 8px 18px !important;
-            border: 1px solid var(--border) !important;
-            border-radius: 3px; color: var(--muted) !important;
-            transition: all 0.2s !important;
-        }
-        .nav-back:hover {
-            border-color: var(--gold-dim) !important;
-            color: var(--gold) !important;
-            background: transparent !important;
-        }
+        /* success */
+        .success-wrap{position:relative;z-index:1;max-width:520px;margin:0 auto;text-align:center;padding:60px 32px 80px}
+        .success-icon{width:88px;height:88px;margin:0 auto 28px;border:1px solid var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--green-lt);animation:popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both}
+        @keyframes popIn{from{opacity:0;transform:scale(0.5)}to{opacity:1;transform:scale(1)}}
+        .success-wrap h2{font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:700;color:var(--cream);margin-bottom:12px}
+        .success-wrap h2 em{font-style:italic;color:var(--gold)}
+        .success-wrap p{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:8px}
+        .order-badge{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--gold-dim);border-radius:3px;padding:8px 18px;font-size:13px;color:var(--gold);margin:18px 0 28px;letter-spacing:0.08em}
+        .success-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+        .btn-primary{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;background:var(--green);border-radius:3px;font-family:'Jost',sans-serif;font-size:13px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#fff;text-decoration:none;transition:background 0.2s}
+        .btn-primary:hover{background:var(--green-lt)}
+        .btn-ghost{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border:1px solid var(--border);border-radius:3px;font-family:'Jost',sans-serif;font-size:13px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:all 0.2s}
+        .btn-ghost:hover{border-color:var(--gold-dim);color:var(--gold)}
 
-        /* ── PAGE HERO ── */
-        .page-hero {
-            position: relative; z-index: 1;
-            text-align: center;
-            padding: 60px 32px 48px;
-        }
-        .hero-eyebrow {
-            display: inline-flex; align-items: center; gap: 10px;
-            font-size: 11px; letter-spacing: 0.2em;
-            text-transform: uppercase; color: var(--gold);
-            margin-bottom: 16px;
-        }
-        .hero-eyebrow::before, .hero-eyebrow::after {
-            content: ''; width: 28px; height: 1px; background: var(--gold-dim);
-        }
-        .page-hero h1 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: clamp(36px, 5vw, 56px);
-            font-weight: 700; color: var(--cream);
-        }
-        .page-hero h1 em { font-style: italic; color: var(--gold); }
+        /* order summary items in success */
+        .success-items{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px 24px;margin:0 auto 28px;max-width:400px;text-align:left}
+        .success-item-row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);padding:6px 0;border-bottom:1px solid rgba(44,44,36,0.4)}
+        .success-item-row:last-child{border-bottom:none;padding-top:12px;color:var(--cream);font-weight:500}
+        .success-item-row .sname{flex:1}
+        .success-item-row .sqty{color:var(--gold-dim);padding:0 12px}
+        .success-item-row .sprice{color:var(--text)}
 
-        /* ── LAYOUT ── */
-        .checkout-layout {
-            position: relative; z-index: 1;
-            max-width: 1100px; margin: 0 auto;
-            padding: 0 32px 80px;
-            display: grid;
-            grid-template-columns: 1fr 360px;
-            gap: 28px;
-            align-items: start;
-        }
+        footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28px 32px;text-align:center}
+        footer p{font-size:12px;color:var(--muted);letter-spacing:0.06em}
+        footer p span{color:var(--gold-dim)}
 
-        /* ── FORM CARD ── */
-        .form-card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            padding: 32px;
-        }
-        .section-label {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 18px; font-weight: 600;
-            color: var(--cream);
-            display: flex; align-items: center; gap: 12px;
-            margin-bottom: 22px;
-        }
-        .section-label::after {
-            content: ''; flex: 1; height: 1px; background: var(--border);
-        }
-        .field-row { margin-bottom: 18px; }
-        .field-row label {
-            display: block;
-            font-size: 11px; font-weight: 500;
-            letter-spacing: 0.12em; text-transform: uppercase;
-            color: var(--muted); margin-bottom: 8px;
-        }
-        .field-row input,
-        .field-row textarea,
-        .field-row select {
-            width: 100%;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 3px;
-            color: var(--cream);
-            font-family: 'Jost', sans-serif;
-            font-size: 14px;
-            padding: 11px 14px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        .field-row input:focus,
-        .field-row textarea:focus,
-        .field-row select:focus { border-color: var(--gold-dim); }
-        .field-row input[readonly] { color: var(--muted); cursor: not-allowed; }
-        .field-row textarea { resize: vertical; min-height: 80px; }
-
-        /* payment methods */
-        .pay-methods { display: flex; gap: 10px; flex-wrap: wrap; }
-        .pay-method {
-            flex: 1; min-width: 130px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 3px;
-            padding: 14px 16px;
-            cursor: pointer;
-            display: flex; align-items: center; gap: 10px;
-            font-size: 13px; font-weight: 500; color: var(--muted);
-            transition: all 0.2s; user-select: none;
-        }
-        .pay-method input { display: none; }
-        .pay-method:has(input:checked),
-        .pay-method.selected {
-            border-color: var(--gold-dim);
-            background: rgba(201,168,76,0.06);
-            color: var(--cream);
-        }
-        .pay-icon {
-            width: 28px; height: 28px;
-            background: var(--border);
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; color: var(--gold-dim);
-        }
-
-        /* error banner */
-        .error-banner {
-            background: rgba(139,46,46,0.15);
-            border: 1px solid var(--red);
-            border-radius: 3px;
-            padding: 12px 16px;
-            color: #e07b7b;
-            font-size: 13px;
-            margin-bottom: 20px;
-            display: flex; align-items: center; gap: 10px;
-        }
-
-        /* ── SUMMARY CARD ── */
-        .summary-card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            padding: 28px 26px;
-            position: sticky; top: 88px;
-        }
-        .summary-title {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 20px; font-weight: 600;
-            color: var(--cream);
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 20px;
-        }
-        .order-item-row {
-            display: flex; justify-content: space-between;
-            font-size: 13px; color: var(--muted);
-            margin-bottom: 10px; gap: 10px;
-        }
-        .order-item-row .name { flex: 1; }
-        .order-item-row .qty { color: var(--gold-dim); min-width: 30px; }
-        .order-item-row .price { font-weight: 500; color: var(--text); }
-        .divider {
-            height: 1px; background: var(--border);
-            margin: 14px 0;
-        }
-        .summary-row {
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 13.5px; color: var(--muted);
-            margin-bottom: 10px;
-        }
-        .summary-row.total {
-            font-size: 15px; color: var(--cream); font-weight: 500;
-            padding-top: 14px; border-top: 1px solid var(--border);
-            margin-top: 6px; margin-bottom: 0;
-        }
-        .summary-row .val {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 18px; color: var(--text); font-weight: 600;
-        }
-        .summary-row.total .val { font-size: 26px; color: var(--gold); }
-
-        /* place order button */
-        .place-btn {
-            display: flex; align-items: center; justify-content: center;
-            gap: 10px; width: 100%;
-            padding: 15px;
-            margin-top: 22px;
-            background: var(--green);
-            border: none; border-radius: 3px;
-            font-family: 'Jost', sans-serif;
-            font-size: 13px; font-weight: 500;
-            letter-spacing: 0.1em; text-transform: uppercase;
-            color: #fff; cursor: pointer;
-            transition: background 0.2s, transform 0.15s;
-            position: relative; overflow: hidden;
-        }
-        .place-btn:hover  { background: var(--green-lt); }
-        .place-btn:active { transform: scale(0.98); }
-        .place-btn::after {
-            content: '';
-            position: absolute; top: 0; left: -100%;
-            width: 60%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transition: left 0.4s ease;
-        }
-        .place-btn:hover::after { left: 160%; }
-
-        .back-link {
-            display: block; text-align: center;
-            margin-top: 14px; font-size: 12.5px;
-            color: var(--muted); text-decoration: none;
-            letter-spacing: 0.06em; transition: color 0.2s;
-        }
-        .back-link:hover { color: var(--gold); }
-        .summary-note {
-            margin-top: 20px; padding-top: 16px;
-            border-top: 1px solid var(--border);
-            font-size: 11.5px; color: var(--muted);
-            line-height: 1.6; text-align: center;
-        }
-
-        /* ── SUCCESS OVERLAY ── */
-        .success-wrap {
-            position: relative; z-index: 1;
-            max-width: 520px; margin: 0 auto;
-            text-align: center;
-            padding: 60px 32px 80px;
-        }
-        .success-icon {
-            width: 88px; height: 88px; margin: 0 auto 28px;
-            border: 1px solid var(--green);
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            color: var(--green-lt);
-            animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
-        }
-        @keyframes popIn {
-            from { opacity:0; transform: scale(0.5); }
-            to   { opacity:1; transform: scale(1); }
-        }
-        .success-wrap h2 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 40px; font-weight: 700;
-            color: var(--cream); margin-bottom: 12px;
-        }
-        .success-wrap h2 em { font-style: italic; color: var(--gold); }
-        .success-wrap p { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 8px; }
-        .order-badge {
-            display: inline-flex; align-items: center; gap: 8px;
-            background: var(--card); border: 1px solid var(--gold-dim);
-            border-radius: 3px; padding: 8px 18px;
-            font-size: 13px; color: var(--gold); margin: 18px 0 28px;
-            letter-spacing: 0.08em;
-        }
-        .success-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-        .btn-primary {
-            display: inline-flex; align-items: center; gap: 8px;
-            padding: 13px 28px;
-            background: var(--green); border-radius: 3px;
-            font-family: 'Jost', sans-serif; font-size: 13px;
-            font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
-            color: #fff; text-decoration: none; transition: background 0.2s;
-        }
-        .btn-primary:hover { background: var(--green-lt); }
-        .btn-ghost {
-            display: inline-flex; align-items: center; gap: 8px;
-            padding: 13px 28px;
-            border: 1px solid var(--border); border-radius: 3px;
-            font-family: 'Jost', sans-serif; font-size: 13px;
-            font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
-            color: var(--muted); text-decoration: none; transition: all 0.2s;
-        }
-        .btn-ghost:hover { border-color: var(--gold-dim); color: var(--gold); }
-
-        /* footer */
-        footer {
-            position: relative; z-index: 1;
-            border-top: 1px solid var(--border);
-            padding: 28px 32px; text-align: center;
-        }
-        footer p { font-size: 12px; color: var(--muted); letter-spacing: 0.06em; }
-        footer p span { color: var(--gold-dim); }
-
-        /* responsive */
-        @media (max-width: 768px) {
-            .checkout-layout { grid-template-columns: 1fr; padding: 0 16px 60px; }
-            .summary-card { position: static; }
-            .header-inner { padding: 0 16px; }
-            nav a:not(.nav-back) { display: none; }
+        @media(max-width:768px){
+            .checkout-layout{grid-template-columns:1fr;padding:0 16px 60px}
+            .summary-card{position:static}
+            .header-inner{padding:0 16px}
+            nav a:not(.nav-back){display:none}
         }
     </style>
 </head>
 <body>
 
-<!-- ══ HEADER ══ -->
 <header>
     <div class="header-inner">
         <a href="index.php" class="brand">
             <div class="brand-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                     stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 11l19-9-9 19-2-8-8-2z"/>
-                </svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
             </div>
-            <span class="brand-name">My <span>Restaurant</span></span>
+            <span class="brand-name">My <span>AyosCoffeeNegosyo</span></span>
         </a>
         <nav>
             <a href="index.php">Menu</a>
             <a href="profile.php">Profile</a>
             <a href="log-out.php">Logout</a>
             <a href="cart.php" class="nav-back">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-                </svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
                 Back to Cart
             </a>
         </nav>
@@ -537,43 +219,50 @@ $itemCount = array_sum(array_column($cartRows, 'qty'));
 </header>
 
 <?php if ($success): ?>
-<!-- ══ SUCCESS STATE ══ -->
+<!-- ══ SUCCESS ══ -->
 <div class="page-hero">
     <div class="hero-eyebrow">Thank you!</div>
     <h1>Order <em>Confirmed</em></h1>
 </div>
 <div class="success-wrap">
     <div class="success-icon">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"/>
-        </svg>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
     <h2>Order <em>Placed!</em></h2>
     <p>Your order has been received and is being prepared.</p>
-    <p>We'll have it ready fresh for you shortly.</p>
+
     <div class="order-badge">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
-            <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
-        </svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
         Order #<?= str_pad($successOrderId, 5, '0', STR_PAD_LEFT) ?>
     </div>
+
+    <!-- Show what was ordered -->
+    <div class="success-items">
+        <?php foreach ($cartRows as $item): ?>
+        <div class="success-item-row">
+            <span class="sname"><?= htmlspecialchars($item['name']) ?></span>
+            <span class="sqty">×<?= $item['qty'] ?></span>
+            <span class="sprice">₱<?= number_format($item['subtotal'], 2) ?></span>
+        </div>
+        <?php endforeach; ?>
+        <div class="success-item-row">
+            <span class="sname">Total</span>
+            <span class="sqty"></span>
+            <span class="sprice" style="color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:18px">₱<?= number_format($total, 2) ?></span>
+        </div>
+    </div>
+
     <div class="success-actions">
         <a href="orders.php" class="btn-primary">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-            </svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
             View My Orders
         </a>
-        <a href="index.php" class="btn-ghost">
-            Browse Menu
-        </a>
+        <a href="index.php" class="btn-ghost">Browse Menu</a>
     </div>
 </div>
 
 <?php else: ?>
-<!-- ══ CHECKOUT PAGE ══ -->
+<!-- ══ CHECKOUT FORM ══ -->
 <div class="page-hero">
     <div class="hero-eyebrow">Almost there</div>
     <h1>Complete your <em>Order</em></h1>
@@ -581,76 +270,51 @@ $itemCount = array_sum(array_column($cartRows, 'qty'));
 
 <form method="POST" action="checkout.php">
 <div class="checkout-layout">
-
-    <!-- LEFT: form -->
     <div class="form-card">
 
         <?php if ($error): ?>
         <div class="error-banner">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <?= htmlspecialchars($error) ?>
         </div>
         <?php endif; ?>
 
-        <!-- Customer details -->
         <div class="section-label">Customer Details</div>
-
         <div class="field-row">
             <label>Name</label>
             <input type="text" value="<?= $userName ?>" readonly>
         </div>
-
         <div class="field-row">
             <label>Email</label>
             <input type="email" value="<?= htmlspecialchars($user['email'] ?? '') ?>" readonly>
         </div>
 
-        <!-- Payment -->
-        <div class="section-label" style="margin-top: 28px;">Payment Method</div>
-
+        <div class="section-label" style="margin-top:28px">Payment Method</div>
         <div class="pay-methods">
             <label class="pay-method">
                 <input type="radio" name="payment" value="cash" checked>
-                <div class="pay-icon">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                        <line x1="1" y1="10" x2="23" y2="10"/>
-                    </svg>
-                </div>
+                <div class="pay-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
                 Cash on Pickup
             </label>
             <label class="pay-method">
                 <input type="radio" name="payment" value="gcash">
-                <div class="pay-icon">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2a10 10 0 1 0 10 10H12V2z"/>
-                        <path d="M12 2a10 10 0 0 1 10 10"/>
-                    </svg>
-                </div>
+                <div class="pay-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 2a10 10 0 0 1 10 10"/></svg></div>
                 GCash
             </label>
             <label class="pay-method">
                 <input type="radio" name="payment" value="card">
-                <div class="pay-icon">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
-                    </svg>
-                </div>
+                <div class="pay-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
                 Credit / Debit
             </label>
         </div>
 
-        <!-- Notes -->
-        <div class="field-row" style="margin-top: 24px;">
+        <div class="field-row" style="margin-top:24px">
             <label>Order Notes <span style="color:var(--muted);text-transform:none;letter-spacing:0">(optional)</span></label>
             <textarea name="notes" placeholder="Any special requests? E.g. less ice, extra sugar..."></textarea>
         </div>
-
     </div>
 
-    <!-- RIGHT: order summary -->
+    <!-- ORDER SUMMARY -->
     <div class="summary-card">
         <div class="summary-title">Order Summary</div>
 
@@ -663,14 +327,13 @@ $itemCount = array_sum(array_column($cartRows, 'qty'));
         <?php endforeach; ?>
 
         <div class="divider"></div>
-
         <div class="summary-row">
             <span>Subtotal</span>
             <span class="val">₱<?= number_format($total, 2) ?></span>
         </div>
         <div class="summary-row">
             <span>Delivery fee</span>
-            <span class="val" style="color:var(--green-lt); font-size:14px;">Free</span>
+            <span class="val" style="color:var(--green-lt);font-size:14px;">Free</span>
         </div>
         <div class="summary-row total">
             <span>Total</span>
@@ -678,28 +341,16 @@ $itemCount = array_sum(array_column($cartRows, 'qty'));
         </div>
 
         <button type="submit" name="place_order" class="place-btn">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"/>
-            </svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             Place Order
         </button>
-
         <a href="cart.php" class="back-link">← Edit cart</a>
-
-        <p class="summary-note">
-            🔒 Secure checkout &nbsp;·&nbsp; Orders prepared fresh upon confirmation.
-        </p>
+        <p class="summary-note">🔒 Secure checkout &nbsp;·&nbsp; Orders prepared fresh upon confirmation.</p>
     </div>
-
 </div>
 </form>
 <?php endif; ?>
 
-<!-- ══ FOOTER ══ -->
-<footer>
-    <p>© 2026 <span>My AyosCoffeeNegosyo</span> — All rights reserved.</p>
-</footer>
-
+<footer><p>© 2026 <span>My AyosCoffeeNegosyo</span> — All rights reserved.</p></footer>
 </body>
 </html>
