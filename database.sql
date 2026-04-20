@@ -85,7 +85,7 @@ INSERT INTO products (id, name, price, category, description, image, stock, reor
 (27, 'Blueberry Muffin',      85,  'sides',    'Fluffy muffin bursting with fresh blueberries and a crumbly sugar topping.',                    'https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/refs/heads/main/Blueberry-Muffin.Product.png', 100, 10),
 (28, 'Cinnamon Roll',         110, 'sides',    'Soft, sweet pastry swirled with cinnamon sugar and topped with light icing.',                   '', 100, 10),
 (29, 'Chocolate Chip Cookie', 70,  'sides',    'Freshly baked cookie loaded with rich chocolate chips and a soft chewy center.',                 '', 100, 10),
-(30, 'Ham and Cheese Panini', 140, 'sides',    'Grilled panini stuffed with savory ham and melted cheese.',                                     '', 100, 10),
+(30, 'Ham and Cheese Panini', 140, 'sides',    'Grilled panini stuffed with savory ham and melted cheese.',                                     'https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/refs/heads/main/Ham-and-Cheese-Panini.Product.png', 100, 10),
 (31, 'Breakfast Sandwich',    150, 'sides',    'Toasted sandwich with egg, cheese, and choice of ham or bacon for a filling start.',             '', 100, 10),
 (32, 'Avocado Toast',         160, 'sides',    'Toasted sourdough topped with smashed avocado, sea salt, and a drizzle of olive oil.',          '', 100, 10),
 (33, 'Cheese Danish',         95,  'sides',    'Flaky pastry filled with sweet cream cheese and a light vanilla glaze.',                        '', 100, 10),
