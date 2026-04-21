@@ -3,42 +3,53 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 if (!isset($_SESSION["user"])) { header("Location: log-in.php"); exit(); }
 include 'config.php';
 
+// Session validation
+$uid   = (int)($_SESSION["user"]["id"] ?? 0);
+$uname = $conn->real_escape_string($_SESSION["user"]["username"] ?? '');
+$chk   = $conn->query("SELECT id FROM users WHERE id = $uid AND username = '$uname' LIMIT 1");
+if (!$chk || $chk->num_rows === 0) {
+    session_unset(); session_destroy();
+    header("Location: log-in.php"); exit();
+}
+
 // Ensure stock columns exist
 $conn->query("ALTER TABLE products ADD COLUMN IF NOT EXISTS stock INT NOT NULL DEFAULT 100");
 $conn->query("ALTER TABLE products ADD COLUMN IF NOT EXISTS reorder_level INT NOT NULL DEFAULT 10");
-$conn->query("UPDATE products SET stock = 100 WHERE stock > 100");
 
 $result = $conn->query("SELECT * FROM products ORDER BY id ASC");
 $products = [];
 while ($row = $result->fetch_assoc()) { $products[] = $row; }
 
+// ── PER-USER ORDERED MAP ──────────────────────────────────────────────────
+$userOrderedMap = [];
+$orderedRes = $conn->query("
+    SELECT oi.product_id, COALESCE(SUM(oi.quantity), 0) AS total_ordered
+    FROM order_items oi
+    JOIN orders o ON o.id = oi.order_id
+    WHERE o.user_id = $uid
+    AND o.status != 'cancelled'
+    GROUP BY oi.product_id
+");
+if ($orderedRes) {
+    while ($oRow = $orderedRes->fetch_assoc()) {
+        $userOrderedMap[(int)$oRow['product_id']] = (int)$oRow['total_ordered'];
+    }
+}
+
 if (empty($products)) {
-
     $products = [
-
-    ["id"=>1,"name"=>"Espresso","price"=>85,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Espresso.Product.png","description"=>"Bold and concentrated shot of pure espresso, brewed from freshly ground arabica beans."],
-
-["id"=>2,"name"=>"Americano","price"=>100,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Americano.Product-V1.png","description"=>"Espresso diluted with hot water for a smooth, full-bodied black coffee experience."],
-
-["id"=>3,"name"=>"Cappuccino","price"=>130,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Cappuccino.Product.png","description"=>"Equal parts espresso, steamed milk, and thick velvety foam — a classic Italian favourite."],
-
-["id"=>4,"name"=>"Caffè Latte","price"=>140,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Caffe.Latte.png","description"=>"Silky steamed milk poured over a double shot of espresso with a light layer of foam."],
-
-["id"=>5,"name"=>"Flat White","price"=>145,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Flat.White.Product.png","description"=>"Stronger and creamier than a latte — micro-foamed milk over a rich ristretto shot."],
-
-["id"=>6,"name"=>"Caramel Macchiato","price"=>155,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Caramel-Macchiato.Product.png","description"=>"Vanilla-infused steamed milk, espresso, and a generous drizzle of rich caramel."],
-
-["id"=>7,"name"=>"Mocha","price"=>150,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Mocha.Product.png","description"=>"Espresso blended with chocolate syrup and steamed milk, topped with whipped cream."],
-
-["id"=>8,"name"=>"Hazelnut Latte","price"=>155,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Hazelnut-Latte.Product.png","description"=>"Smooth latte infused with rich hazelnut syrup and topped with silky milk foam."],
-
-["id"=>9,"name"=>"White Chocolate Mocha","price"=>160,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/White-Chocolate-Mocha.Product.png","description"=>"Espresso blended with creamy white chocolate and steamed milk, topped with whipped cream."],
-
-["id"=>10,"name"=>"Spanish Latte","price"=>150,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Spanish-Latte.Product.png","description"=>"Sweet and creamy latte made with condensed milk for a richer flavor profile."],
-
-["id"=>11,"name"=>"Vanilla Latte","price"=>145,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Vanilla-Latte.Product.png","description"=>"Classic latte enhanced with smooth vanilla syrup and steamed milk."],
-
-["id"=>12,"name"=>"Cortado","price"=>135,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Cortado-Latte.Product.png","description"=>"Equal parts espresso and warm milk, cutting the acidity for a balanced, velvety sip."],
+        ["id"=>1,"name"=>"Espresso","price"=>85,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Espresso.Product.png","description"=>"Bold and concentrated shot of pure espresso, brewed from freshly ground arabica beans."],
+        ["id"=>2,"name"=>"Americano","price"=>100,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Americano.Product-V1.png","description"=>"Espresso diluted with hot water for a smooth, full-bodied black coffee experience."],
+        ["id"=>3,"name"=>"Cappuccino","price"=>130,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Cappuccino.Product.png","description"=>"Equal parts espresso, steamed milk, and thick velvety foam — a classic Italian favourite."],
+        ["id"=>4,"name"=>"Caffè Latte","price"=>140,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Caffe.Latte.png","description"=>"Silky steamed milk poured over a double shot of espresso with a light layer of foam."],
+        ["id"=>5,"name"=>"Flat White","price"=>145,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Flat.White.Product.png","description"=>"Stronger and creamier than a latte — micro-foamed milk over a rich ristretto shot."],
+        ["id"=>6,"name"=>"Caramel Macchiato","price"=>155,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Caramel-Macchiato.Product.png","description"=>"Vanilla-infused steamed milk, espresso, and a generous drizzle of rich caramel."],
+        ["id"=>7,"name"=>"Mocha","price"=>150,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Mocha.Product.png","description"=>"Espresso blended with chocolate syrup and steamed milk, topped with whipped cream."],
+        ["id"=>8,"name"=>"Hazelnut Latte","price"=>155,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Hazelnut-Latte.Product.png","description"=>"Smooth latte infused with rich hazelnut syrup and topped with silky milk foam."],
+        ["id"=>9,"name"=>"White Chocolate Mocha","price"=>160,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/White-Chocolate-Mocha.Product.png","description"=>"Espresso blended with creamy white chocolate and steamed milk, topped with whipped cream."],
+        ["id"=>10,"name"=>"Spanish Latte","price"=>150,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Spanish-Latte.Product.png","description"=>"Sweet and creamy latte made with condensed milk for a richer flavor profile."],
+        ["id"=>11,"name"=>"Vanilla Latte","price"=>145,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Vanilla-Latte.Product.png","description"=>"Classic latte enhanced with smooth vanilla syrup and steamed milk."],
+        ["id"=>12,"name"=>"Cortado","price"=>135,"category"=>"mains","stock"=>100,"reorder_level"=>10,"image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Cortado-Latte.Product.png","description"=>"Equal parts espresso and warm milk, cutting the acidity for a balanced, velvety sip."],
         ["id"=>13,"name"=>"Cold Brew","price"=>160,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"image"=>"","description"=>"Steeped 18 hours in cold water for a smooth, naturally sweet concentrate over ice."],
         ["id"=>14,"name"=>"Iced Americano","price"=>110,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"image"=>"","description"=>"Double espresso pulled over ice and chilled water — clean, crisp, and refreshing."],
         ["id"=>15,"name"=>"Iced Caramel Latte","price"=>165,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"image"=>"","description"=>"Chilled latte with caramel syrup and milk poured over a glass of crushed ice."],
@@ -342,15 +353,19 @@ footer p span{color:var(--gold-dim)}
         </div>
     <?php else: ?>
         <div class="menu-grid" id="menuGrid">
-        <?php foreach ($products as $row):
-            $stock    = (int)($row['stock'] ?? 100);
-            $reorder  = (int)($row['reorder_level'] ?? 10);
-            $pct      = max(0, min(100, ($stock / 100) * 100));
-            $isOos    = $stock <= 0;
-            $isLow    = !$isOos && $stock <= $reorder;
-            $cls      = $isOos ? 's-red' : ($isLow ? 's-amber' : 's-green');
-            $txt      = $isOos ? 'Out of stock' : ($isLow ? "Low — {$stock} left" : "{$stock} in stock");
-        ?>
+            <?php foreach ($products as $row):
+                // ── PER-USER STOCK ──
+                $maxStock    = 100;
+                $alreadyUsed = (int)($userOrderedMap[(int)$row['id']] ?? 0);
+                $cartQty     = (int)($_SESSION['cart'][(int)$row['id']] ?? 0);
+                $stock       = max(0, $maxStock - $alreadyUsed - $cartQty);
+                $reorder     = (int)($row['reorder_level'] ?? 10);
+                $pct         = max(0, min(100, ($stock / 100) * 100));
+                $isOos       = $stock <= 0;
+                $isLow       = !$isOos && $stock <= $reorder;
+                $cls         = $isOos ? 's-red' : ($isLow ? 's-amber' : 's-green');
+                $txt         = $isOos ? 'Out of stock' : ($isLow ? "Low — {$stock} left" : "{$stock} in stock");
+            ?>
             <div class="menu-card <?= $isOos ? 'out-of-stock' : '' ?>"
                  data-category="<?= htmlspecialchars($row['category'] ?? 'mains') ?>"
                  data-stock="<?= $stock ?>">

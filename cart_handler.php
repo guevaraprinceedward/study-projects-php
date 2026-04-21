@@ -2,7 +2,6 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-
 if (!isset($_SESSION["user"])) {
     echo json_encode(['success' => false, 'message' => 'Not logged in']);
     exit();
@@ -11,13 +10,23 @@ if (!isset($_SESSION["user"])) {
 include 'config.php';
 header('Content-Type: application/json');
 
+// Session validation
+$uid   = (int)($_SESSION["user"]["id"] ?? 0);
+$uname = $conn->real_escape_string($_SESSION["user"]["username"] ?? '');
+$chk   = $conn->query("SELECT id FROM users WHERE id = $uid AND username = '$uname' LIMIT 1");
+if (!$chk || $chk->num_rows === 0) {
+    session_unset();
+    session_destroy();
+    echo json_encode(['success' => false, 'message' => 'Session expired']);
+    exit();
+}
+
 // ── ADD TO CART ───────────────────────────────────────────────────────────
-// Hindi na babawasan ang stock dito — bawasan lang sa checkout
 if (isset($_GET['add'])) {
     $id = (int)$_GET['add'];
 
-    // Kunin ang actual stock mula sa DB
-    $check   = $conn->query("SELECT stock FROM products WHERE id = $id");
+    // Check kung nag-eexist ang product
+    $check   = $conn->query("SELECT id FROM products WHERE id = $id");
     $product = $check ? $check->fetch_assoc() : null;
 
     if (!$product) {
@@ -25,21 +34,28 @@ if (isset($_GET['add'])) {
         exit();
     }
 
-    $actualStock = (int)$product['stock'];
+    // Ilang units na nai-order ng current user para sa product na ito
+    $orderedRes = $conn->query("
+        SELECT COALESCE(SUM(oi.quantity), 0) AS total_ordered
+        FROM order_items oi
+        JOIN orders o ON o.id = oi.order_id
+        WHERE oi.product_id = $id
+        AND o.user_id = $uid
+        AND o.status != 'cancelled'
+    ");
+    $totalOrdered = (int)($orderedRes->fetch_assoc()['total_ordered'] ?? 0);
 
-    if ($actualStock <= 0) {
-        echo json_encode(['success' => false, 'message' => 'Out of stock']);
-        exit();
-    }
-
-    // Ilang qty na nandoon sa cart para sa product na ito
+    // Ilang units na nasa cart ng current user
     $currentCartQty = (int)($_SESSION['cart'][$id] ?? 0);
 
-    // Huwag payagan kung lampas na sa stock
-    if ($currentCartQty >= $actualStock) {
+    // Total na ginamit = orders + cart
+    $totalUsed = $totalOrdered + $currentCartQty;
+    $maxStock  = 100;
+
+    if ($totalUsed >= $maxStock) {
         echo json_encode([
             'success' => false,
-            'message' => 'Only ' . $actualStock . ' left in stock'
+            'message' => 'You have reached your maximum stock for this item'
         ]);
         exit();
     }
@@ -47,21 +63,22 @@ if (isset($_GET['add'])) {
     // Dagdagan ng isa sa cart
     $_SESSION['cart'][$id] = $currentCartQty + 1;
 
+    // Per-user remaining stock
+    $userStock = $maxStock - $totalUsed - 1;
+
     echo json_encode([
         'success' => true,
         'qty'     => $_SESSION['cart'][$id],
         'count'   => array_sum($_SESSION['cart']),
-        'stock'   => $actualStock  // ibabalik para ma-update ang UI sa index.php
+        'stock'   => $userStock
     ]);
     exit();
 }
 
 // ── REMOVE FROM CART ──────────────────────────────────────────────────────
-// Hindi na kailangang ibalik ang stock kasi hindi naman binawasan
 if (isset($_GET['remove'])) {
     $id = (int)$_GET['remove'];
     unset($_SESSION['cart'][$id]);
-
     echo json_encode([
         'success' => true,
         'count'   => array_sum($_SESSION['cart'] ?? [])
@@ -69,20 +86,11 @@ if (isset($_GET['remove'])) {
     exit();
 }
 
-// ── COUNT (para sa cart badge) ────────────────────────────────────────────
+// ── COUNT ─────────────────────────────────────────────────────────────────
 if (isset($_GET['count'])) {
     echo json_encode([
         'count' => array_sum($_SESSION['cart'] ?? [])
     ]);
-    exit();
-}
-
-// ── GET STOCK (para malaman ng index.php ang actual stock) ────────────────
-if (isset($_GET['stock'])) {
-    $id    = (int)$_GET['stock'];
-    $check = $conn->query("SELECT stock FROM products WHERE id = $id");
-    $row   = $check ? $check->fetch_assoc() : null;
-    echo json_encode(['stock' => $row ? (int)$row['stock'] : 0]);
     exit();
 }
 

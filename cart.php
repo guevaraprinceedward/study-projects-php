@@ -1,16 +1,26 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+if (session_status() === PHP_SESSION_NONE) session_start();
 if (!isset($_SESSION["user"])) { header("Location: log-in.php"); exit(); }
 include 'config.php';
 
-// ── HANDLE REMOVE ──────────────────────────────────────────────────────────
+// Session validation
+$uid   = (int)($_SESSION["user"]["id"] ?? 0);
+$uname = $conn->real_escape_string($_SESSION["user"]["username"] ?? '');
+$chk   = $conn->query("SELECT id FROM users WHERE id = $uid AND username = '$uname' LIMIT 1");
+if (!$chk || $chk->num_rows === 0) {
+    session_unset(); session_destroy();
+    header("Location: log-in.php"); exit();
+}
+
+$conn->query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT NULL");
+$conn->query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'pending'");
+$conn->query("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS price decimal(10,2) DEFAULT NULL");
+
+
+// ── HANDLE REMOVE ─────────────────────────────────────────────────────────
 if (isset($_GET['remove'])) {
-    $removeId = (int)$_GET['remove'];
-    unset($_SESSION['cart'][$removeId]);
-    header("Location: cart.php");
-    exit();
+    unset($_SESSION['cart'][(int)$_GET['remove']]);
+    header("Location: cart.php"); exit();
 }
 
 // ── HANDLE QTY UPDATE ─────────────────────────────────────────────────────
@@ -21,14 +31,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update'])) {
         if ($qty <= 0) {
             unset($_SESSION['cart'][$id]);
         } else {
-            $stockRes = $conn->query("SELECT stock FROM products WHERE id = $id");
-            $stockRow = $stockRes ? $stockRes->fetch_assoc() : null;
-            $maxStock = $stockRow ? (int)$stockRow['stock'] : 99;
-            $_SESSION['cart'][$id] = min($qty, $maxStock);
+            // Per-user remaining stock
+            $orderedRes = $conn->query("
+                SELECT COALESCE(SUM(oi.quantity), 0) AS total_ordered
+                FROM order_items oi
+                JOIN orders o ON o.id = oi.order_id
+                WHERE oi.product_id = $id
+                AND o.user_id = $uid
+                AND o.status != 'cancelled'
+            ");
+            $alreadyOrdered = (int)($orderedRes->fetch_assoc()['total_ordered'] ?? 0);
+            $userRemaining  = max(0, 100 - $alreadyOrdered);
+            $_SESSION['cart'][$id] = min($qty, $userRemaining);
         }
     }
-    header("Location: cart.php");
-    exit();
+    header("Location: cart.php"); exit();
 }
 
 // ── BUILD CART ITEMS ───────────────────────────────────────────────────────
@@ -44,10 +61,23 @@ if (!empty($_SESSION['cart'])) {
         $res = $conn->query("SELECT * FROM products WHERE id = $id");
         if (!$res || !($row = $res->fetch_assoc())) continue;
 
-        $actualStock = (int)($row['stock'] ?? 0);
-        if ($actualStock <= 0) { unset($_SESSION['cart'][$id]); continue; }
+        // Per-user remaining stock
+        $orderedRes = $conn->query("
+            SELECT COALESCE(SUM(oi.quantity), 0) AS total_ordered
+            FROM order_items oi
+            JOIN orders o ON o.id = oi.order_id
+            WHERE oi.product_id = $id
+            AND o.user_id = $uid
+            AND o.status != 'cancelled'
+        ");
+        $alreadyOrdered = (int)($orderedRes->fetch_assoc()['total_ordered'] ?? 0);
+        $userRemaining  = max(0, 100 - $alreadyOrdered);
 
-        $qty = min($qty, $actualStock);
+        // Kung wala nang remaining, alisin sa cart
+        if ($userRemaining <= 0) { unset($_SESSION['cart'][$id]); continue; }
+
+        // Clamp qty sa user remaining
+        $qty = min($qty, $userRemaining);
         $_SESSION['cart'][$id] = $qty;
 
         $subtotal   = $row['price'] * $qty;
@@ -55,7 +85,7 @@ if (!empty($_SESSION['cart'])) {
         $cartRows[] = array_merge($row, [
             'qty'       => $qty,
             'subtotal'  => $subtotal,
-            'max_stock' => $actualStock,
+            'max_stock' => $userRemaining,
         ]);
     }
 }

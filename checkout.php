@@ -1,13 +1,25 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+if (session_status() === PHP_SESSION_NONE) session_start();
 if (!isset($_SESSION["user"])) { header("Location: log-in.php"); exit(); }
 include 'config.php';
 
+// Session validation
+$uid   = (int)($_SESSION["user"]["id"] ?? 0);
+$uname = $conn->real_escape_string($_SESSION["user"]["username"] ?? '');
+$chk   = $conn->query("SELECT id FROM users WHERE id = $uid AND username = '$uname' LIMIT 1");
+if (!$chk || $chk->num_rows === 0) {
+    session_unset(); session_destroy();
+    header("Location: log-in.php"); exit();
+}
+
+// Ensure columns exist
+$conn->query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT NULL");
+$conn->query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'pending'");
+$conn->query("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS price decimal(10,2) DEFAULT NULL");
+
 if (empty($_SESSION['cart'])) { header("Location: cart.php"); exit(); }
 
-// ── BUILD CART ROWS from DB (real qty, real price, real stock) ─────────────
+// ── BUILD CART ROWS ────────────────────────────────────────────────────────
 $cartRows = [];
 $total    = 0;
 
@@ -19,10 +31,21 @@ foreach ($_SESSION['cart'] as $id => $qty) {
     $res = $conn->query("SELECT * FROM products WHERE id = $id");
     if (!$res || !($row = $res->fetch_assoc())) continue;
 
-    // Clamp qty sa actual DB stock para hindi makalagpas
-    $actualStock = (int)($row['stock'] ?? 0);
-    if ($actualStock <= 0) { unset($_SESSION['cart'][$id]); continue; }
-    $qty = min($qty, $actualStock);
+    // Per-user remaining stock
+    $orderedRes = $conn->query("
+        SELECT COALESCE(SUM(oi.quantity), 0) AS total_ordered
+        FROM order_items oi
+        JOIN orders o ON o.id = oi.order_id
+        WHERE oi.product_id = $id
+        AND o.user_id = $uid
+        AND o.status != 'cancelled'
+    ");
+    $alreadyOrdered = (int)($orderedRes->fetch_assoc()['total_ordered'] ?? 0);
+    $userRemaining  = max(0, 100 - $alreadyOrdered);
+
+    if ($userRemaining <= 0) { unset($_SESSION['cart'][$id]); continue; }
+
+    $qty = min($qty, $userRemaining);
     $_SESSION['cart'][$id] = $qty;
 
     $subtotal   = $row['price'] * $qty;
@@ -32,15 +55,15 @@ foreach ($_SESSION['cart'] as $id => $qty) {
 
 if (empty($cartRows)) { header("Location: cart.php"); exit(); }
 
-$user   = $_SESSION['user'];
-$userId = (int)($user['id'] ?? 0);
+$user    = $_SESSION['user'];
+$userId  = $uid;
 $userName = htmlspecialchars($user['name'] ?? $user['username'] ?? 'Guest');
 
-$error   = '';
-$success = false;
+$error          = '';
+$success        = false;
 $successOrderId = null;
 
-// ── HANDLE FORM SUBMIT ────────────────────────────────────────────────────────
+// ── HANDLE FORM SUBMIT ─────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
 
     $notes = $conn->real_escape_string(trim($_POST['notes'] ?? ''));
@@ -53,30 +76,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
         $orderId = $conn->insert_id;
         if (!$orderId) throw new Exception("Could not create order.");
 
-        // 2. Insert each item into order_items AND deduct stock
+        // 2. Insert each item — per-user stock check, NO deduction sa products.stock
         foreach ($cartRows as $item) {
             $pid   = (int)$item['id'];
             $qty   = (int)$item['qty'];
             $price = (float)$item['price'];
 
-            // Verify stock is still available
-            $stockCheck = $conn->query("SELECT stock FROM products WHERE id = $pid FOR UPDATE");
-            $stockRow   = $stockCheck->fetch_assoc();
-            if (!$stockRow || (int)$stockRow['stock'] < $qty) {
-                throw new Exception("Sorry, stock changed for: " . htmlspecialchars($item['name']));
+            // Per-user stock check
+            $orderedRes = $conn->query("
+                SELECT COALESCE(SUM(oi.quantity), 0) AS total_ordered
+                FROM order_items oi
+                JOIN orders o ON o.id = oi.order_id
+                WHERE oi.product_id = $pid
+                AND o.user_id = $userId
+                AND o.status != 'cancelled'
+            ");
+            $alreadyOrdered = (int)($orderedRes->fetch_assoc()['total_ordered'] ?? 0);
+            $userRemaining  = 100 - $alreadyOrdered;
+
+            if ($qty > $userRemaining) {
+                throw new Exception("Sorry, you exceeded your stock limit for: " . htmlspecialchars($item['name']));
             }
 
             // Insert into order_items
             $conn->query("INSERT INTO order_items (order_id, product_id, quantity, price)
                           VALUES ($orderId, $pid, $qty, $price)");
-
-            // ← Dito lang talaga babawas ang stock — pagkatapos ng confirmed order
-            $conn->query("UPDATE products SET stock = GREATEST(0, stock - $qty) WHERE id = $pid");
         }
 
         $conn->commit();
-
-        // Clear cart
         unset($_SESSION['cart']);
         $success        = true;
         $successOrderId = $orderId;
