@@ -1,7 +1,7 @@
 <?php
-include 'config.php';
-
+if (session_status() === PHP_SESSION_NONE) session_start();
+session_unset();
 session_destroy();
-header("Location: log-in.php");
+header("Location: index.php");
 exit();
 ?>

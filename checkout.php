@@ -76,33 +76,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
         $orderId = $conn->insert_id;
         if (!$orderId) throw new Exception("Could not create order.");
 
-        // 2. Insert each item — per-user stock check, NO deduction sa products.stock
+        // 2. Insert each item — shared stock check + deduction
         foreach ($cartRows as $item) {
             $pid   = (int)$item['id'];
             $qty   = (int)$item['qty'];
             $price = (float)$item['price'];
 
-            // Per-user stock check
-            $orderedRes = $conn->query("
-                SELECT COALESCE(SUM(oi.quantity), 0) AS total_ordered
-                FROM order_items oi
-                JOIN orders o ON o.id = oi.order_id
-                WHERE oi.product_id = $pid
-                AND o.user_id = $userId
-                AND o.status != 'cancelled'
-            ");
-            $alreadyOrdered = (int)($orderedRes->fetch_assoc()['total_ordered'] ?? 0);
-            $userRemaining  = 100 - $alreadyOrdered;
-
-            if ($qty > $userRemaining) {
-                throw new Exception("Sorry, you exceeded your stock limit for: " . htmlspecialchars($item['name']));
+            // Shared stock check with row lock
+            $stockCheck = $conn->query("SELECT stock FROM products WHERE id = $pid FOR UPDATE");
+            $stockRow   = $stockCheck->fetch_assoc();
+            if (!$stockRow || (int)$stockRow['stock'] < $qty) {
+                throw new Exception("Sorry, not enough stock for: " . htmlspecialchars($item['name']));
             }
 
             // Insert into order_items
             $conn->query("INSERT INTO order_items (order_id, product_id, quantity, price)
                           VALUES ($orderId, $pid, $qty, $price)");
+
+            // Deduct from shared stock
+            $conn->query("UPDATE products SET stock = GREATEST(0, stock - $qty) WHERE id = $pid");
         }
 
+        // 3. Commit AFTER all items are processed — this was the main bug
         $conn->commit();
         unset($_SESSION['cart']);
         $success        = true;
@@ -203,7 +198,6 @@ $itemCount = array_sum(array_column($cartRows, 'qty'));
         .btn-ghost{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border:1px solid var(--border);border-radius:3px;font-family:'Jost',sans-serif;font-size:13px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:all 0.2s}
         .btn-ghost:hover{border-color:var(--gold-dim);color:var(--gold)}
 
-        /* order summary items in success */
         .success-items{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px 24px;margin:0 auto 28px;max-width:400px;text-align:left}
         .success-item-row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);padding:6px 0;border-bottom:1px solid rgba(44,44,36,0.4)}
         .success-item-row:last-child{border-bottom:none;padding-top:12px;color:var(--cream);font-weight:500}
@@ -263,7 +257,6 @@ $itemCount = array_sum(array_column($cartRows, 'qty'));
         Order #<?= str_pad($successOrderId, 5, '0', STR_PAD_LEFT) ?>
     </div>
 
-    <!-- Show what was ordered -->
     <div class="success-items">
         <?php foreach ($cartRows as $item): ?>
         <div class="success-item-row">
