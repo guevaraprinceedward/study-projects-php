@@ -25,6 +25,34 @@ CREATE TABLE users (
     password VARCHAR(100) NOT NULL
 );
 
+-- ── ATTENDANCE TABLE ──────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `attendance` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) DEFAULT NULL,
+  `admin_id` int(11) DEFAULT NULL,
+  `type` enum('user','admin') NOT NULL DEFAULT 'user',
+  `clock_in` datetime DEFAULT NULL,
+  `clock_out` datetime DEFAULT NULL,
+  `date` date NOT NULL,
+  `photo_in` text DEFAULT NULL,
+  `photo_out` text DEFAULT NULL,
+  `status` varchar(20) DEFAULT 'present',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── FACE DESCRIPTORS TABLE ────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `face_descriptors` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) DEFAULT NULL,
+  `admin_id` int(11) DEFAULT NULL,
+  `type` enum('user','admin') NOT NULL DEFAULT 'user',
+  `descriptor` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 ON DUPLICATE KEY UPDATE
   name          = VALUES(name),
   price         = VALUES(price),
