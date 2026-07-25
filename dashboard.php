@@ -856,17 +856,21 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 </div>
 
 <script>
+    
 // ── Sidebar ──
 const sidebar = document.getElementById('sidebar');
 const overlay  = document.getElementById('sidebarOverlay');
 const isMobile = () => window.innerWidth <= 768;
 
 function toggleSidebar() {
+
     if (isMobile()) return;
     const c = sidebar.classList.toggle('collapsed');
     document.body.classList.toggle('sidebar-collapsed', c);
     localStorage.setItem('sidebarCollapsed', c ? '1' : '0');
+
 }
+
 function openMobileSidebar()  { sidebar.classList.add('mobile-open');    overlay.classList.add('visible'); }
 function closeMobileSidebar() { sidebar.classList.remove('mobile-open'); overlay.classList.remove('visible'); }
 
