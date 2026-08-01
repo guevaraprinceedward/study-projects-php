@@ -33,65 +33,66 @@ if (isset($_GET['branch']) && in_array($_GET['branch'], ['laguna', 'manila'])) {
 
 // ── FETCH PRODUCTS BY BRANCH ──────────────────────────────────────────────
 $branchEsc = $conn->real_escape_string($branch);
-$result = $conn->query("SELECT * FROM products WHERE branch = '$branchEsc' ORDER BY id ASC");
+$result = $conn->query("SELECT * FROM products WHERE LOWER(TRIM(COALESCE(branch, ''))) = LOWER('$branchEsc') ORDER BY id ASC");
 $products = [];
 if ($result) {
     while ($row = $result->fetch_assoc()) { $products[] = $row; }
 }
 
-// Laguna fallback products
-if ($branch === 'laguna' && empty($products)) {
-    $products = [
-        ["id"=>1,"name"=>"Espresso","price"=>85,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Espresso.Product.png","description"=>"Bold and concentrated shot of pure espresso."],
-        ["id"=>2,"name"=>"Americano","price"=>100,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Americano.Product-V1.png","description"=>"Espresso diluted with hot water for a smooth black coffee."],
-        ["id"=>3,"name"=>"Cappuccino","price"=>130,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Cappuccino.Product.png","description"=>"Equal parts espresso, steamed milk, and thick velvety foam."],
-        ["id"=>4,"name"=>"Caffè Latte","price"=>140,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Caffe.Latte.png","description"=>"Silky steamed milk poured over a double shot of espresso."],
-        ["id"=>5,"name"=>"Flat White","price"=>145,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Flat.White.Product.png","description"=>"Stronger and creamier than a latte."],
-        ["id"=>6,"name"=>"Caramel Macchiato","price"=>155,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Caramel-Macchiato.Product.png","description"=>"Vanilla-infused steamed milk, espresso, and caramel drizzle."],
-        ["id"=>7,"name"=>"Mocha","price"=>150,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Mocha.Product.png","description"=>"Espresso blended with chocolate syrup and steamed milk."],
-        ["id"=>8,"name"=>"Hazelnut Latte","price"=>155,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Hazelnut-Latte.Product.png","description"=>"Smooth latte infused with rich hazelnut syrup."],
-        ["id"=>9,"name"=>"White Chocolate Mocha","price"=>160,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/White-Chocolate-Mocha.Product.png","description"=>"Espresso with creamy white chocolate and steamed milk."],
-        ["id"=>10,"name"=>"Spanish Latte","price"=>150,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Spanish-Latte.Product.png","description"=>"Sweet and creamy latte made with condensed milk."],
-        ["id"=>11,"name"=>"Vanilla Latte","price"=>145,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Vanilla-Latte.Product.png","description"=>"Classic latte enhanced with smooth vanilla syrup."],
-        ["id"=>12,"name"=>"Cortado","price"=>135,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Cortado-Latte.Product.png","description"=>"Equal parts espresso and warm milk."],
-        ["id"=>13,"name"=>"Cold Brew","price"=>160,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Steeped 18 hours in cold water."],
-        ["id"=>14,"name"=>"Iced Americano","price"=>110,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Double espresso over ice and chilled water."],
-        ["id"=>15,"name"=>"Iced Caramel Latte","price"=>165,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Chilled latte with caramel syrup over ice."],
-        ["id"=>16,"name"=>"Matcha Latte","price"=>150,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Ceremonial-grade matcha with oat milk."],
-        ["id"=>17,"name"=>"Iced Mocha","price"=>155,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Chilled espresso with chocolate syrup over ice."],
-        ["id"=>18,"name"=>"Dirty Matcha","price"=>165,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Matcha and espresso with milk."],
-        ["id"=>19,"name"=>"Espresso Tonic","price"=>150,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Espresso and tonic water over ice."],
-        ["id"=>20,"name"=>"Iced Hazelnut Latte","price"=>165,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Chilled hazelnut-infused latte over ice."],
-        ["id"=>21,"name"=>"Strawberry Lemonade","price"=>120,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Lemonade blended with strawberry purée."],
-        ["id"=>22,"name"=>"Sparkling Water","price"=>80,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Chilled sparkling mineral water."],
-        ["id"=>23,"name"=>"Mango Soda Float","price"=>145,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Mango soda with vanilla ice cream."],
-        ["id"=>24,"name"=>"Hot Chocolate","price"=>130,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Rich hot chocolate with steamed milk."],
-        ["id"=>25,"name"=>"Croissant","price"=>95,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Buttery flaky croissant baked fresh."],
-        ["id"=>26,"name"=>"Banana Bread","price"=>80,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Moist homemade banana bread."],
-        ["id"=>27,"name"=>"Blueberry Muffin","price"=>85,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Fluffy muffin with fresh blueberries."],
-        ["id"=>28,"name"=>"Cinnamon Roll","price"=>110,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Soft pastry with cinnamon sugar and icing."],
-        ["id"=>29,"name"=>"Chocolate Chip Cookie","price"=>70,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Freshly baked cookie with chocolate chips."],
-        ["id"=>30,"name"=>"Ham & Cheese Panini","price"=>140,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Grilled panini with ham and cheese."],
-        ["id"=>31,"name"=>"Breakfast Sandwich","price"=>150,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Toasted sandwich with egg and cheese."],
-        ["id"=>32,"name"=>"Avocado Toast","price"=>160,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Sourdough with smashed avocado."],
-        ["id"=>33,"name"=>"Cheese Danish","price"=>95,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Flaky pastry with cream cheese filling."],
-        ["id"=>34,"name"=>"Granola Bar","price"=>65,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"House-made oat granola bar."],
-        ["id"=>35,"name"=>"Egg Salad Sandwich","price"=>130,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Creamy egg salad on soft white bread."],
-        ["id"=>36,"name"=>"Spinach & Feta Wrap","price"=>145,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Whole wheat wrap with spinach and feta."],
-        ["id"=>37,"name"=>"Tiramisu","price"=>130,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Classic Italian tiramisu."],
-        ["id"=>38,"name"=>"Chocolate Lava Cake","price"=>145,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Warm chocolate cake with molten centre."],
-        ["id"=>39,"name"=>"Affogato","price"=>140,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Vanilla ice cream with hot espresso."],
-        ["id"=>40,"name"=>"Cheesecake","price"=>135,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Creamy baked cheesecake."],
-        ["id"=>41,"name"=>"Brownies","price"=>90,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Fudgy chocolate brownies."],
-        ["id"=>42,"name"=>"Crème Brûlée","price"=>150,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Silky vanilla custard with caramelised sugar."],
-        ["id"=>43,"name"=>"Mango Panna Cotta","price"=>130,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Silky panna cotta with mango coulis."],
-        ["id"=>44,"name"=>"Strawberry Shortcake","price"=>140,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Sponge cake with strawberries and cream."],
-        ["id"=>45,"name"=>"Macarons (3 pcs)","price"=>120,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"French macarons in assorted flavours."],
-        ["id"=>46,"name"=>"Chocolate Mousse","price"=>125,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Airy dark chocolate mousse."],
-        ["id"=>47,"name"=>"Leche Flan","price"=>95,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Classic Filipino caramel custard flan."],
-        ["id"=>48,"name"=>"Ube Cheesecake","price"=>145,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Creamy ube-flavoured cheesecake."],
-    ];
+function buildMenuImage(string $name, string $branch = 'laguna'): string {
+    $safeName = preg_replace('/[^a-z0-9]+/i', ' ', (string) $name);
+    $safeName = trim($safeName);
+    if ($safeName === '') {
+        $safeName = 'Menu Item';
+    }
+
+    $branchLabel = ucfirst($branch);
+    $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">' .
+        '<rect width="800" height="600" fill="#14110d"/>' .
+        '<rect x="30" y="30" width="740" height="540" rx="24" fill="#1d1711" stroke="#c9a84c" stroke-width="4"/>' .
+        '<circle cx="400" cy="250" r="140" fill="#c9a84c" opacity="0.16"/>' .
+        '<path d="M240 440h320" stroke="#c9a84c" stroke-width="10" stroke-linecap="round"/>' .
+        '<text x="400" y="250" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" fill="#f2e7c8">' . htmlspecialchars($safeName, ENT_QUOTES, 'UTF-8') . '</text>' .
+        '<text x="400" y="320" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="500" fill="#c9a84c">' . htmlspecialchars($branchLabel . ' Branch', ENT_QUOTES, 'UTF-8') . '</text>' .
+        '</svg>';
+
+    return 'data:image/svg+xml;base64,' . base64_encode($svg);
 }
+
+$branchFallbackProducts = [
+    'laguna' => [
+        ['id' => 1, 'name' => 'Espresso', 'price' => 85, 'category' => 'mains', 'stock' => 100, 'reorder_level' => 10, 'branch' => 'laguna', 'image' => buildMenuImage('Espresso', 'laguna'), 'description' => 'Bold and concentrated shot of pure espresso.'],
+        ['id' => 2, 'name' => 'Americano', 'price' => 100, 'category' => 'mains', 'stock' => 100, 'reorder_level' => 10, 'branch' => 'laguna', 'image' => buildMenuImage('Americano', 'laguna'), 'description' => 'Espresso diluted with hot water for a smooth black coffee.'],
+        ['id' => 3, 'name' => 'Cappuccino', 'price' => 130, 'category' => 'mains', 'stock' => 100, 'reorder_level' => 10, 'branch' => 'laguna', 'image' => buildMenuImage('Cappuccino', 'laguna'), 'description' => 'Equal parts espresso, steamed milk, and thick velvety foam.'],
+        ['id' => 4, 'name' => 'Hazelnut Latte', 'price' => 155, 'category' => 'mains', 'stock' => 100, 'reorder_level' => 10, 'branch' => 'laguna', 'image' => buildMenuImage('Hazelnut Latte', 'laguna'), 'description' => 'Smooth latte infused with rich hazelnut syrup.'],
+        ['id' => 5, 'name' => 'Cold Brew', 'price' => 160, 'category' => 'drinks', 'stock' => 100, 'reorder_level' => 10, 'branch' => 'laguna', 'image' => buildMenuImage('Cold Brew', 'laguna'), 'description' => 'Steeped 18 hours in cold water.'],
+        ['id' => 6, 'name' => 'Croissant', 'price' => 95, 'category' => 'sides', 'stock' => 100, 'reorder_level' => 10, 'branch' => 'laguna', 'image' => buildMenuImage('Croissant', 'laguna'), 'description' => 'Buttery flaky croissant baked fresh.'],
+        ['id' => 7, 'name' => 'Tiramisu', 'price' => 130, 'category' => 'desserts', 'stock' => 100, 'reorder_level' => 10, 'branch' => 'laguna', 'image' => buildMenuImage('Tiramisu', 'laguna'), 'description' => 'Classic Italian tiramisu.'],
+        ['id' => 8, 'name' => 'Chocolate Lava Cake', 'price' => 145, 'category' => 'desserts', 'stock' => 100, 'reorder_level' => 10, 'branch' => 'laguna', 'image' => buildMenuImage('Chocolate Lava Cake', 'laguna'), 'description' => 'Warm chocolate cake with molten centre.'],
+    ],
+    'manila' => [
+        ['id' => 101, 'name' => 'Signature Latte', 'price' => 145, 'category' => 'coffee', 'stock' => 100, 'reorder_level' => 10, 'branch' => 'manila', 'image' => buildMenuImage('Signature Latte', 'manila'), 'description' => 'A smooth premium latte with a rich Manila twist.'],
+        ['id' => 102, 'name' => 'Golden Cappuccino', 'price' => 150, 'category' => 'coffee', 'stock' => 100, 'reorder_level' => 10, 'branch' => 'manila', 'image' => buildMenuImage('Golden Cappuccino', 'manila'), 'description' => 'Velvety cappuccino with a glossy caramel finish.'],
+        ['id' => 103, 'name' => 'Berry Croissant', 'price' => 110, 'category' => 'sides', 'stock' => 100, 'reorder_level' => 10, 'branch' => 'manila', 'image' => buildMenuImage('Berry Croissant', 'manila'), 'description' => 'Flaky croissant filled with berry cream.'],
+        ['id' => 104, 'name' => 'Mango Tart', 'price' => 135, 'category' => 'desserts', 'stock' => 100, 'reorder_level' => 10, 'branch' => 'manila', 'image' => buildMenuImage('Mango Tart', 'manila'), 'description' => 'Bright mango tart with a buttery crust.'],
+        ['id' => 105, 'name' => 'Iced Matcha', 'price' => 140, 'category' => 'coffee', 'stock' => 100, 'reorder_level' => 10, 'branch' => 'manila', 'image' => buildMenuImage('Iced Matcha', 'manila'), 'description' => 'Refreshing matcha served over ice.'],
+        ['id' => 106, 'name' => 'Sunset Donut', 'price' => 90, 'category' => 'sides', 'stock' => 100, 'reorder_level' => 10, 'branch' => 'manila', 'image' => buildMenuImage('Sunset Donut', 'manila'), 'description' => 'Soft donut glazed for a bright afternoon pick-me-up.'],
+        ['id' => 107, 'name' => 'Cream Puff', 'price' => 125, 'category' => 'desserts', 'stock' => 100, 'reorder_level' => 10, 'branch' => 'manila', 'image' => buildMenuImage('Cream Puff', 'manila'), 'description' => 'Light cream-filled pastry with a crisp shell.'],
+        ['id' => 108, 'name' => 'Midnight Mocha', 'price' => 155, 'category' => 'coffee', 'stock' => 100, 'reorder_level' => 10, 'branch' => 'manila', 'image' => buildMenuImage('Midnight Mocha', 'manila'), 'description' => 'Dark chocolate mocha with a polished finish.'],
+    ],
+];
+
+if (empty($products)) {
+    $products = $branchFallbackProducts[$branch] ?? $branchFallbackProducts['laguna'];
+}
+
+$products = array_map(function ($row) use ($branch) {
+    $row['category'] = $row['category'] ?? ($branch === 'manila' ? 'coffee' : 'mains');
+    $row['image'] = buildMenuImage($row['name'] ?? 'Menu Item', $branch);
+    $row['stock'] = (int)($row['stock'] ?? 100);
+    $row['reorder_level'] = (int)($row['reorder_level'] ?? 10);
+    return $row;
+}, $products);
 
 // Categories per branch
 $categories = $branch === 'manila'

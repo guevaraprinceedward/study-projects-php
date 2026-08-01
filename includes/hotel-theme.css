@@ -146,3 +146,19 @@ footer p span{color:var(--h-gold-dim)}
     .sec-head{padding:0 16px}
     .tabs{padding:0 16px}
 }
+
+.sidebar-account{padding:14px 16px;margin:0 14px 6px;border:1px solid var(--h-line);border-radius:6px;background:rgba(255,255,255,0.02)}
+.sa-top{display:flex;align-items:center;gap:11px}
+.sa-avatar{width:34px;height:34px;border-radius:50%;background:rgba(207,167,107,0.1);border:1px solid var(--h-gold-dim);color:var(--h-gold);font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sa-info{display:flex;flex-direction:column;gap:4px;min-width:0}
+.sa-name{font-size:13px;color:var(--h-champagne);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sa-tier{display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:0.05em;color:var(--h-muted);width:fit-content}
+.sa-tier.vip{color:var(--h-vip)}
+.sa-progress{margin-top:12px}
+.sa-progress-bar{height:3px;background:var(--h-line);border-radius:2px;overflow:hidden;margin-bottom:6px}
+.sa-progress-fill{height:100%;background:var(--h-gold);border-radius:2px;transition:width 0.4s ease}
+.sa-progress-label{font-size:10px;color:var(--h-muted);letter-spacing:0.02em}
+.sidebar-logout{margin-top:2px;color:#c0574a !important}
+.sidebar-guest{padding:14px 16px 4px;display:flex;flex-direction:column;gap:10px}
+.sg-text{font-size:11.5px;color:var(--h-muted);line-height:1.65}
+.sg-btn{width:100%;padding:10px 16px;font-size:11px}

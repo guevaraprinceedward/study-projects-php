@@ -28,6 +28,7 @@ $isLoggedIn = isHotelLoggedIn();
             <a href="hotel-reserve.php" class="<?= $activePage==='reserve'?'active':'' ?>">Reserve</a>
             <a href="hotel-services.php" class="<?= $activePage==='services'?'active':'' ?>">Spa &amp; Shop</a>
             <a href="testimonial.php" class="<?= $activePage==='testimonial'?'active':'' ?>">Testimonials</a>
+            <a href="about-us.php" class="<?= $activePage==='about'?'active':'' ?>">About Us</a>
         </nav>
 
         <div class="header-right">
@@ -40,3 +41,14 @@ $isLoggedIn = isHotelLoggedIn();
         </div>
     </div>
 </header>
+
+<?php if (isset($_GET['loggedout'])): ?>
+<div class="toast" id="logoutToast">You've been logged out — come back soon.</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const t = document.getElementById('logoutToast');
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => t.classList.remove('show'), 3800);
+});
+</script>
+<?php endif; ?>

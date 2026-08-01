@@ -16,7 +16,7 @@ if (isset($_SESSION["user"])) {
     }
 }
 
-// Ensure columns exist
+// Ensure columns exist ( MySQL )
 $conn->query("ALTER TABLE products ADD COLUMN IF NOT EXISTS stock INT NOT NULL DEFAULT 100");
 $conn->query("ALTER TABLE products ADD COLUMN IF NOT EXISTS reorder_level INT NOT NULL DEFAULT 10");
 $conn->query("ALTER TABLE products ADD COLUMN IF NOT EXISTS branch VARCHAR(20) DEFAULT 'laguna'");
@@ -33,28 +33,37 @@ if (isset($_GET['branch']) && in_array($_GET['branch'], ['laguna', 'manila'])) {
 
 // ── FETCH PRODUCTS BY BRANCH ──────────────────────────────────────────────
 $branchEsc = $conn->real_escape_string($branch);
-$result = $conn->query("SELECT * FROM products WHERE branch = '$branchEsc' ORDER BY id ASC");
-$products = [];
-if ($result) {
+    $result = $conn->query("SELECT * FROM products WHERE branch = '$branchEsc' ORDER BY id ASC");
+    $products = [];
+
+    if ($result) {
     while ($row = $result->fetch_assoc()) { $products[] = $row; }
-}
+
+    }
 
 // Laguna fallback products
-if ($branch === 'laguna' && empty($products)) {
+
+    if ($branch === 'laguna' && empty($products)) {
+        
     $products = [
 
-        ["id"=>1,"name"=>"Espresso","price"=>85,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Espresso.Product.png","description"=>"Bold and concentrated shot of pure espresso."],
-        ["id"=>2,"name"=>"Americano","price"=>100,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Americano.Product-V1.png","description"=>"Espresso diluted with hot water for a smooth black coffee."],
-        ["id"=>3,"name"=>"Cappuccino","price"=>130,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Cappuccino.Product.png","description"=>"Equal parts espresso, steamed milk, and thick velvety foam."],
-        ["id"=>4,"name"=>"Caffè Latte","price"=>140,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Caffe.Latte.png","description"=>"Silky steamed milk poured over a double shot of espresso."],
-        ["id"=>5,"name"=>"Flat White","price"=>145,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Flat.White.Product.png","description"=>"Stronger and creamier than a latte."],
-        ["id"=>6,"name"=>"Caramel Macchiato","price"=>155,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Caramel-Macchiato.Product.png","description"=>"Vanilla-infused steamed milk, espresso, and caramel drizzle."],
-        ["id"=>7,"name"=>"Mocha","price"=>150,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Mocha.Product.png","description"=>"Espresso blended with chocolate syrup and steamed milk."],
-        ["id"=>8,"name"=>"Hazelnut Latte","price"=>155,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Hazelnut-Latte.Product.png","description"=>"Smooth latte infused with rich hazelnut syrup."],
-        ["id"=>9,"name"=>"White Chocolate Mocha","price"=>160,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/White-Chocolate-Mocha.Product.png","description"=>"Espresso with creamy white chocolate and steamed milk."],
-        ["id"=>10,"name"=>"Spanish Latte","price"=>150,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Spanish-Latte.Product.png","description"=>"Sweet and creamy latte made with condensed milk."],
-        ["id"=>11,"name"=>"Vanilla Latte","price"=>145,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Vanilla-Latte.Product.png","description"=>"Classic latte enhanced with smooth vanilla syrup."],
-        ["id"=>12,"name"=>"Cortado","price"=>135,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"https://raw.githubusercontent.com/guevaraprinceedward/study-projects-php/main/Cortado-Latte.Product.png","description"=>"Equal parts espresso and warm milk."],
+        // MAIN - CATEGORY
+
+        ["id"=>1,"name"=>"Espresso","price"=>85,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Bold and concentrated shot of pure espresso."],
+        ["id"=>2,"name"=>"Americano","price"=>100,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Espresso diluted with hot water for a smooth black coffee."],
+        ["id"=>3,"name"=>"Cappuccino","price"=>130,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Equal parts espresso, steamed milk, and thick velvety foam."],
+        ["id"=>4,"name"=>"Caffè Latte","price"=>140,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Silky steamed milk poured over a double shot of espresso."],
+        ["id"=>5,"name"=>"Flat White","price"=>145,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Stronger and creamier than a latte."],
+        ["id"=>6,"name"=>"Caramel Macchiato","price"=>155,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Vanilla-infused steamed milk, espresso, and caramel drizzle."],
+        ["id"=>7,"name"=>"Mocha","price"=>150,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Espresso blended with chocolate syrup and steamed milk."],
+        ["id"=>8,"name"=>"Hazelnut Latte","price"=>155,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Smooth latte infused with rich hazelnut syrup."],
+        ["id"=>9,"name"=>"White Chocolate Mocha","price"=>160,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Espresso with creamy white chocolate and steamed milk."],
+        ["id"=>10,"name"=>"Spanish Latte","price"=>150,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Sweet and creamy latte made with condensed milk."],
+        ["id"=>11,"name"=>"Vanilla Latte","price"=>145,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Classic latte enhanced with smooth vanilla syrup."],
+        ["id"=>12,"name"=>"Cortado","price"=>135,"category"=>"mains","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Equal parts espresso and warm milk."],
+        
+        // DRINKS - CATEGORY
+
         ["id"=>13,"name"=>"Cold Brew","price"=>160,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Steeped 18 hours in cold water."],
         ["id"=>14,"name"=>"Iced Americano","price"=>110,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Double espresso over ice and chilled water."],
         ["id"=>15,"name"=>"Iced Caramel Latte","price"=>165,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Chilled latte with caramel syrup over ice."],
@@ -67,6 +76,9 @@ if ($branch === 'laguna' && empty($products)) {
         ["id"=>22,"name"=>"Sparkling Water","price"=>80,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Chilled sparkling mineral water."],
         ["id"=>23,"name"=>"Mango Soda Float","price"=>145,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Mango soda with vanilla ice cream."],
         ["id"=>24,"name"=>"Hot Chocolate","price"=>130,"category"=>"drinks","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Rich hot chocolate with steamed milk."],
+        
+        // SIDES - CATEGORY
+
         ["id"=>25,"name"=>"Croissant","price"=>95,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Buttery flaky croissant baked fresh."],
         ["id"=>26,"name"=>"Banana Bread","price"=>80,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Moist homemade banana bread."],
         ["id"=>27,"name"=>"Blueberry Muffin","price"=>85,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Fluffy muffin with fresh blueberries."],
@@ -79,6 +91,9 @@ if ($branch === 'laguna' && empty($products)) {
         ["id"=>34,"name"=>"Granola Bar","price"=>65,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"House-made oat granola bar."],
         ["id"=>35,"name"=>"Egg Salad Sandwich","price"=>130,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Creamy egg salad on soft white bread."],
         ["id"=>36,"name"=>"Spinach & Feta Wrap","price"=>145,"category"=>"sides","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Whole wheat wrap with spinach and feta."],
+        
+        // DESSERTS - CATEGORY
+
         ["id"=>37,"name"=>"Tiramisu","price"=>130,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Classic Italian tiramisu."],
         ["id"=>38,"name"=>"Chocolate Lava Cake","price"=>145,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Warm chocolate cake with molten centre."],
         ["id"=>39,"name"=>"Affogato","price"=>140,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Vanilla ice cream with hot espresso."],
@@ -91,16 +106,13 @@ if ($branch === 'laguna' && empty($products)) {
         ["id"=>46,"name"=>"Chocolate Mousse","price"=>125,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Airy dark chocolate mousse."],
         ["id"=>47,"name"=>"Leche Flan","price"=>95,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Classic Filipino caramel custard flan."],
         ["id"=>48,"name"=>"Ube Cheesecake","price"=>145,"category"=>"desserts","stock"=>100,"reorder_level"=>10,"branch"=>"laguna","image"=>"","description"=>"Creamy ube-flavoured cheesecake."],
-    
     ];
 }
 
-// Categories per branch
+// List of Categories per branch
 $categories = $branch === 'manila'
-
-    ? ['all' => 'All Items', 'coffee' => 'Coffee', 'sides' => 'Sides', 'desserts' => 'Desserts']
+    ? ['all' => 'All Items', 'coffee' => 'Coffee','meals' => 'Meals', 'champagnes' => 'Champagnes']
     : ['all' => 'All Items', 'mains' => 'Mains', 'sides' => 'Sides', 'drinks' => 'Drinks', 'desserts' => 'Desserts'];
-
 ?>
 
 <!DOCTYPE html>
@@ -110,10 +122,11 @@ $categories = $branch === 'manila'
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Our Menu — AyosCoffeeNegosyo</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+
 <style>
 
-    *,*::before,*::after {
-        
+*,*::before,*::after {
+    
         box-sizing:border-box;
         margin:0;
         padding:0
@@ -141,7 +154,7 @@ $categories = $branch === 'manila'
     }
 
     html {
-        
+    
         scroll-behavior:smooth
 
     }
@@ -154,7 +167,7 @@ $categories = $branch === 'manila'
         min-height:100vh;
         position:relative;
         overflow-x:hidden
-
+    
     }
 
     body::before {
@@ -162,13 +175,14 @@ $categories = $branch === 'manila'
         content:'';
         position:fixed;
         inset:0;
-        background:radial-gradient(ellipse 70% 50% at 10% 0%,rgba(201,168,76,0.06) 0%,transparent 55%),radial-gradient(ellipse 50% 70% at 90% 100%,rgba(74,122,58,0.07) 0%,transparent 55%);
+        background:radial-gradient(ellipse 70% 50% at 10% 0%,rgba(201,168,76,0.06) 0%,transparent 55%),
+        radial-gradient(ellipse 50% 70% at 90% 100%,rgba(74,122,58,0.07) 0%,transparent 55%);
         pointer-events:none;
         z-index:0
-    
     }
 
-    /* SIDEBAR OVERLAY */
+/* SIDEBAR OVERLAY */
+
     #sidebarOverlay {
         
         position:fixed;
@@ -177,17 +191,18 @@ $categories = $branch === 'manila'
         z-index:199;
         pointer-events:none;
         transition:background 0.4s ease
-
+    
     }
 
     #sidebarOverlay.active {
         
         background:rgba(0,0,0,0.55);
-        pointer-events:all
-
+        pointer-events:all 
+    
     }
 
-    /* SIDEBAR */
+/* SIDEBAR */
+
     #sidebar {
         
         position:fixed;
@@ -202,7 +217,7 @@ $categories = $branch === 'manila'
         flex-direction:column;
         transform:translateX(calc(-1 * var(--sidebar-w)));
         transition:transform 0.42s cubic-bezier(0.4,0,0.2,1);
-        will-change:transform
+        will-change:transform 
 
     }
 
@@ -210,7 +225,7 @@ $categories = $branch === 'manila'
         
         transform:translateX(0);
         box-shadow:6px 0 40px rgba(0,0,0,0.7)
-
+    
     }
 
     .sb-header {
@@ -219,7 +234,7 @@ $categories = $branch === 'manila'
         border-bottom:1px solid var(--border);
         display:flex;
         align-items:center;
-        justify-content:space-between
+        justify-content:space-between 
     
     }
 
@@ -241,7 +256,7 @@ $categories = $branch === 'manila'
         align-items:center;
         justify-content:center;
         flex-shrink:0
-
+    
     }
 
     .sb-brand-name {
@@ -252,7 +267,7 @@ $categories = $branch === 'manila'
         color:var(--cream);
         letter-spacing:0.03em;
         line-height:1.2
-
+    
     }
 
     .sb-brand-name span {
@@ -264,7 +279,7 @@ $categories = $branch === 'manila'
         color:var(--gold);
         letter-spacing:0.1em;
         text-transform:uppercase
-
+    
     }
 
     .sb-close {
@@ -281,7 +296,7 @@ $categories = $branch === 'manila'
         justify-content:center;
         transition:color 0.2s,border-color 0.2s,background 0.2s;
         flex-shrink:0
-    
+
     }
 
     .sb-close:hover {
@@ -289,10 +304,10 @@ $categories = $branch === 'manila'
         color:var(--cream);
         border-color:var(--gold-dim);
         background:rgba(201,168,76,0.06)
-
+    
     }
 
-    .sb-nav {
+    .sb-nav{
         
         flex:1;
         padding:20px 16px;
@@ -300,7 +315,7 @@ $categories = $branch === 'manila'
         flex-direction:column;
         gap:4px;
         overflow-y:auto
-
+    
     }
 
     .sb-nav-label {
@@ -316,19 +331,19 @@ $categories = $branch === 'manila'
 
     .sb-link {
         
-    display:flex;
-    align-items:center;
-    gap:13px;
-    padding:11px 14px;
-    border-radius:6px;
-    text-decoration:none;
-    color:var(--muted);
-    font-size:13.5px;
-    font-weight:400;
-    letter-spacing:0.02em;
-    transition:color 0.2s,background 0.2s;
-    position:relative;
-    border:1px solid transparent
+        display:flex;
+        align-items:center;
+        gap:13px;
+        padding:11px 14px;
+        border-radius:6px;
+        text-decoration:none;
+        color:var(--muted);
+        font-size:13.5px;
+        font-weight:400;
+        letter-spacing:0.02em;
+        transition:color 0.2s,background 0.2s;
+        position:relative;
+        border:1px solid transparent
 
     }
 
@@ -347,7 +362,7 @@ $categories = $branch === 'manila'
     
     }
 
-    .sb-link svg {
+    .sb-link svg {  
         
         flex-shrink:0;
         opacity:0.7;
@@ -383,9 +398,9 @@ $categories = $branch === 'manila'
         height:1px;
         background:var(--border);
         margin:8px 0
-
+    
     }
-
+    
     .sb-footer {
         
         padding:16px;
@@ -398,43 +413,43 @@ $categories = $branch === 'manila'
 
     .sb-logout {
         
-        display:flex;
-        align-items:center;
-        gap:12px;
-        padding:11px 14px;
-        border-radius:6px;
-        text-decoration:none;
-        color:#c0574a;
-        font-size:13.5px;
-        font-weight:400;
-        letter-spacing:0.02em;
-        transition:color 0.2s,background 0.2s;
-        border:1px solid transparent
-
-    }
-
-    .sb-logout:hover {
-        
-    color:#e06b5d;
-    background:rgba(192,87,74,0.08);
-    border-color:rgba(192,87,74,0.14)
-
-    }
-
-    .sb-login {
-        
     display:flex;
     align-items:center;
     gap:12px;
     padding:11px 14px;
     border-radius:6px;
     text-decoration:none;
-    color:var(--green-lt);
+    color:#c0574a;
     font-size:13.5px;
     font-weight:400;
     letter-spacing:0.02em;
-    transition:color 0.2s,background 0.2s;border:1px solid transparent
+    transition:color 0.2s,background 0.2s;
+    border:1px solid transparent
 
+    }
+
+    .sb-logout:hover {
+        
+        color:#e06b5d;
+        background:rgba(192,87,74,0.08);
+        border-color:rgba(192,87,74,0.14)
+    
+    }
+
+    .sb-login {
+        display:flex;
+        align-items:center;
+        gap:12px;
+        padding:11px 14px;
+        border-radius:6px;
+        text-decoration:none;
+        color:var(--green-lt);
+        font-size:13.5px;
+        font-weight:400;
+        letter-spacing:0.02em;
+        transition:color 0.2s,background 0.2s;
+        border:1px solid transparent
+    
     }
 
     .sb-login:hover {
@@ -442,11 +457,10 @@ $categories = $branch === 'manila'
         color:#fff;
         background:rgba(74,122,58,0.12);
         border-color:rgba(74,122,58,0.2)
-    
-    }
 
+    }
     .sb-register {
-        
+
         display:flex;
         align-items:center;
         gap:12px;
@@ -459,30 +473,30 @@ $categories = $branch === 'manila'
         letter-spacing:0.02em;
         transition:color 0.2s,background 0.2s;
         border:1px solid transparent
-
-    }
-
-    .sb-register:hover {
-        
-        color:#fff;
-        background:rgba(201,168,76,0.1);border-color:rgba(201,168,76,0.2)
     
     }
 
-    /* BRANCH SWITCHER */
+    .sb-register:hover {
+
+        color:#fff;
+        background:rgba(201,168,76,0.1);
+        border-color:rgba(201,168,76,0.2)
+    
+    }
+
+/* BRANCH SWITCHER */
+
     .branch-bar {
-        
+
         position:relative;
-        z-index:1;
-        display:flex;
+        z-index:1;display:flex;
         justify-content:center;
         gap:10px;
         padding:20px 32px 0
     
     }
-    
-    .branch-btn {
-        
+    .branch-btn { 
+
         display:flex;
         align-items:center;
         gap:8px;
@@ -490,62 +504,64 @@ $categories = $branch === 'manila'
         border-radius:100px;
         border:1px solid var(--border);
         background:transparent;
-        color:var(--muted);font-family:'Jost',sans-serif;
-        font-size:12px;font-weight:500;
+        color:var(--muted);
+        font-family:'Jost',sans-serif;
+        font-size:12px;
+        font-weight:500;
         letter-spacing:0.1em;
         text-transform:uppercase;
         cursor:pointer;
         text-decoration:none;
         transition:all 0.25s ease
-
-    }
     
-    .branch-btn:hover {
-        
-    border-color:var(--gold-dim);
-    color:var(--gold);
-    background:rgba(201,168,76,0.05)
-
     }
 
-    .branch-btn.active {
-        
+    .branch-btn:hover {
+
+        border-color:var(--gold-dim);
+        color:var(--gold);
+        background:rgba(201,168,76,0.05)
+    
+    }
+
+    .branch-btn.active { 
+
         border-color:var(--gold);
         color:var(--gold);
         background:rgba(201,168,76,0.1)
     
     }
 
-    .branch-dot {
-        
-        width:7px;
-        height:7px;
+    .branch-dot { 
+
+
+        width:7px;height:7px;
         border-radius:50%;
         background:var(--green-lt)
     
     }
 
-    .branch-btn.active .branch-dot {
-        
+    .branch-btn.active .branch-dot { 
+
         background:var(--gold)
     
     }
 
-    /* HEADER */
+/* HEADER */
+
     header {
-        
+
         position:sticky;
         top:0;
         z-index:100;
         background:rgba(11,11,9,0.88);
         backdrop-filter:blur(18px);
         border-bottom:1px solid var(--border)
-
+    
     }
 
+    .header-inner { 
 
-    .header-inner {
-        
         max-width:1200px;
         margin:0 auto;
         padding:0 32px;
@@ -553,18 +569,17 @@ $categories = $branch === 'manila'
         display:flex;
         align-items:center;
         justify-content:space-between
-
+    
     }
+    .header-left { 
 
-    .header-left {
-        
         display:flex;
         align-items:center;
         gap:18px
     
     }
 
-    #sidebarToggle {
+    #sidebarToggle { 
 
         width:40px;
         height:40px;
@@ -578,52 +593,52 @@ $categories = $branch === 'manila'
         justify-content:center;
         flex-shrink:0;
         transition:color 0.2s,border-color 0.2s,background 0.2s
-
+    
     }
+    
+    #sidebarToggle:hover { 
 
-    #sidebarToggle:hover {
-        
         color:var(--gold);
         border-color:var(--gold-dim);
         background:rgba(201,168,76,0.06)
     
     }
 
-    .hb {
-        
+    .hb { 
+
         display:flex;
         flex-direction:column;
         gap:5px;
         width:18px
-
+    
     }
 
-    .hb span {
-        
+    .hb span { 
+
         display:block;
         height:1.5px;
         background:currentColor;
         border-radius:2px;
         transition:transform 0.3s ease,opacity 0.3s ease,width 0.3s ease;
         transform-origin:center
-
-    }
-
-    .hb span:nth-child(3) {
-        
-    width:12px
-
-    }
-
-    #sidebarToggle.open .hb span:nth-child(1) {
-        
-        transform:translateY(6.5px) rotate(45deg)
     
     }
 
-    #sidebarToggle.open .hb span:nth-child(2) {
-        
-        opacity:0;transform:scaleX(0)
+    .hb span:nth-child(3) { 
+
+        width:12px
+    
+    }
+
+    #sidebarToggle.open .hb span:nth-child(1) { 
+
+        transform:translateY(6.5px) rotate(45deg)
+    
+    }
+    #sidebarToggle.open .hb span:nth-child(2) { 
+
+        opacity:0;
+        transform:scaleX(0)
     
     }
 
@@ -633,8 +648,9 @@ $categories = $branch === 'manila'
         width:18px
     
     }
-    .brand {
-        
+
+    .brand { 
+
         display:flex;
         align-items:center;
         gap:12px;
@@ -642,7 +658,7 @@ $categories = $branch === 'manila'
     
     }
 
-    .brand-icon {
+    .brand-icon { 
 
         width:36px;
         height:36px;
@@ -654,28 +670,30 @@ $categories = $branch === 'manila'
     
     }
 
-    .brand-name {
+    .brand-name { 
 
         font-family:'Cormorant Garamond',serif;
-        font-size:22px;font-weight:600;
+        font-size:22px;
+        font-weight:600;
         color:var(--cream);
         letter-spacing:0.04em
     
     }
-    .brand-name span {
+
+    .brand-name span { 
 
         color:var(--gold)
-
+    
     }
-    .header-right {
+
+    .header-right { 
 
         display:flex;
         align-items:center;
         gap:10px
-
+    
     }
-
-    .header-cart-pill {
+    .header-cart-pill { 
 
         display:flex;
         align-items:center;
@@ -694,7 +712,8 @@ $categories = $branch === 'manila'
         cursor:pointer
     
     }
-    .header-cart-pill:hover {
+
+    .header-cart-pill:hover { 
 
         color:var(--gold);
         border-color:var(--gold-dim);
@@ -702,8 +721,8 @@ $categories = $branch === 'manila'
     
     }
 
-    .header-cart-count {
-        
+    .header-cart-count { 
+
         background:var(--gold);
         color:#1a1400;
         font-size:10px;
@@ -715,12 +734,13 @@ $categories = $branch === 'manila'
         align-items:center;
         justify-content:center;
         padding:0 4px
-
+    
     }
 
-    /* HERO */
-    .hero {
-        
+/* HERO */
+
+    .hero { 
+
         position:relative;
         z-index:1;
         text-align:center;
@@ -730,8 +750,8 @@ $categories = $branch === 'manila'
     
     }
 
-    .hero-eyebrow {
-
+    .hero-eyebrow { 
+        
         display:inline-flex;
         align-items:center;
         gap:10px;
@@ -742,8 +762,8 @@ $categories = $branch === 'manila'
         margin-bottom:22px
     
     }
-
-    .hero-eyebrow::before,.hero-eyebrow::after {
+    
+    .hero-eyebrow::before,.hero-eyebrow::after { 
 
         content:'';
         width:28px;
@@ -752,8 +772,8 @@ $categories = $branch === 'manila'
     
     }
 
-    .hero h1 {
-
+    .hero h1 { 
+        
         font-family:'Cormorant Garamond',serif;
         font-size:clamp(44px,6vw,72px);
         font-weight:700;
@@ -764,23 +784,21 @@ $categories = $branch === 'manila'
     
     }
 
-    .hero h1 em {
+    .hero h1 em { 
 
         font-style:italic;
         color:var(--gold)
     
     }
 
-    .hero p {
+    .hero p { 
 
-        font-size:15px;
-        color:var(--muted);
-        line-height:1.7;
-        font-weight:300
+        font-size:15px;color:var(--muted);
+        line-height:1.7;font-weight:300
     
     }
 
-    .branch-badge {
+    .branch-badge { 
 
         display:inline-flex;
         align-items:center;
@@ -791,12 +809,15 @@ $categories = $branch === 'manila'
         padding:5px 14px;
         font-size:11px;
         letter-spacing:0.1em;
-        text-transform:uppercase;color:var(--gold);margin-top:14px
+        text-transform:uppercase;
+        color:var(--gold);
+        margin-top:14px
     
     }
 
-    /* FILTER */
-    .filter-bar {
+/* FILTER */
+
+    .filter-bar{ 
 
         position:relative;
         z-index:1;
@@ -808,7 +829,7 @@ $categories = $branch === 'manila'
     
     }
 
-    .filter-btn {
+    .filter-btn{ 
 
         font-family:'Jost',sans-serif;
         font-size:12px;
@@ -819,119 +840,710 @@ $categories = $branch === 'manila'
         border-radius:100px;
         border:1px solid var(--border);
         background:transparent;
-        color:var(--muted);cursor:pointer;transition:all 0.25s ease
+        color:var(--muted);
+        cursor:pointer;
+        transition:all 0.25s ease
     
     }
 
-    .filter-btn:hover,.filter-btn.active {border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.07)}
+    .filter-btn:hover,.filter-btn.active{ 
 
-    /* MENU GRID */
-    .menu-section {
+        border-color:var(--gold);
+        color:var(--gold);
+        background:rgba(201,168,76,0.07)
+    
+    }
+
+/* MENU GRID */
+    .menu-section { 
 
         position:relative;
         z-index:1;
         max-width:1200px;
         margin:0 auto;
         padding:0 32px 60px
-    
+
     }
 
-    .menu-grid {
+    .menu-grid { 
 
         display:grid;
         grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
-        gap:24px;
-        transition:opacity 0.25s ease
-    
+        gap:24px;transition:opacity 0.25s ease
+
     }
 
-    .menu-grid.fading {
+    .menu-grid.fading { 
 
         opacity:0
+
+    }
+
+/* CARD */
+
+    .menu-card { 
+
+        background:var(--card);
+        border:1px solid var(--border);
+        border-radius:4px;
+        overflow:hidden;
+        display:flex;
+        flex-direction:column;
+        opacity:0;
+        transform:translateY(18px);
+        transition:opacity 0.35s ease,transform 0.35s ease,border-color 0.3s ease,box-shadow 0.3s ease
     
     }
 
-    /* CARD */
-    .menu-card{background:var(--card);border:1px solid var(--border);border-radius:4px;overflow:hidden;display:flex;flex-direction:column;opacity:0;transform:translateY(18px);transition:opacity 0.35s ease,transform 0.35s ease,border-color 0.3s ease,box-shadow 0.3s ease}
-    .menu-card.visible{opacity:1;transform:translateY(0)}
-    .menu-card:hover{border-color:var(--gold-dim);box-shadow:0 20px 50px rgba(0,0,0,0.5),0 0 0 1px rgba(201,168,76,0.08)}
-    .menu-card.visible:hover{transform:translateY(-6px)}
-    .menu-card.out-of-stock{opacity:0.55}
-    .menu-card.out-of-stock.visible:hover{transform:none}
-    .card-img-wrap{position:relative;height:210px;overflow:hidden;background:var(--surface)}
-    .card-img-wrap img{width:100%;height:100%;object-fit:cover;transition:transform 0.5s ease;display:block}
-    .menu-card:hover .card-img-wrap img{transform:scale(1.06)}
-    .card-img-wrap::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,0.5) 100%)}
-    .img-placeholder{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);font-size:13px;letter-spacing:0.05em}
-    .img-placeholder svg{opacity:0.3}
-    .oos-badge{position:absolute;top:12px;left:12px;z-index:2;background:rgba(192,57,43,0.9);color:#fff;font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:4px 10px;border-radius:3px}
-    .card-body{padding:22px 24px 24px;display:flex;flex-direction:column;flex:1;gap:6px}
-    .card-category{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:500}
-    .card-name{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--cream);line-height:1.2;margin-bottom:4px}
-    .card-desc{font-size:13px;color:var(--muted);line-height:1.6;font-weight:300;flex:1;margin-bottom:10px}
-    .stock-wrap{margin-bottom:10px}
-    .stock-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
-    .stock-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)}
-    .stock-text{font-size:10px;font-weight:500}
-    .stock-text.s-green{color:var(--green-lt)}
-    .stock-text.s-amber{color:var(--amber)}
-    .stock-text.s-red{color:var(--red)}
-    .stock-bar-bg{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
-    .stock-bar-fill{height:100%;border-radius:2px;transition:width 0.4s ease}
-    .stock-bar-fill.s-green{background:var(--green-lt)}
-    .stock-bar-fill.s-amber{background:var(--amber)}
-    .stock-bar-fill.s-red{background:var(--red)}
-    .card-footer{display:flex;align-items:center;justify-content:space-between;padding-top:16px;border-top:1px solid var(--border);margin-top:auto}
-    .card-price{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:var(--gold);letter-spacing:-0.01em}
-    .card-price span{font-size:14px;font-weight:400;font-family:'Jost',sans-serif;color:var(--muted);margin-right:2px}
-    .add-btn{display:flex;align-items:center;gap:8px;padding:10px 18px;background:var(--green);border:none;border-radius:3px;font-family:'Jost',sans-serif;font-size:12.5px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#fff;cursor:pointer;transition:background 0.2s,transform 0.15s;position:relative;overflow:hidden}
-    .add-btn:hover{background:var(--green-lt)}
-    .add-btn:active{transform:scale(0.95)}
-    .add-btn.added{background:var(--gold);color:#000}
-    .add-btn:disabled{background:var(--muted);cursor:not-allowed;opacity:0.5}
-    .add-btn .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,0.3);transform:scale(0);animation:ripple 0.5s linear;pointer-events:none}
-    @keyframes ripple{to{transform:scale(4);opacity:0}}
+    .menu-card.visible { 
 
-    /* EMPTY */
-    .empty-state{text-align:center;padding:80px 20px;color:var(--muted)}
-    .empty-state svg{opacity:0.2;margin-bottom:20px}
-    .empty-state h3{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--text);margin-bottom:8px}
+        opacity:1;
+        transform:translateY(0)
+    
+    }
 
-    /* PAGINATION */
-    .pagination-wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:14px;padding:32px 32px 80px}
-    .pagination-info{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted)}
-    .pagination{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center}
-    .page-btn{font-family:'Jost',sans-serif;font-size:13px;font-weight:500;min-width:38px;height:38px;padding:0 12px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all 0.2s ease}
-    .page-btn:hover:not(:disabled){border-color:var(--gold-dim);color:var(--gold);background:rgba(201,168,76,0.07)}
-    .page-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.12)}
-    .page-btn:disabled{opacity:0.3;cursor:not-allowed}
-    .page-ellipsis{color:var(--muted);padding:0 4px;font-size:14px;line-height:38px}
+    .menu-card:hover {
+        
+        border-color:var(--gold-dim);
+        box-shadow:0 20px 50px rgba(0,0,0,0.5),0 0 0 1px rgba(201,168,76,0.08)
+    
+    }
 
-    /* TOAST */
-    #toast{position:fixed;bottom:30px;right:30px;z-index:999;background:var(--card);border:1px solid var(--gold-dim);border-radius:4px;padding:14px 20px;display:flex;align-items:center;gap:12px;font-size:14px;color:var(--cream);box-shadow:0 8px 32px rgba(0,0,0,0.5);transform:translateY(20px);opacity:0;transition:all 0.3s ease;pointer-events:none}
-    #toast.show{transform:translateY(0);opacity:1}
-    #toast .t-icon{color:var(--green-lt);flex-shrink:0}
-    #toast.error .t-icon{color:var(--red)}
+    .menu-card.visible:hover { 
 
-    /* LOGIN PROMPT MODAL */
-    #loginPrompt{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity 0.3s ease}
-    #loginPrompt.show{opacity:1;pointer-events:all}
-    .login-prompt-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:36px 32px;max-width:380px;width:90%;text-align:center;transform:translateY(20px);transition:transform 0.3s ease}
-    #loginPrompt.show .login-prompt-card{transform:translateY(0)}
-    .login-prompt-card h3{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:var(--cream);margin-bottom:10px}
-    .login-prompt-card h3 em{font-style:italic;color:var(--gold)}
-    .login-prompt-card p{font-size:13.5px;color:var(--muted);line-height:1.6;margin-bottom:24px}
-    .lp-btns{display:flex;gap:10px;justify-content:center}
-    .lp-btn-primary{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;background:var(--green);border:none;border-radius:3px;font-family:'Jost',sans-serif;font-size:13px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#fff;text-decoration:none;cursor:pointer;transition:background 0.2s}
-    .lp-btn-primary:hover{background:var(--green-lt)}
-    .lp-btn-ghost{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border:1px solid var(--border);border-radius:3px;font-family:'Jost',sans-serif;font-size:13px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;cursor:pointer;background:transparent;transition:all 0.2s}
-    .lp-btn-ghost:hover{border-color:var(--gold-dim);color:var(--gold)}
-    .lp-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border:1px solid var(--border);border-radius:50%;background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
-    .lp-close:hover{border-color:var(--gold-dim);color:var(--cream)}
-    .login-prompt-card{position:relative}
+        transform:translateY(-6px)
+    
+    }
+
+    .menu-card.out-of-stock { 
+
+        opacity:0.55
+    
+    }
+
+    .menu-card.out-of-stock.visible:hover { 
+
+        transform:none
+    
+    }
+    
+    .card-img-wrap { 
+
+        position:relative;
+        height:210px;
+        overflow:hidden;
+        background:var(--surface)
+    
+    }
+
+    .card-img-wrap img {
+        
+        width:100%;
+        height:100%;
+        object-fit:cover;
+        transition:transform 0.5s ease;
+        display:block
+    
+    }
+
+    .menu-card:hover .card-img-wrap img { 
+
+        transform:scale(1.06)
+    
+    }
+
+    .card-img-wrap::after { 
+
+        content:'';
+        position:absolute;
+        inset:0;
+        background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,0.5) 100%)
+    
+    }
+
+    .img-placeholder {
+        
+        width:100%;
+        height:100%;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:10px;
+        color:var(--muted);
+        font-size:13px;
+        letter-spacing:0.05em
+    
+    }
+
+    .img-placeholder svg { 
+
+        opacity:0.3
+    
+    }
+
+    .oos-badge {
+        
+        position:absolute;
+        top:12px;
+        left:12px;
+        z-index:2;
+        background:rgba(192,57,43,0.9);
+        color:#fff;
+        font-size:10px;
+        font-weight:600;
+        letter-spacing:0.1em;
+        text-transform:uppercase;
+        padding:4px 10px;
+        border-radius:3px
+    
+    }
+
+    .card-body {
+        
+        padding:22px 24px 24px;
+        display:flex;
+        flex-direction:column;
+        flex:1;
+        gap:6px
+    
+    }
+
+    .card-category { 
+
+        font-size:10px;
+        letter-spacing:0.18em;
+        text-transform:uppercase;
+        color:var(--gold);
+        font-weight:500
+    
+    }
+
+    .card-name {
+        
+        font-family:'Cormorant Garamond',serif;
+        font-size:22px;
+        font-weight:600;
+        color:var(--cream);
+        line-height:1.2;
+        margin-bottom:4px
+    
+    }
+
+    .card-desc { 
+
+        font-size:13px;
+        color:var(--muted);
+        line-height:1.6;
+        font-weight:300;
+        flex:1;
+        margin-bottom:10px
+    
+    }
+
+    .stock-wrap { 
+
+        margin-bottom:10px
+    
+    }
+
+    .stock-top {
+        
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        margin-bottom:5px
+    
+    }
+
+    .stock-label {
+        
+        font-size:10px;
+        letter-spacing:0.1em;
+        text-transform:uppercase;color:var(--muted)
+    
+    }
+    
+    .stock-text { 
+
+        font-size:10px;font-weight:500
+    
+    }
+
+    .stock-text.s-green {
+        
+        color:var(--green-lt)
+    
+    }
+
+    .stock-text.s-amber {
+        
+        color:var(--amber)
+    
+    }
+
+    .stock-text.s-red {
+        
+        color:var(--red)
+    
+    }
+
+    .stock-bar-bg {
+        
+        height:3px;
+        background:var(--border);
+        border-radius:2px;
+        overflow:hidden
+    
+    }
+
+    .stock-bar-fill {
+        
+        height:100%;
+        border-radius:2px;
+        transition:width 0.4s ease
+    
+    }
+
+    .stock-bar-fill.s-green { 
+
+        background:var(--green-lt)
+    
+    }
+
+    .stock-bar-fill.s-amber {
+        
+        background:var(--amber)
+    
+    }
+
+    .stock-bar-fill.s-red {
+        
+        background:var(--red)
+    
+    }
+    .card-footer {
+        
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        padding-top:16px;border-top:1px solid var(--border);
+        margin-top:auto
+    
+    }
+
+    .card-price { 
+
+        font-family:'Cormorant Garamond',serif;
+        font-size:26px;
+        font-weight:700;
+        color:var(--gold);
+        letter-spacing:-0.01em
+    
+    }
+
+    .card-price span { 
+
+        font-size:14px;
+        font-weight:400;
+        font-family:'Jost',sans-serif;
+        color:var(--muted);
+        margin-right:2px
+    
+    }
+
+    .add-btn {
+        
+        display:flex;
+        align-items:center;
+        gap:8px;
+        padding:10px 18px;
+        background:var(--green);
+        border:none;
+        border-radius:3px;
+        font-family:'Jost',sans-serif;
+        font-size:12.5px;
+        font-weight:500;
+        letter-spacing:0.08em;
+        text-transform:uppercase;
+        color:#fff;
+        cursor:pointer;
+        transition:background 0.2s,transform 0.15s;
+        position:relative;
+        overflow:hidden
+    
+    }
+
+    .add-btn:hover { 
+
+        background:var(--green-lt)
+    
+    }
+
+    .add-btn:active { 
+
+        transform:scale(0.95)
+    
+    }
+
+    .add-btn.added { 
+
+        background:var(--gold);color:#000
+    
+    }
+
+    .add-btn:disabled {
+        
+        background:var(--muted);
+        cursor:not-allowed;
+        opacity:0.5
+    
+    }
+    
+    .add-btn .ripple { 
+
+        position:absolute;
+        border-radius:50%;
+        background:rgba(255,255,255,0.3);
+        transform:scale(0);
+        animation:ripple 0.5s linear;
+        pointer-events:none
+    
+    }
+
+    @keyframes ripple { 
+
+        to {
+            
+        transform:scale(4);
+        opacity:0
+    
+        }
+
+    }
+
+/* EMPTY */
+
+    .empty-state {
+        
+        text-align:center;
+        padding:80px 20px;
+        color:var(--muted)
+    
+    }
+
+    .empty-state svg {
+        
+        opacity:0.2;
+        margin-bottom:20px
+
+    }
+
+    .empty-state h3 { 
+
+        font-family:'Cormorant Garamond',serif;
+        font-size:26px;color:var(--text);
+        margin-bottom:8px
+    
+    }
+
+/* PAGINATION */
+
+    .pagination-wrap { 
+
+        position:relative;
+        z-index:1;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        gap:14px;
+        padding:32px 32px 80px
+    
+    }
+
+    .pagination-info { 
+
+        font-size:11px;
+        letter-spacing:0.12em;
+        text-transform:uppercase;
+        color:var(--muted)
+    
+    }
+
+    .pagination {
+        
+        display:flex;
+        align-items:center;
+        gap:6px;
+        flex-wrap:wrap;
+        justify-content:center
+    
+    }
+
+    .page-btn { 
+
+        font-family:'Jost',sans-serif;
+        font-size:13px;
+        font-weight:500;
+        min-width:38px;
+        height:38px;
+        padding:0 12px;
+        border-radius:3px;
+        border:1px solid var(--border);
+        background:transparent;
+        color:var(--muted);
+        cursor:pointer;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        transition:all 0.2s ease
+    
+    }
+
+    .page-btn:hover:not(:disabled) { 
+
+        border-color:var(--gold-dim);
+        color:var(--gold);
+        background:rgba(201,168,76,0.07)
+    
+    }
+
+    .page-btn.active { 
+        border-color:var(--gold);
+        color:var(--gold);
+        background:rgba(201,168,76,0.12)
+    
+    }
+
+    .page-btn:disabled {
+        
+        opacity:0.3;
+        cursor:not-allowed
+    
+    }
+
+    .page-ellipsis {
+        
+        color:var(--muted);
+        padding:0 4px;
+        font-size:14px;
+        line-height:38px
+    
+    }
+
+/* TOAST */
+
+    #toast { 
+
+        position:fixed;
+        bottom:30px;
+        right:30px;
+        z-index:999;
+        background:var(--card);
+        border:1px solid var(--gold-dim);
+        border-radius:4px;
+        padding:14px 20px;
+        display:flex;
+        align-items:center;
+        gap:12px;
+        font-size:14px;
+        color:var(--cream);
+        box-shadow:0 8px 32px rgba(0,0,0,0.5);
+        transform:translateY(20px);
+        opacity:0;
+        transition:all 0.3s ease;
+        pointer-events:none
+    
+    }
+
+    #toast.show { 
+
+        transform:translateY(0);
+        opacity:1
+    
+    }
+
+    #toast .t-icon { 
+
+        color:var(--green-lt);
+        flex-shrink:0
+    
+    }
+    
+    #toast.error .t-icon { 
+
+        color:var(--red)
+    
+    }
+
+/* LOGIN PROMPT MODAL */
+
+    #loginPrompt { 
+
+        position:fixed;
+        inset:0;
+        z-index:300;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:rgba(0,0,0,0.7);
+        backdrop-filter:blur(6px);
+        opacity:0;
+        pointer-events:none;
+        transition:opacity 0.3s ease
+    
+    }
+
+    #loginPrompt.show {
+        
+        opacity:1;
+        pointer-events:all
+    
+    }
+
+    .login-prompt-card {
+        
+        background:var(--card);
+        border:1px solid var(--border);
+        border-radius:6px;
+        padding:36px 32px;
+        max-width:380px;
+        width:90%;
+        text-align:center;
+        transform:translateY(20px);
+        transition:transform 0.3s ease
+    
+    }
+
+    #loginPrompt.show .login-prompt-card {
+        
+        transform:translateY(0)
+    
+    }
+
+    .login-prompt-card h3 {
+        
+        font-family:'Cormorant Garamond',serif;
+        font-size:26px;
+        font-weight:700;
+        color:var(--cream);
+        margin-bottom:10px
+    
+    }
+
+    .login-prompt-card h3 em {
+        
+        font-style:italic;
+        color:var(--gold)
+    
+    }
+
+    .login-prompt-card p {
+        
+        font-size:13.5px;
+        color:var(--muted);
+        line-height:1.6;
+        margin-bottom:24px
+    
+    }
+
+    .lp-btns { 
+
+        display:flex;
+        gap:10px;
+        justify-content:center
+    
+    }
+
+    .lp-btn-primary {
+        
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        padding:11px 24px;
+        background:var(--green);
+        border:none;
+        border-radius:3px;
+        font-family:'Jost',sans-serif;
+        font-size:13px;
+        font-weight:500;
+        letter-spacing:0.08em;
+        text-transform:uppercase;
+        color:#fff;
+        text-decoration:none;
+        cursor:pointer;
+        transition:background 0.2s
+    
+    }
+
+    .lp-btn-primary:hover {
+        
+        background:var(--green-lt)
+    
+    }
+
+    .lp-btn-ghost {
+        
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        padding:11px 24px;
+        border:1px solid var(--border);
+        border-radius:3px;
+        font-family:'Jost',sans-serif;
+        font-size:13px;
+        font-weight:500;
+        letter-spacing:0.08em;
+        text-transform:uppercase;
+        color:var(--muted);
+        text-decoration:none;
+        cursor:pointer;
+        background:transparent;
+        transition:all 0.2s
+    
+    }
+
+    .lp-btn-ghost:hover {
+        
+        border-color:var(--gold-dim);
+        color:var(--gold)
+    
+    }
+
+    .lp-close {
+        
+        position:absolute;
+        top:14px;
+        right:14px;
+        width:28px;
+        height:28px;
+        border:1px solid var(--border);
+        border-radius:50%;
+        background:transparent;
+        color:var(--muted);
+        cursor:pointer;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        transition:all 0.2s
+    
+    }
+
+    .lp-close:hover { 
+
+        border-color:var(--gold-dim);
+        color:var(--cream)
+    
+    }
+
+    .login-prompt-card {
+        
+        position:relative
+    
+    }
 
     footer {
-        
+
         position:relative;
         z-index:1;
         border-top:1px solid var(--border);
@@ -939,31 +1551,80 @@ $categories = $branch === 'manila'
         text-align:center
     
     }
+    footer p { 
 
-    footer p {
-        
         font-size:12px;
         color:var(--muted);
         letter-spacing:0.06em
     
     }
 
-    footer p span {
-        
+    footer p span { 
+
         color:var(--gold-dim)
     
     }
-
+ 
     @media(max-width:640px) {
 
-        .header-inner{padding:0 16px}
-        .brand-name{font-size:18px}
-        .hero{padding:60px 20px 50px}
-        .menu-section{padding:0 16px 40px}
-        .menu-grid{grid-template-columns:1fr;gap:16px}
-        .pagination-wrap{padding:24px 16px 60px}
-        .branch-bar{padding:16px 16px 0}
+        .header-inner { 
 
+            padding:0 16px
+        
+        }
+
+        .brand-name {
+            
+            font-size:18px
+        
+        }
+
+        .hero {
+            
+            padding:60px 20px 50px
+        
+        }
+
+        .menu-section {
+            
+            padding:0 16px 40px
+        
+        }
+
+        .menu-grid {
+            
+            grid-template-columns:1fr;
+            gap:16px
+        
+        }
+
+        .pagination-wrap { 
+
+            padding:24px 16px 60px
+        
+        }
+
+        .branch-bar { 
+
+            padding:16px 16px 0
+        
+        }
+
+    }
+
+    footer a {
+
+        color: var(--gold);
+        text-decoration: none;
+        transition: color 0.2s ease;
+
+    }
+
+    footer a:hover {
+
+        color: var(--cream);
+        text-decoration: underline;
+        
     }
 
 </style>
@@ -1007,6 +1668,13 @@ $categories = $branch === 'manila'
             Manila Branch
         </a>
 
+        <div class="sb-divider"></div>
+        <div class="sb-nav-label">Industry</div>
+        <a href="includes/hotel-industry.php" class="sb-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Hotel Business
+        </a>
+
         <?php if ($isLoggedIn): ?>
         <div class="sb-divider"></div>
         <div class="sb-nav-label">Account</div>
@@ -1017,12 +1685,6 @@ $categories = $branch === 'manila'
         <a href="dashboard.php" class="sb-link">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             Dashboard
-        </a>
-        <div class="sb-divider"></div>
-        <div class="sb-nav-label"> Other Industries </div>
-        <a href="includes/hotel-industry.php" class="sb-link">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            Hotel Business
         </a>
         <div class="sb-divider"></div>
         <div class="sb-nav-label">Orders</div>
@@ -1040,8 +1702,6 @@ $categories = $branch === 'manila'
             <span class="sb-badge" id="sidebarCartCount">0</span>
         </a>
         <?php else: ?>
-        <div class="sb-divider"></div>
-        <div class="sb-nav-label"> Other Industries </div>
         <div class="sb-divider"></div>
         <div class="sb-nav-label">Orders</div>
         <a href="cart.php" class="sb-link">
@@ -1214,7 +1874,11 @@ $categories = $branch === 'manila'
     </div>
 </div>
 
-<footer><p>© 2026 <span>My AyosCoffeeNegosyo</span> — All rights reserved.</p></footer>
+<!-- ═══════════════════════ FOOTER ═══════════════════════ -->
+<footer>
+    <p>© 2026 <span>My AyosCoffeeNegosyo</span> — All rights reserved.</p>
+    <p>Developed by: <a href="https://www.instagram.com/_theprnx.gvara/" target="_blank" rel="noopener noreferrer">Prince Edward Guevara</a></p>
+</footer>
 
 <script>
 const isLoggedIn = <?= $isLoggedIn ? 'true' : 'false' ?>;
@@ -1228,200 +1892,70 @@ sidebarClose.addEventListener('click',closeSidebar);
 sidebarOverlay.addEventListener('click',closeSidebar);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSidebar();closeLoginPrompt()}});
 
-    // Login prompt
-    function showLoginPrompt() {
+// Login prompt
+function showLoginPrompt(){document.getElementById('loginPrompt').classList.add('show')}
+function closeLoginPrompt(){document.getElementById('loginPrompt').classList.remove('show')}
+document.getElementById('loginPrompt').addEventListener('click',function(e){if(e.target===this)closeLoginPrompt()});
 
-        document.getElementById('loginPrompt')
-        .classList.add('show')
+// Grid
+const ITEMS_PER_PAGE=6;
+let currentPage=1,currentFilter='all';
+const allCards=Array.from(document.querySelectorAll('.menu-card'));
+const grid=document.getElementById('menuGrid');
 
-    }
-
-    function closeLoginPrompt() {
-        
-        document.getElementById('loginPrompt')
-        .classList.remove('show')
-
-    }
-
-    document.getElementById('loginPrompt')
-    .addEventListener('click',function(e) {
-        
-        if(e.target===this)closeLoginPrompt()
-        
-        }
-    );
-
-    // Grid
-        const ITEMS_PER_PAGE=6;
-
-        let currentPage=1,
-        currentFilter='all';
-
-        const allCards=Array.from(document.querySelectorAll('.menu-card'));
-        const grid=document.getElementById('menuGrid');
-
-    function renderGrid(animate=true) {
-
-        const filtered=currentFilter==='all'?allCards:allCards.filter(c=>c.dataset.category===currentFilter);
-        const totalItems=filtered.length,totalPages=Math.max(1,Math.ceil(totalItems/ITEMS_PER_PAGE));
-
-    if (currentPage>totalPages)currentPage=totalPages;
-
-        const start=(currentPage-1)*ITEMS_PER_PAGE,end=start+ITEMS_PER_PAGE,pageCards=filtered.slice(start,end);
-
-    if (animate) {
-
+function renderGrid(animate=true){
+    const filtered=currentFilter==='all'?allCards:allCards.filter(c=>c.dataset.category===currentFilter);
+    const totalItems=filtered.length,totalPages=Math.max(1,Math.ceil(totalItems/ITEMS_PER_PAGE));
+    if(currentPage>totalPages)currentPage=totalPages;
+    const start=(currentPage-1)*ITEMS_PER_PAGE,end=start+ITEMS_PER_PAGE,pageCards=filtered.slice(start,end);
+    if(animate){
         grid.classList.add('fading');
-
-        setTimeout(()=>{applyVis(allCards,pageCards);grid.classList.remove('fading');
-        pageCards.forEach((c,i)=>{c.classList.remove('visible');
-        
-            setTimeout(()=>c.classList.add('visible'),i*60)})},250);
-
-    } else { 
-        
-        applyVis(allCards,pageCards);
-        pageCards.forEach((c,i)=>setTimeout(()=>c.classList.add('visible'),i*60))
-    
-    }
-
+        setTimeout(()=>{applyVis(allCards,pageCards);grid.classList.remove('fading');pageCards.forEach((c,i)=>{c.classList.remove('visible');setTimeout(()=>c.classList.add('visible'),i*60)})},250);
+    }else{applyVis(allCards,pageCards);pageCards.forEach((c,i)=>setTimeout(()=>c.classList.add('visible'),i*60))}
     renderPagUI(totalItems,totalPages,start,end);
-
 }
-
-    function applyVis(all,pageCards) {
-
-        all.forEach(c=>{c.classList.remove('visible');
-        c.style.display='none'
-    
-        }
-    );
-    
-        pageCards.forEach(c=>c.style.display='')
-    
+function applyVis(all,pageCards){all.forEach(c=>{c.classList.remove('visible');c.style.display='none'});pageCards.forEach(c=>c.style.display='')}
+function renderPagUI(totalItems,totalPages,start,end){
+    const wrap=document.getElementById('paginationWrap'),infoEl=document.getElementById('paginationInfo'),paginEl=document.getElementById('pagination');
+    wrap.style.display=totalPages<=1?'none':'flex';
+    infoEl.textContent='Showing '+(start+1)+'–'+Math.min(end,totalItems)+' of '+totalItems+' items';
+    paginEl.innerHTML='';
+    const prev=mkBtn('←',currentPage===1);
+    prev.addEventListener('click',()=>{currentPage--;renderGrid();scrollUp()});paginEl.appendChild(prev);
+    for(let i=1;i<=totalPages;i++){
+        if(totalPages>7&&i>2&&i<totalPages-1&&Math.abs(i-currentPage)>1){if(i===3||i===totalPages-2){const el=document.createElement('span');el.className='page-ellipsis';el.textContent='…';paginEl.appendChild(el)}continue}
+        const btn=mkBtn(i,false,i===currentPage);btn.addEventListener('click',()=>{currentPage=i;renderGrid();scrollUp()});paginEl.appendChild(btn);
     }
+    const next=mkBtn('→',currentPage===totalPages);next.addEventListener('click',()=>{currentPage++;renderGrid();scrollUp()});paginEl.appendChild(next);
+}
+function mkBtn(label,disabled,active){const btn=document.createElement('button');btn.className='page-btn'+(active?' active':'');btn.textContent=label;btn.disabled=!!disabled;return btn}
+function scrollUp(){document.querySelector('.filter-bar').scrollIntoView({behavior:'smooth',block:'start'})}
 
-    function renderPagUI(totalItems,totalPages,start,end) {
-
-        const wrap=document.getElementById('paginationWrap'),
-            infoEl=document.getElementById('paginationInfo'),
-            paginEl=document.getElementById('pagination');
-
-            wrap.style.display=totalPages<=1?'none':'flex';
-            infoEl.textContent='Showing '+(start+1)+'–'+Math.min(end,totalItems)+' of '+totalItems+' items';
-            paginEl.innerHTML='';
-
-        const prev=mkBtn('←',currentPage===1);
-
-        prev.addEventListener('click',()=>{
-            
-            currentPage--;renderGrid();
-                scrollUp()
-            
-        }
-        
-        );
-    
-            paginEl.appendChild(prev);
-
-        for (let i=1;i<=totalPages;i++) {
-
-            if (totalPages>7&&i>2&&i<totalPages-1&&Math.abs(i-currentPage)>1) {
-                
-                if (i===3||i===totalPages-2) {
-                    
-                    const el=document.createElement('span');
-                        el.className='page-ellipsis';
-                        el.textContent='…';
-                        paginEl.appendChild(el)
-                    
-                }
-            
-                continue
-        
-            }
-
-        const btn=mkBtn(i,false,i===currentPage);
-            btn.addEventListener('click',()=>{currentPage=i;
-            renderGrid();
-            scrollUp()
-    }
-    );
-            paginEl.appendChild(btn);
-    }
-
-        const next=mkBtn ('→',currentPage===totalPages);
-            next.addEventListener('click',()=>{
-                
-                currentPage++;renderGrid();
-                scrollUp()
-            
-            }
-        );
-        
-            paginEl.appendChild(next);
-
-    }
-
-    function mkBtn (label,disabled,active) {
-        
-        const btn=document.createElement('button');
-            btn.className='page-btn'+(active?' active':'');
-                btn.textContent=label;btn.disabled=!!disabled;return btn
-            
-    }
-
-    function scrollUp() {
-        
-        document.querySelector('.filter-bar').scrollIntoView( {
-            
-            behavior:'smooth',
-            block:'start'
-        }
-        )
-    }   
-
-    document.querySelectorAll('.filter-btn').forEach(btn=> {
-
-        btn.addEventListener('click',()=> {
-
-            document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-            btn.classList.add('active');currentFilter=btn.dataset.filter;currentPage=1;renderGrid(true);
-
-        }
-        );
-
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+        document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');currentFilter=btn.dataset.filter;currentPage=1;renderGrid(true);
     });
+});
 
 // Cart badge
-    function updateCartBadge() {
-
-        fetch('cart_handler.php?count=1').then(r=>r.json()).then(data=>{
-
-            const c=data.count||0;
-            document.getElementById('cartCount').textContent=c;
-            const sb=document.getElementById('sidebarCartCount');
-            if(sb)sb.textContent=c;
-
-        }).catch(()=>{});
-    }
-
-    updateCartBadge();
+function updateCartBadge(){
+    fetch('cart_handler.php?count=1').then(r=>r.json()).then(data=>{
+        const c=data.count||0;
+        document.getElementById('cartCount').textContent=c;
+        const sb=document.getElementById('sidebarCartCount');
+        if(sb)sb.textContent=c;
+    }).catch(()=>{});
+}
+updateCartBadge();
 
 // Add to cart
-    function addToCart(id,btn) {
-
-        const ripple=document.createElement('span');
-            ripple.className='ripple';
-
-        const rect=btn.getBoundingClientRect(),
-            size=Math.max(rect.width,rect.height);
-
-        ripple.style.cssText='width:'+size+'px;height:'+size+'px;left:'+((rect.width-size)/2)+'px;top:'+((rect.height-size)/2)+'px';
-
-        btn.appendChild(ripple);
-        setTimeout(()=>ripple.remove(),600);
-        btn.disabled=true;
+function addToCart(id,btn){
+    const ripple=document.createElement('span');ripple.className='ripple';
+    const rect=btn.getBoundingClientRect(),size=Math.max(rect.width,rect.height);
+    ripple.style.cssText='width:'+size+'px;height:'+size+'px;left:'+((rect.width-size)/2)+'px;top:'+((rect.height-size)/2)+'px';
+    btn.appendChild(ripple);setTimeout(()=>ripple.remove(),600);
+    btn.disabled=true;
 
     fetch('cart_handler.php?add='+id).then(r=>r.json()).then(data=>{
         if(data.success){
