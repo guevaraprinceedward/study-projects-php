@@ -1,4 +1,4 @@
-    <?php
+<?php
 include_once 'hotel-config.php';
 $activePage = 'about';
 ?>
@@ -106,6 +106,35 @@ $activePage = 'about';
 .fam-mother .fm-val{font-family:var(--f-serif);font-size:16px;color:var(--h-text)}
 @media(max-width:820px){ .family-grid{grid-template-columns:1fr} .fam-photo{max-width:320px;margin:0 auto} }
 
+/* ── Father's extended story ── */
+.fam-story{margin-top:64px;padding-top:56px;border-top:1px solid var(--h-line)}
+.fam-story-head{display:flex;align-items:baseline;gap:14px;margin-bottom:8px}
+.fam-story-head .fs-eyebrow{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--h-gold)}
+.fam-story-head .fs-years{font-family:var(--f-serif);font-style:italic;font-size:13px;color:var(--h-gold-dim)}
+.fam-story h3{font-family:var(--f-serif);font-size:28px;color:var(--h-champagne);margin-bottom:28px}
+.fam-story-body{display:grid;grid-template-columns:1.15fr 0.85fr;gap:56px}
+.fam-story-body p{font-size:14px;line-height:1.9;color:var(--h-text);font-weight:300;margin-bottom:18px}
+.fam-story-body p:first-child::first-letter{font-family:var(--f-serif);font-size:50px;font-weight:600;color:var(--h-gold);float:left;line-height:.78;padding:6px 10px 0 0}
+.fam-ventures{background:var(--h-card);border:1px solid var(--h-line);border-radius:4px;padding:24px 24px 8px;align-self:start}
+.fam-ventures h5{font-family:var(--f-serif);font-size:14px;font-style:italic;color:var(--h-gold);margin-bottom:16px}
+.fam-venture-item{padding:14px 0;border-bottom:1px solid var(--h-line)}
+.fam-venture-item:last-child{border-bottom:none}
+.fam-venture-item .fv-name{font-size:13px;color:var(--h-champagne);font-family:var(--f-serif);margin-bottom:3px}
+.fam-venture-item .fv-desc{font-size:11.5px;color:var(--h-muted);line-height:1.6;font-weight:300}
+
+.fam-pullquote{margin:44px 0;padding:36px 40px;background:linear-gradient(160deg,rgba(207,167,107,0.06),transparent 60%);border-left:2px solid var(--h-gold);border-radius:2px}
+.fam-pullquote p{font-family:var(--f-serif);font-style:italic;font-size:17px;line-height:1.75;color:var(--h-champagne);margin-bottom:14px}
+.fam-pullquote .fq-attr{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--h-gold-dim)}
+
+.fam-legacy{margin-top:8px}
+.fam-legacy h5{font-family:var(--f-serif);font-size:15px;font-style:italic;color:var(--h-gold);margin-bottom:18px}
+.fam-mentor-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.fam-mentor-card{border:1px solid var(--h-line);border-radius:4px;padding:16px 18px;background:rgba(255,255,255,0.015)}
+.fam-mentor-card .fm-num{font-family:var(--f-serif);font-style:italic;font-size:11px;color:var(--h-gold-dim);margin-bottom:6px}
+.fam-mentor-card .fm-title{font-size:12.5px;color:var(--h-champagne);font-family:var(--f-serif)}
+@media(max-width:820px){ .fam-story-body{grid-template-columns:1fr} .fam-mentor-grid{grid-template-columns:1fr 1fr} }
+@media(max-width:560px){ .fam-mentor-grid{grid-template-columns:1fr} .fam-pullquote{padding:26px 22px} }
+
 /* ── Skills ── */
 .skills-layout{display:grid;grid-template-columns:1fr 1fr;gap:60px}
 .skill-block h4{font-family:var(--f-serif);font-size:17px;color:var(--h-gold);margin-bottom:18px;font-style:italic}
@@ -163,16 +192,17 @@ $activePage = 'about';
 }
 
 /* ── Monte Carlo panel ── */
-.mc-panel{display:grid;grid-template-columns:0.8fr 1.2fr;gap:54px;align-items:center;background:linear-gradient(160deg,rgba(207,167,107,0.05),var(--h-card) 60%);border:1px solid var(--h-line);border-radius:6px;padding:52px}
-.mc-badge{background:#ffffff;border-radius:6px;padding:38px 30px;display:flex;align-items:center;justify-content:center}
-.mc-badge img{width:100%;max-width:220px;object-fit:contain}
+.mc-panel{background:linear-gradient(160deg,rgba(207,167,107,0.05),var(--h-card) 60%);border:1px solid var(--h-line);border-radius:6px;padding:44px;display:flex;flex-direction:column;gap:38px}
+.mc-shot .browser-frame{box-shadow:0 30px 70px rgba(0,0,0,.5)}
+.mc-shot .browser-shot{max-height:none}
+.mc-lower{display:grid;grid-template-columns:0.8fr 1.2fr;gap:54px;align-items:start}
 .mc-copy .mc-eyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--h-gold-dim);margin-bottom:12px}
 .mc-copy h3{font-family:var(--f-serif);font-size:27px;color:var(--h-champagne);margin-bottom:14px}
 .mc-copy p{font-size:13.5px;line-height:1.85;color:var(--h-muted);font-weight:300;margin-bottom:16px}
 .mc-roles{display:flex;flex-direction:column;gap:10px}
 .mc-role-line{display:flex;gap:12px;font-size:12.5px;color:var(--h-text)}
 .mc-role-line b{color:var(--h-gold);font-family:var(--f-serif);font-weight:600;flex-shrink:0;width:170px}
-@media(max-width:820px){ .mc-panel{grid-template-columns:1fr;padding:34px 26px} }
+@media(max-width:820px){ .mc-panel{padding:26px} .mc-lower{grid-template-columns:1fr} }
 
 /* ── Vision / philosophy ── */
 .vision-wrap{text-align:center;max-width:820px;margin:0 auto}
@@ -234,6 +264,7 @@ $activePage = 'about';
             <div class="dh-roles">
                 <span class="dh-role-pill">Founder</span>
                 <span class="dh-role-pill">Technology Leader</span>
+                <span class="dh-role-pill">Tech Prodigy</span>
                 <span class="dh-role-pill">Programmer Developer</span>
                 <span class="dh-role-pill">Editor Trainee</span>
             </div>
@@ -297,7 +328,7 @@ $activePage = 'about';
             <h3>Father</h3>
             <div class="fam-name">Rogelio Calderon Guevara</div>
             <div class="fam-tags">
-                <span class="fam-tag">Founder &amp; CEO, Monte Carlo Group of Companies</span>
+                <span class="fam-tag">Founder &amp; Chairman, Monte Carlo Group of Companies — Est. 1984</span>
                 <span class="fam-tag">Former CIS Investigator</span>
                 <span class="fam-tag">Geodetic Engineer</span>
                 <span class="fam-tag">Attorney</span>
@@ -309,6 +340,59 @@ $activePage = 'about';
             <div class="fam-mother">
                 <span class="fm-label">Mother</span>
                 <span class="fm-val">Jane S. Mendoza — Housewife</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Father's extended story ── -->
+    <div class="fam-story">
+        <div class="fam-story-head">
+            <span class="fs-eyebrow">In His Own Chapter</span>
+            <span class="fs-years">Monte Carlo Group of Companies &middot; Est. 1984</span>
+        </div>
+        <h3>The Man Behind the Name</h3>
+
+        <div class="fam-story-body">
+            <div>
+                <p>Rogelio Calderon Guevara was an extraordinary entrepreneur, visionary leader, and philanthropist who dedicated his life to building businesses, empowering communities, and shaping future generations. As the Founder of the Monte Carlo Group of Companies, established in 1984, he transformed a single vision into a respected organization that served clients across the Philippines and internationally.</p>
+                <p>What distinguished him was not merely his intelligence, but his unwavering determination, strategic mindset, and exceptional leadership. He began with limited resources and without relying on the support of influential people — through discipline, resilience, and countless sacrifices, he laid the foundation of a company that would later expand into multiple industries and branches throughout the Philippines.</p>
+                <p>His path was never easy. While carrying the responsibility of supporting a large family and ensuring his children's education, he also managed demanding business operations and the needs of countless clients. There were moments when the weight of it all nearly forced him to abandon everything he had built. He chose courage over defeat — and that conviction became the cornerstone of everything he later built.</p>
+                <p>Beyond business, he devoted himself to humanitarian service — an active member of the Lions Clubs International and the Fraternal Order of Eagles, leading Medical Missions that brought free healthcare to underprivileged Filipino families, and supporting Brigada Eskwela with school supplies for children who needed them most. For Rogelio, success was never measured solely by profit, but by the people he empowered along the way.</p>
+            </div>
+
+            <div class="fam-ventures">
+                <h5>Ventures Built</h5>
+                <div class="fam-venture-item">
+                    <div class="fv-name">Monte Carlo Group of Companies</div>
+                    <div class="fv-desc">Founded 1984 — expanded across multiple industries and branches nationwide.</div>
+                </div>
+                <div class="fam-venture-item">
+                    <div class="fv-name">Monte Carlo Farm</div>
+                    <div class="fv-desc">A resort built through years of dedication, sacrifice, and hard work.</div>
+                </div>
+                <div class="fam-venture-item">
+                    <div class="fv-name">Monte Carlo Executive Villa</div>
+                    <div class="fv-desc">An elegant residential community built on comfort, security, and a refined lifestyle.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="fam-pullquote">
+            <p>"My son, always remember that no matter how difficult life becomes — no matter how deeply you feel defeated — never allow hardship to define your future. Instead, transform every setback into the fuel that strengthens your heart and sharpens your determination. Every great leader experiences moments of exhaustion, doubt, and mental struggle. I have faced those challenges myself. What separates successful people is not the absence of hardship, but the courage to continue despite it."</p>
+            <div class="fq-attr">— Rogelio Calderon Guevara, to his son</div>
+        </div>
+
+        <div class="fam-legacy">
+            <h5>How He Shaped Me</h5>
+            <p style="font-size:13.5px;line-height:1.85;color:var(--h-muted);font-weight:300;max-width:760px;margin-bottom:22px">Among his children is his son, Prince Edward Guevara — affectionately known as <em style="color:var(--h-champagne);font-style:italic">"Dokdok."</em> My father personally mentored me across the areas below, always insisting that true leadership begins with humility, integrity, and inspiring others through action rather than words. Every principle I carry into AyosCoffeeNegosyo, Noctrune, and my work at Monte Carlo Technologies traces back to lessons he taught me long before I ever wrote a line of code.</p>
+            <div class="fam-mentor-grid">
+                <div class="fam-mentor-card"><div class="fm-num">01</div><div class="fm-title">Humanitarian & Great Leadership</div></div>
+                <div class="fam-mentor-card"><div class="fm-num">02</div><div class="fm-title">Professional Communication</div></div>
+                <div class="fam-mentor-card"><div class="fm-num">03</div><div class="fm-title">Strategic Thinking</div></div>
+                <div class="fam-mentor-card"><div class="fm-num">04</div><div class="fm-title">Business Development</div></div>
+                <div class="fam-mentor-card"><div class="fm-num">05</div><div class="fm-title">Professionalism in Several Aspects</div></div>  
+                <div class="fam-mentor-card"><div class="fm-num">06</div><div class="fm-title">Kindness &amp; Respect for Others</div></div>
+                <div class="fam-mentor-card"><div class="fm-num">07</div><div class="fm-title">Case Problem Solving</div></div>
             </div>
         </div>
     </div>
@@ -470,7 +554,7 @@ $activePage = 'about';
         <div class="ds-tag"><span class="ds-num">VI.</span><div><span class="ds-eyebrow">Professional Home</span><h2>Monte Carlo<br>Technologies</h2></div></div>
         <p class="ds-lede">An early professional environment that continues to sharpen both the technical and creative sides of the craft.</p>
     </div>
- 
+
     <div class="mc-panel">
         <div class="mc-shot">
             <div class="browser-frame">
@@ -494,6 +578,30 @@ $activePage = 'about';
                     <div class="mc-role-line"><b>Member</b><span>Contributing to technology-related projects across the organization.</span></div>
                 </div>
             </div>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════ VII. VISION & PHILOSOPHY ══════════ -->
+<section class="dossier-section" id="vision">
+    <div class="ds-head">
+        <div class="ds-tag"><span class="ds-num">VII.</span><div><span class="ds-eyebrow">Looking Ahead</span><h2>Vision &amp;<br>Philosophy</h2></div></div>
+        <p class="ds-lede">Success built through discipline, consistency, humility, and continuous self-improvement.</p>
+    </div>
+
+    <div class="vision-wrap">
+        <p class="vision-quote">Every challenge presents an opportunity to learn. Every mistake becomes a valuable lesson. Every project represents another step toward excellence.</p>
+        <div class="vision-attr">Professional Philosophy</div>
+
+        <div class="goals-grid">
+            <div class="goal-cell"><span class="gc-num">01</span><p>Become a professional Software Engineer</p></div>
+            <div class="goal-cell"><span class="gc-num">02</span><p>Develop enterprise-level business systems</p></div>
+            <div class="goal-cell"><span class="gc-num">03</span><p>Expand full-stack development expertise</p></div>
+            <div class="goal-cell"><span class="gc-num">04</span><p>Strengthen leadership &amp; project management</p></div>
+            <div class="goal-cell"><span class="gc-num">05</span><p>Keep learning emerging technologies</p></div>
+            <div class="goal-cell"><span class="gc-num">06</span><p>Build scalable, real-world web apps</p></div>
+            <div class="goal-cell"><span class="gc-num">07</span><p>Collaborate with innovation-driven teams</p></div>
+            <div class="goal-cell"><span class="gc-num">08</span><p>Create technology with lasting impact</p></div>
         </div>
     </div>
 </section>
