@@ -433,6 +433,8 @@ $activePage = 'about';
                     <span class="chip lang">PHP</span>
                     <span class="chip lang">jQuery</span>
                     <span class="chip lang">SQL</span>
+                    <span class="chip lang">JAVA</span>
+
                 </div>
             </div>
         </div>
