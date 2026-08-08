@@ -44,7 +44,7 @@ if (is_logged_in()) {
             <li><a href="<?= SITE_URL ?>/about.php">Maison</a></li>
         </ul>
 
-        <a href="<?= SITE_URL ?>/index.php" class="nav-logo">The Atelier Noir</a>
+        <a href="<?= SITE_URL ?>/index.php" class="nav-logo">The Atelier Noir   </a>
 
         <div class="nav-actions">
             <a class="nav-icon-btn" aria-label="Wishlist" href="<?= SITE_URL ?>/customer/wishlist.php">

@@ -470,7 +470,7 @@ $activePage = 'about';
             </div>
             <div class="org-item">
                 <div class="org-role">Tech Lead / Main Programmer</div>
-                <div class="org-body"><h5>AyosCoffeeNegosyo &amp; Noctrune</h5><p>Leading system architecture, front-end and back-end development, database structure, and continuous feature planning.</p></div>
+                <div class="org-body"><h5>AyosCoffeeNegosyo &amp; Noctrune </h5><p>Leading system architecture, front-end and back-end development, database structure, and continuous feature planning.</p></div>
             </div>
             <div class="org-item">
                 <div class="org-role">Editor Trainee</div>
@@ -545,6 +545,31 @@ $activePage = 'about';
                 <li>Inventory &amp; supply tracking</li>
                 <li>Occupancy &amp; revenue reporting</li>
                 <li>Guest records &amp; booking history</li>
+            </ul>
+        </div>
+    </div>
+
+        <div class="venture">
+        <div class="venture-shot">
+            <div class="browser-frame">
+                <div class="browser-bar">
+                    <span class="browser-dot r"></span><span class="browser-dot y"></span><span class="browser-dot g"></span>
+                    <span class="browser-url">ayoscoffeenegosyo.com/menu</span>
+                </div>
+                <img class="browser-shot" src="images/about-the-atelier-noir.png" alt="The Atelier Noir menu interface">
+            </div>
+        </div>
+        <div class="venture-copy">
+            <div class="venture-eyebrow">Project III <span class="venture-role">&middot; Founder &amp; Tech Lead</span></div>
+            <h3>The Atelier Noir</h3>
+            <p>A modern fashion and essentials platform created to bring clothing, accessories, collections, and everyday essentials into one refined digital experience — giving customers a seamless way to discover their style, explore curated collections, and shop products while giving the brand a strong platform to showcase its identity.</p>
+            <ul class="venture-features">
+                <li>Curated Fashion Collections</li>
+                <li>Personalized &amp; Style Discovering</li>
+                <li>Clothing & Essentials Marketplace</li>
+                <li>Wishlist & Saved Items</li>
+                <li>Online product showcase</li>
+                <li>Shop-the-Look Experience</li>
             </ul>
         </div>
     </div>
