@@ -24,6 +24,7 @@ if (is_logged_in()) {
 <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/design-system.css">
 <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/navigation.css">
 <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/home.css">
+<link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/product-card.css">
 <?php if (!empty($extra_css)): ?><link rel="stylesheet" href="<?= e($extra_css) ?>"><?php endif; ?>
 </head>
 <body>
@@ -44,7 +45,7 @@ if (is_logged_in()) {
             <li><a href="<?= SITE_URL ?>/about.php">Maison</a></li>
         </ul>
 
-        <a href="<?= SITE_URL ?>/index.php" class="nav-logo">The Atelier Noir   </a>
+        <a href="<?= SITE_URL ?>/index.php" class="nav-logo">The Atelier Noir</a>
 
         <div class="nav-actions">
             <a class="nav-icon-btn" aria-label="Wishlist" href="<?= SITE_URL ?>/customer/wishlist.php">

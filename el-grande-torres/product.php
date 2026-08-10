@@ -93,6 +93,11 @@ require_once __DIR__ . '/includes/header.php';
             <p class="pd-desc"><?= e($product['short_description'] ?: substr(strip_tags($product['description'] ?? ''), 0, 200)) ?></p>
 
             <form id="addToCartForm" data-product-id="<?= $product['product_id'] ?>" data-product-type="<?= $store_type ?>">
+                <!-- FIX: hidden inputs so FormData() actually picks up product_id / product_type.
+                     data-* attributes on the <form> tag are NOT included by FormData(). -->
+                <input type="hidden" name="product_id" value="<?= $product['product_id'] ?>">
+                <input type="hidden" name="product_type" value="<?= $store_type ?>">
+
                 <?php if ($sizes): ?>
                 <div class="pd-option-group">
                     <h5>Size</h5>
