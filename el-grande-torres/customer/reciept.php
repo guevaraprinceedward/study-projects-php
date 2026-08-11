@@ -45,15 +45,15 @@ $payment_labels = ['cod' => 'Cash on Delivery', 'gcash' => 'GCash', 'maya' => 'M
 .receipt-head .status-ok { color: #8FC9A0; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; }
 .receipt-divider { display: flex; align-items: center; gap: 0.8rem; margin: 1.8rem 0; }
 .receipt-divider::before, .receipt-divider::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--border-color), transparent); }
-.receipt-diamond { width: 6px; height: 6px; background: var(--gold); transform: rotate(45deg); }
-.receipt-row { display: flex; justify-content: space-between; padding: 0.5rem 0; font-size: 0.88rem; }
-.receipt-row .lbl { color: var(--text-secondary); }
-.receipt-row .val { color: var(--text-primary); font-family: var(--font-display); font-size: 1rem; }
-.receipt-item-row { display: flex; justify-content: space-between; padding: 0.7rem 0; border-bottom: 1px dotted var(--border-color); font-size: 0.85rem; }
+.receipt-diamond { width: 6px; height: 6px; background: var(--gold); transform: rotate(45deg); flex-shrink: 0; }
+.receipt-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.5rem 0; font-size: 0.88rem; }
+.receipt-row .lbl { color: var(--text-secondary); flex-shrink: 0; }
+.receipt-row .val { color: var(--text-primary); font-family: var(--font-display); font-size: 1rem; text-align: right; }
+.receipt-item-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.7rem 0; border-bottom: 1px dotted var(--border-color); font-size: 0.85rem; }
 .receipt-item-row:last-child { border-bottom: none; }
 .receipt-totals .rt { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary); padding: 0.4rem 0; }
 .receipt-totals .rt.grand { border-top: 1px double var(--gold); margin-top: 0.8rem; padding-top: 1rem; font-size: 1.4rem; color: var(--gold); font-family: var(--font-display); }
-.receipt-actions { display: flex; gap: 1rem; justify-content: center; margin-top: 2.5rem; }
+.receipt-actions { display: flex; gap: 1rem; justify-content: center; margin-top: 2.5rem; flex-wrap: wrap; }
 @media print {
     body * { visibility: hidden; }
     .receipt-box, .receipt-box * { visibility: visible; }

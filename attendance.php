@@ -202,6 +202,7 @@ $isLateNow = !$todayRecord && $now > $shiftStart;
 
 $username = htmlspecialchars($_SESSION['user']['username'] ?? 'User');
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
