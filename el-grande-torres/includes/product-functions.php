@@ -7,7 +7,7 @@ function product_table(string $type): string {
     return $type === 'essentials' ? 'essentials_products' : 'clothing_products';
 }
 
-function query_products(string $store_type, array $filters = [], string $sort = 'newest', int $page = 1, int $per_page = 12): array {
+function query_products(string $store_type, array $filters = [], string $sort = 'newest', int $page = 1, int $per_page = 6): array {
     $db = getDB();
     $table = product_table($store_type);
     $where = ["p.status = 'active'"];
@@ -54,7 +54,7 @@ function query_products(string $store_type, array $filters = [], string $sort = 
         error_log('query_products error: ' . $e->getMessage());
         $items = []; $total = 0;
     }
-    return ['items' => $items, 'total' => $total, 'pages' => (int)ceil($total / $per_page)];
+    return ['items' => $items, 'total' => $total, 'pages' => max(1, (int)ceil($total / $per_page))];
 }
 
 function get_product_by_slug(string $store_type, string $slug): ?array {
@@ -92,4 +92,65 @@ function fetch_flagged_products(string $flag, int $limit = 8, ?string $gender = 
         $stmt->execute();
         return $stmt->fetchAll();
     } catch (Throwable $e) { return []; }
+}
+
+/**
+ * Combined, paginated query across BOTH clothing_products and
+ * essentials_products for a set of boolean flag columns (e.g.
+ * ['is_new_arrival'] or ['is_limited_edition']). Used by new-arrivals.php
+ * so New Arrivals / Limited Edition can show pieces from either store in
+ * one consistently-sized, paginated grid — matching the card size used on
+ * clothing.php and essentials.php (see product-card.css).
+ *
+ * $filters supports: gender ('men'|'women'|'unisex'), limited_only (bool)
+ */
+function query_combined_products(array $flags, array $filters = [], string $sort = 'newest', int $page = 1, int $per_page = 6): array {
+    $db = getDB();
+
+    $flagConds = [];
+    foreach ($flags as $f) {
+        $f = preg_replace('/[^a-z_]/', '', $f); // guard against anything unexpected
+        if ($f !== '') $flagConds[] = "p.$f = 1";
+    }
+    $flagSql = $flagConds ? '(' . implode(' OR ', $flagConds) . ')' : '1=1';
+
+    $gender = $filters['gender'] ?? null;
+    $genderSql = ($gender && in_array($gender, ['men', 'women', 'unisex'], true)) ? $db->quote($gender) : null;
+    $limitedOnly = !empty($filters['limited_only']);
+
+    $order = match ($sort) {
+        'price_asc'    => 'price ASC',
+        'price_desc'   => 'price DESC',
+        'best_selling' => 'sales_count DESC',
+        default        => 'created_at DESC',
+    };
+
+    $parts = [];
+    foreach (['clothing' => 'clothing_products', 'essentials' => 'essentials_products'] as $ptype => $table) {
+        $where = ["p.status = 'active'", $flagSql];
+        if ($genderSql) $where[] = "p.gender = $genderSql";
+        if ($limitedOnly) $where[] = "p.is_limited_edition = 1";
+        $whereSql = implode(' AND ', $where);
+        $parts[] = "(SELECT p.product_id, p.name, p.slug, p.price, p.compare_at_price, p.primary_image, p.gender,
+                        p.is_limited_edition, p.limited_edition_note, p.is_new_arrival, p.created_at, p.sales_count,
+                        '$ptype' AS ptype,
+                        (SELECT name FROM categories c WHERE c.category_id = p.category_id) AS cat_name
+                     FROM $table p
+                     WHERE $whereSql)";
+    }
+    $unionSql = implode(' UNION ALL ', $parts);
+
+    $offset = max(0, ($page - 1) * $per_page);
+    $finalSql = "SELECT * FROM ($unionSql) combined ORDER BY $order LIMIT $per_page OFFSET $offset";
+    $countSql = "SELECT COUNT(*) AS total FROM ($unionSql) combined";
+
+    try {
+        $items = $db->query($finalSql)->fetchAll();
+        $total = (int)($db->query($countSql)->fetch()['total'] ?? 0);
+    } catch (Throwable $e) {
+        error_log('query_combined_products error: ' . $e->getMessage());
+        $items = []; $total = 0;
+    }
+
+    return ['items' => $items, 'total' => $total, 'pages' => max(1, (int)ceil($total / $per_page))];
 }

@@ -19,13 +19,25 @@ $filters = [
 ];
 $sort = $_GET['sort'] ?? 'newest';
 $page = max(1, (int)($_GET['page'] ?? 1));
+$per_page = 6;
 
-$results = query_products($store_type, $filters, $sort, $page, 12);
+$results = query_products($store_type, $filters, $sort, $page, $per_page);
 $categories = get_categories($store_type);
 
 $page_title = "$store_label — El Grande De La Torres";
 $extra_css = SITE_URL . '/assets/css/shop.css';
 require_once __DIR__ . '/header.php';
+
+/** Build a query string for the tab links, preserving search but resetting page. */
+function tab_query_string(array $overrides): string {
+    $base = $_GET;
+    unset($base['page']);
+    foreach ($overrides as $k => $v) {
+        if ($v === null) { unset($base[$k]); } else { $base[$k] = $v; }
+    }
+    $qs = http_build_query($base);
+    return $qs ? '?' . $qs : '?';
+}
 ?>
 
 <div class="shop-header">
@@ -34,10 +46,11 @@ require_once __DIR__ . '/header.php';
     <p class="badge-count"><?= $results['total'] ?> pieces available</p>
 
     <div class="gender-tabs">
-        <a href="?" class="<?= empty($filters['gender']) ? 'active' : '' ?>">All</a>
-        <a href="?gender=men" class="<?= $filters['gender'] === 'men' ? 'active' : '' ?>">Men</a>
-        <a href="?gender=women" class="<?= $filters['gender'] === 'women' ? 'active' : '' ?>">Women</a>
-        <a href="?gender=unisex" class="<?= $filters['gender'] === 'unisex' ? 'active' : '' ?>">Unisex</a>
+        <a href="<?= tab_query_string(['gender' => null, 'limited_only' => null]) ?>" class="<?= empty($filters['gender']) && !$filters['limited_only'] ? 'active' : '' ?>">All</a>
+        <a href="<?= tab_query_string(['gender' => 'men', 'limited_only' => null]) ?>" class="<?= $filters['gender'] === 'men' && !$filters['limited_only'] ? 'active' : '' ?>">Men</a>
+        <a href="<?= tab_query_string(['gender' => 'women', 'limited_only' => null]) ?>" class="<?= $filters['gender'] === 'women' && !$filters['limited_only'] ? 'active' : '' ?>">Women</a>
+        <a href="<?= tab_query_string(['gender' => 'unisex', 'limited_only' => null]) ?>" class="<?= $filters['gender'] === 'unisex' && !$filters['limited_only'] ? 'active' : '' ?>">Unisex</a>
+        <a href="<?= tab_query_string(['limited_only' => 1]) ?>" class="<?= $filters['limited_only'] ? 'active' : '' ?>" style="border-color:var(--gold); color:var(--gold);">Limited Edition</a>
     </div>
 </div>
 
@@ -99,21 +112,24 @@ require_once __DIR__ . '/header.php';
             </div>
         <?php else: ?>
         <div class="product-grid">
-            <?php foreach ($results['items'] as $p): ?>
+            <?php foreach ($results['items'] as $p):
+                $has_discount = !empty($p['compare_at_price']) && (float)$p['compare_at_price'] > (float)$p['price'];
+            ?>
             <article class="product-card reveal">
                 <a href="<?= SITE_URL ?>/product.php?type=<?= $store_type ?>&slug=<?= e($p['slug']) ?>" class="product-card-media">
                     <div class="product-card-badges">
                         <?php if ($p['is_new_arrival']): ?><span class="badge-lux">New</span><?php endif; ?>
-                        <?php if ($p['is_limited_edition']): ?><span class="badge-limited">Limited</span><?php endif; ?>
+                        <?php if ($p['is_limited_edition']): ?><span class="badge-limited"><?= e($p['limited_edition_note'] ?: 'Limited Edition') ?></span><?php endif; ?>
+                        <?php if ($has_discount): ?><span class="badge-sale">-<?= round((1 - ((float)$p['price'] / (float)$p['compare_at_price'])) * 100) ?>%</span><?php endif; ?>
                     </div>
                     <img src="<?= e($p['primary_image']) ?>" alt="<?= e($p['name']) ?>" loading="lazy">
                     <button class="wish-btn" data-product-id="<?= $p['product_id'] ?>" data-product-type="<?= $store_type ?>" aria-label="Add to wishlist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg></button>
                     <button class="quick-add">Quick View</button>
                 </a>
                 <p class="product-card-cat"><?= e($p['category_name']) ?></p>
-                <h3 class="product-card-title"><?= e($p['name']) ?></h3>
+                <h3 class="product-card-title"><?= e($p['name']) ?><?= $p['is_limited_edition'] ? ' (Limited Edition)' : '' ?></h3>
                 <p class="product-card-price">
-                    <?php if ($p['compare_at_price']): ?><span class="was"><?= CURRENCY_SYMBOL . number_format($p['compare_at_price'], 2) ?></span><?php endif; ?>
+                    <?php if ($has_discount): ?><span class="was"><?= CURRENCY_SYMBOL . number_format($p['compare_at_price'], 2) ?></span><?php endif; ?>
                     <?= CURRENCY_SYMBOL . number_format($p['price'], 2) ?>
                 </p>
             </article>
