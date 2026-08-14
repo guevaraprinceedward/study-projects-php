@@ -2,8 +2,8 @@
 /**
  * about.php — The Atelier Noir
  *
- * Brand-new page (replaces the old founder-dossier adaptation entirely).
- * Requires: includes/testimonial-functions.php + database/about_testimonials.sql
+ * Requires: includes/testimonial-functions.php, includes/team-data.php,
+ *           database/about_testimonials.sql (+ about_testimonials_update.sql)
  */
 require_once __DIR__ . '/config/app.php';
 require_once __DIR__ . '/includes/testimonial-functions.php';
@@ -13,6 +13,10 @@ $meta_description = "Crafted with intention. Defined by you. The story, philosop
 require_once __DIR__ . '/includes/header.php';
 
 $testimonials = get_about_testimonials();
+
+$roster   = require __DIR__ . '/includes/team-data.php';
+$founders = $roster['founders'];
+$team     = $roster['team'];
 
 /** A small stylized laurel wreath, reused as a divider / brand mark. */
 function noir_laurel(int $w = 96, int $h = 48): string {
@@ -49,23 +53,20 @@ function noir_column(int $w = 60, int $h = 260): string {
     </svg>';
 }
 
-$founders = [
-    ['name' => 'Elizabeth Jeanel Torres', 'role' => 'Founder &amp; Owner &middot; UI/UX Consultant', 'initials' => 'EJT',
-     'bio' => 'Leading The Atelier Noir with a vision centered on refined fashion and thoughtful experiences. Elizabeth oversees the brand\'s direction while bringing a strong perspective in user experience and interface design.'],
-    ['name' => 'Prince Edward Guevara', 'role' => 'Founder &amp; Co-Owner &middot; Full-Stack Developer', 'initials' => 'PEG',
-     'bio' => 'Bringing technology and innovation into the foundation of The Atelier Noir. Prince develops and maintains the digital systems behind the brand, ensuring that its online experience remains functional, modern, and seamless.'],
-];
-
-$team = [
-    ['name' => 'Mark Andrei Vertudez', 'role' => 'Professional Marketing Strategist', 'initials' => 'MV',
-     'bio' => 'Shapes the strategies that connect The Atelier Noir with its audience. Mark focuses on positioning, marketing direction, and creating meaningful opportunities for the brand to grow.'],
-    ['name' => 'Ralf A. Arenas', 'role' => 'Feature &amp; Product Analyzer', 'initials' => 'RA',
-     'bio' => 'Examines products and platform features with a focus on functionality, relevance, and customer experience. Ralf helps ensure that every feature and offering provides meaningful value.'],
-    ['name' => 'Ckiel Abraham Eronico', 'role' => 'Social Media Strategist &amp; Client Communicator', 'initials' => 'CE',
-     'bio' => 'Strengthens the connection between The Atelier Noir and its community. Ckiel develops social media strategies while maintaining clear and meaningful communication with clients and audiences.'],
-    ['name' => 'Katherine Jasmine Gesmundo', 'role' => 'UI/UX Designer', 'initials' => 'KG',
-     'bio' => 'Transforms ideas into intuitive and visually refined digital experiences. Katherine focuses on creating interfaces that reflect the elegance of The Atelier Noir while keeping every interaction simple and engaging.'],
-];
+/** One face of the 3D coin motif — the page's signature element. */
+function noir_coin_face(string $glyph): string {
+    return '<svg viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
+        <defs>
+            <radialGradient id="coinGrad-' . $glyph . '" cx="35%" cy="30%" r="75%">
+                <stop offset="0%" stop-color="rgba(200,169,106,0.30)"/>
+                <stop offset="100%" stop-color="rgba(200,169,106,0.03)"/>
+            </radialGradient>
+        </defs>
+        <circle cx="60" cy="60" r="57" fill="url(#coinGrad-' . $glyph . ')" stroke="var(--gold)" stroke-width="1.4"/>
+        <circle cx="60" cy="60" r="47" fill="none" stroke="var(--gold)" stroke-width="0.7" opacity="0.55"/>
+        <text x="60" y="77" text-anchor="middle" font-family="Cinzel, serif" font-size="44" fill="var(--gold)">' . $glyph . '</text>
+    </svg>';
+}
 ?>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -75,8 +76,17 @@ $team = [
 .noir-kicker::before{ content:''; width:30px; height:1px; background:var(--gold); }
 .noir-kicker.center{ justify-content:center; }
 .noir-h2{ font-size:clamp(28px,4vw,46px); color:var(--text-primary); line-height:1.12; margin-bottom:1.4rem; }
+.noir-h2 em{ font-style:italic; color:var(--gold); font-weight:500; font-family:var(--font-serif); }
 .noir-h2.center{ text-align:center; }
 .center{ text-align:center; margin-left:auto; margin-right:auto; }
+
+/* Respect reduced-motion across every animation on this page */
+@media (prefers-reduced-motion: reduce){
+    .noir-page *, .noir-page *::before, .noir-page *::after{
+        animation-duration:.001ms !important; animation-iteration-count:1 !important;
+        transition-duration:.001ms !important; scroll-behavior:auto !important;
+    }
+}
 
 .greek-key-divider{ height:22px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20' viewBox='0 0 40 20'%3E%3Cpath d='M0 15 H10 V5 H20 V15 H30 V5 H40' fill='none' stroke='%23C8A96A' stroke-width='1.1' opacity='0.4'/%3E%3C/svg%3E"); background-repeat:repeat-x; background-position:center; opacity:.8; }
 
@@ -108,46 +118,92 @@ $team = [
 .essentials-visual svg{ transform:translateZ(30px); }
 @media(max-width:900px){ .essentials-grid{ grid-template-columns:1fr; gap:2.5rem; } }
 
+/* ---- Philosophy / signature 3D coin ---- */
 .defines-section{ text-align:center; }
-.laurel-divider{ display:flex; justify-content:center; margin-bottom:1.4rem; }
 .defines-wrap{ max-width:760px; margin:0 auto; }
+.coin-wrap{ perspective:900px; display:flex; justify-content:center; margin-bottom:1.6rem; }
+.coin-3d{ position:relative; width:120px; height:120px; transform-style:preserve-3d; animation:coinSpin 11s linear infinite; }
+.coin-face{ position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; border-radius:50%; }
+.coin-back{ transform:rotateY(180deg); }
+@keyframes coinSpin{ from{ transform:rotateY(0deg); } to{ transform:rotateY(360deg); } }
 .defines-quote{ font-family:var(--font-serif); font-style:italic; font-size:1.3rem; line-height:1.75; color:var(--text-primary); margin-bottom:1.6rem; }
 
 .team-intro{ font-family:var(--font-serif); font-size:1.05rem; line-height:1.85; color:var(--text-secondary); max-width:640px; margin:0 auto 3.5rem; }
 .founders-row{ display:grid; grid-template-columns:1fr 1fr; gap:2rem; margin-bottom:2.5rem; }
-.founder-card, .team-card{ background:var(--bg-card); border:1px solid var(--border-color); padding:2.4rem 2.2rem; transition:border-color .35s ease; }
-.founder-card:hover, .team-card:hover{ border-color:rgba(200,169,106,0.4); }
-.member-avatar{ width:58px; height:58px; border-radius:50%; border:1px solid var(--gold); color:var(--gold); display:flex; align-items:center; justify-content:center; font-family:var(--font-greek); font-size:1.05rem; margin-bottom:1.3rem; transform:translateZ(20px); }
+
+/* ---- Team / founder cards: 3D tilt + hover skill reveal ---- */
+.founder-card, .team-card{ position:relative; overflow:hidden; background:var(--bg-card); border:1px solid var(--border-color); padding:2.4rem 2.2rem; transition:border-color .35s ease; cursor:pointer; }
+.founder-card:hover, .team-card:hover{ border-color:rgba(200,169,106,0.45); }
+.member-avatar{ width:58px; height:58px; border-radius:50%; border:1px solid var(--gold); color:var(--gold); display:flex; align-items:center; justify-content:center; font-family:var(--font-greek); font-size:1.05rem; margin-bottom:1.3rem; transform:translateZ(20px); overflow:hidden; }
+.member-avatar img{ width:100%; height:100%; object-fit:cover; border-radius:50%; }
 .founder-card h3, .team-card h3{ font-size:1.25rem; color:var(--text-primary); margin-bottom:.4rem; }
 .founder-card .role, .team-card .role{ font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); margin-bottom:1rem; }
 .founder-card .bio, .team-card .bio{ font-size:.88rem; line-height:1.8; color:var(--text-secondary); }
+
+.skills-overlay{
+    position:absolute; inset:0; z-index:3; padding:2rem 2.1rem;
+    display:flex; flex-direction:column; justify-content:center; gap:1rem;
+    background:linear-gradient(165deg, rgba(10,9,8,0.97), rgba(20,17,13,0.97));
+    border-top:1px solid var(--gold);
+    transform:perspective(700px) rotateX(-12deg) translateY(100%);
+    transform-origin:bottom center;
+    opacity:0;
+    transition:transform .4s cubic-bezier(.2,.7,.2,1), opacity .4s ease;
+    pointer-events:none;
+}
+.founder-card:hover .skills-overlay, .team-card:hover .skills-overlay,
+.founder-card.skills-open .skills-overlay, .team-card.skills-open .skills-overlay{
+    transform:perspective(700px) rotateX(0deg) translateY(0%); opacity:1; pointer-events:auto;
+}
+.skills-label{ font-size:.68rem; letter-spacing:.24em; text-transform:uppercase; color:var(--gold); margin:0; }
+.skills-chips{ display:flex; flex-wrap:wrap; gap:.5rem; }
+.skill-chip{ font-size:.72rem; letter-spacing:.03em; color:var(--text-primary); border:1px solid var(--noir-line); padding:.35rem .7rem; }
+.view-more-btn{ align-self:flex-start; margin-top:.4rem; font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); text-decoration:none; border-bottom:1px solid var(--gold); padding-bottom:2px; transition:opacity .2s ease; }
+.view-more-btn:hover{ opacity:.7; }
+
 .team-grid{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:1.6rem; }
 @media(max-width:992px){ .founders-row{ grid-template-columns:1fr; } .team-grid{ grid-template-columns:repeat(2, minmax(0,1fr)); } }
 @media(max-width:560px){ .team-grid{ grid-template-columns:1fr; } }
 
-.noir-closing{ text-align:center; padding:7rem 5vw; }
-.noir-closing-title{ font-size:clamp(2rem,4.4vw,3.2rem); color:var(--text-primary); margin-bottom:1rem; }
-.noir-closing-title em{ color:var(--gold); font-style:italic; font-family:var(--font-serif); }
-.noir-closing-sub{ font-family:var(--font-serif); font-style:italic; color:var(--gold); font-size:1.05rem; margin-bottom:1.6rem; }
-.noir-closing-body{ font-size:.95rem; color:var(--text-secondary); max-width:560px; margin:0 auto; line-height:1.85; }
+/* ---- What Drives Us Forward ---- */
+.drives-section{ text-align:center; padding:7rem 5vw; }
+.drives-wrap{ max-width:680px; margin:0 auto; }
+.drives-lede{ font-size:.98rem; line-height:1.9; color:var(--text-secondary); margin-bottom:2.4rem; }
+.drives-quote{ margin:0; padding:2.2rem 2rem 1.8rem; border-top:1px solid var(--noir-line); border-bottom:1px solid var(--noir-line); }
+.drives-quote-mark{ display:block; font-family:var(--font-serif); font-size:3rem; line-height:1; color:var(--gold); margin-bottom:.4rem; }
+.drives-quote p{ font-family:var(--font-serif); font-style:italic; font-size:1.35rem; line-height:1.7; color:var(--text-primary); margin-bottom:1rem; }
+.drives-quote footer{ font-size:.78rem; letter-spacing:.06em; color:var(--gold); }
 
-.testimonial-section .section-head{ margin-bottom:3rem; }
-.marquee-row-wrap{ display:flex; flex-direction:column; gap:1.6rem; }
+.testimonial-section .section-head{ margin-bottom:1.4rem; }
+.marquee-row-wrap{ display:flex; flex-direction:column; gap:1.6rem; margin-top:2.4rem; }
 .marquee-row{ overflow:hidden; position:relative; -webkit-mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
-.marquee-track{ display:flex; gap:1.4rem; width:max-content; animation:marqueeLeft 42s linear infinite; }
+.marquee-track{ display:flex; gap:1.4rem; width:max-content; animation:marqueeLeft 42s linear infinite; transform:translateZ(0); backface-visibility:hidden; -webkit-backface-visibility:hidden; will-change:transform; }
 .marquee-track.reverse{ animation-name:marqueeRight; animation-duration:48s; }
 .marquee-row:hover .marquee-track{ animation-play-state:paused; }
-@keyframes marqueeLeft{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
-@keyframes marqueeRight{ from{ transform:translateX(-50%); } to{ transform:translateX(0); } }
+@keyframes marqueeLeft{ from{ transform:translateX(0) translateZ(0); } to{ transform:translateX(-50%) translateZ(0); } }
+@keyframes marqueeRight{ from{ transform:translateX(-50%) translateZ(0); } to{ transform:translateX(0) translateZ(0); } }
 
-.testi-card{ flex:0 0 auto; width:320px; background:var(--bg-card); border:1px solid var(--border-color); padding:1.8rem 1.9rem; transform-style:preserve-3d; transition:transform .25s cubic-bezier(.2,.7,.3,1), border-color .3s ease; }
-.testi-card:hover{ border-color:rgba(200,169,106,0.4); }
+.testi-card{ flex:0 0 auto; width:320px; background:var(--bg-card); border:1px solid var(--border-color); padding:1.8rem 1.9rem; transform-style:preserve-3d; transform:translateZ(0); backface-visibility:hidden; -webkit-backface-visibility:hidden; transition:transform .25s cubic-bezier(.2,.7,.3,1), border-color .3s ease; cursor:pointer; }
+.testi-card:hover, .testi-card:focus-visible{ border-color:rgba(200,169,106,0.45); outline:none; }
 .testi-stars{ color:var(--gold); font-size:.82rem; letter-spacing:.18em; margin-bottom:.9rem; }
 .testi-quote{ font-family:var(--font-serif); font-size:1rem; line-height:1.7; color:var(--text-primary); margin-bottom:1.2rem; min-height:4.5em; }
 .testi-foot{ display:flex; align-items:center; gap:.8rem; }
-.testi-avatar{ width:38px; height:38px; border-radius:50%; border:1px solid var(--gold); color:var(--gold); display:flex; align-items:center; justify-content:center; font-family:var(--font-greek); font-size:.78rem; flex-shrink:0; }
+.testi-avatar{ width:38px; height:38px; border-radius:50%; border:1px solid var(--gold); color:var(--gold); display:flex; align-items:center; justify-content:center; font-family:var(--font-greek); font-size:.78rem; flex-shrink:0; overflow:hidden; }
+.testi-avatar img{ width:100%; height:100%; object-fit:cover; border-radius:50%; }
 .testi-name{ font-size:.85rem; color:var(--text-primary); }
 .testi-branch{ font-size:.72rem; color:var(--text-secondary); }
+.testi-readmore{ display:inline-block; margin-top:1rem; font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); }
+
+/* ---- Testimonial modal ---- */
+.noir-modal{ position:fixed; inset:0; z-index:300; display:flex; align-items:center; justify-content:center; padding:5vw; visibility:hidden; opacity:0; transition:opacity .3s ease, visibility 0s linear .3s; }
+.noir-modal.open{ visibility:visible; opacity:1; transition:opacity .3s ease; }
+.noir-modal-backdrop{ position:absolute; inset:0; background:rgba(6,5,4,0.85); backdrop-filter:blur(3px); }
+.noir-modal-panel{ position:relative; max-width:560px; width:100%; background:var(--bg-card); border:1px solid rgba(200,169,106,0.45); padding:2.6rem 2.4rem; transform:perspective(1000px) rotateX(8deg) translateY(20px) scale(.96); opacity:0; transition:transform .35s cubic-bezier(.2,.7,.2,1), opacity .35s ease; }
+.noir-modal.open .noir-modal-panel{ transform:perspective(1000px) rotateX(0) translateY(0) scale(1); opacity:1; }
+.noir-modal-close{ position:absolute; top:14px; right:16px; width:32px; height:32px; background:none; border:none; color:var(--gold); font-size:1.6rem; line-height:1; cursor:pointer; }
+.noir-modal-stars{ color:var(--gold); font-size:.9rem; letter-spacing:.2em; margin-bottom:1rem; }
+.noir-modal-quote{ font-family:var(--font-serif); font-style:italic; font-size:1.2rem; line-height:1.85; color:var(--text-primary); margin-bottom:1.8rem; }
+.noir-modal-foot{ display:flex; align-items:center; gap:.9rem; border-top:1px solid var(--noir-line); padding-top:1.2rem; }
 
 @media(max-width:768px){ .noir-section{ padding:4.5rem 0; } .noir-hero{ padding:calc(var(--nav-height) + 40px) 5vw 60px; } }
 </style>
@@ -188,10 +244,15 @@ $team = [
 </section>
 <div class="greek-key-divider"></div>
 
-<!-- ══════════ WHAT DEFINES US ══════════ -->
+<!-- ══════════ WHAT DEFINES US (signature 3D coin) ══════════ -->
 <section class="noir-section defines-section reveal-3d">
     <div class="container-lux defines-wrap">
-        <div class="laurel-divider"><?= noir_laurel(80, 40) ?></div>
+        <div class="coin-wrap">
+            <div class="coin-3d">
+                <div class="coin-face coin-front"><?= noir_coin_face('Α') ?></div>
+                <div class="coin-face coin-back"><?= noir_coin_face('Ω') ?></div>
+            </div>
+        </div>
         <span class="noir-kicker center">02 &mdash; Our Philosophy</span>
         <h2 class="noir-h2 center">What Defines Us</h2>
         <p class="defines-quote">"We believe fashion should feel personal. Our purpose is to bring together thoughtful design, refined essentials, and a digital experience that allows every individual to discover pieces that genuinely represent who they are."</p>
@@ -206,16 +267,31 @@ $team = [
         <div class="section-head centered">
             <span class="noir-kicker center">03 &mdash; The People</span>
             <h2 class="noir-h2 center">Our Team</h2>
-            <p class="team-intro">Behind The Atelier Noir is a multidisciplinary team bringing together fashion, design, technology, marketing, product analysis, and communication. Together, we transform ideas into a cohesive fashion experience&mdash;both online and beyond.</p>
+            <p class="team-intro">Behind The Atelier Noir is a multidisciplinary team bringing together fashion, design, technology, marketing, product analysis, and communication. Hover a card to see each member's expertise, or view their full profile.</p>
         </div>
 
         <div class="founders-row">
             <?php foreach ($founders as $f): ?>
             <article class="founder-card tilt-card">
-                <div class="member-avatar"><?= e($f['initials']) ?></div>
+                <div class="member-avatar">
+                    <?php if (!empty($f['image'])): ?>
+                        <img src="<?= e($f['image']) ?>" alt="" loading="lazy" data-fallback="<?= e($f['initials']) ?>">
+                    <?php else: ?>
+                        <?= e($f['initials']) ?>
+                    <?php endif; ?>
+                </div>
                 <h3><?= $f['name'] ?></h3>
                 <p class="role"><?= $f['role'] ?></p>
                 <p class="bio"><?= $f['bio'] ?></p>
+                <div class="skills-overlay">
+                    <p class="skills-label">Expertise</p>
+                    <div class="skills-chips">
+                        <?php foreach ($f['skills'] as $skill): ?>
+                            <span class="skill-chip"><?= $skill ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                    <a class="view-more-btn" href="<?= SITE_URL ?>/team-member.php?slug=<?= urlencode($f['slug']) ?>">View More &rarr;</a>
+                </div>
             </article>
             <?php endforeach; ?>
         </div>
@@ -223,46 +299,83 @@ $team = [
         <div class="team-grid">
             <?php foreach ($team as $m): ?>
             <article class="team-card tilt-card">
-                <div class="member-avatar"><?= e($m['initials']) ?></div>
+                <div class="member-avatar">
+                    <?php if (!empty($m['image'])): ?>
+                        <img src="<?= e($m['image']) ?>" alt="" loading="lazy" data-fallback="<?= e($m['initials']) ?>">
+                    <?php else: ?>
+                        <?= e($m['initials']) ?>
+                    <?php endif; ?>
+                </div>
                 <h3><?= $m['name'] ?></h3>
                 <p class="role"><?= $m['role'] ?></p>
                 <p class="bio"><?= $m['bio'] ?></p>
+                <div class="skills-overlay">
+                    <p class="skills-label">Expertise</p>
+                    <div class="skills-chips">
+                        <?php foreach ($m['skills'] as $skill): ?>
+                            <span class="skill-chip"><?= $skill ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                    <a class="view-more-btn" href="<?= SITE_URL ?>/team-member.php?slug=<?= urlencode($m['slug']) ?>">View More &rarr;</a>
+                </div>
             </article>
             <?php endforeach; ?>
         </div>
     </div>
 </section>
+<div class="greek-key-divider"></div>
 
-<!-- ══════════ CLOSING TAGLINE ══════════ -->
-<section class="noir-closing reveal-3d">
-    <div class="laurel-divider"><?= noir_laurel(80, 40) ?></div>
-    <h2 class="noir-closing-title">Together, We Shape<br><em>The Atelier Noir</em></h2>
-    <p class="noir-closing-sub">Different disciplines. One vision.</p>
-    <p class="noir-closing-body">From the first concept to the final experience, our team works together to build a fashion brand where style, technology, and individuality meet.</p>
+<!-- ══════════ WHAT DRIVES US FORWARD ══════════ -->
+<section class="noir-section drives-section reveal-3d">
+    <div class="drives-wrap">
+        <span class="noir-kicker center">04 &mdash; Our Purpose</span>
+        <h2 class="noir-h2 center">What Drives Us <em>Forward</em></h2>
+        <p class="drives-lede">Every collection, every line of code, and every client interaction is measured against the same question&mdash;does this feel like The Atelier Noir. That standard is what our clients notice first, and it is what keeps our team, across every discipline, moving in the same direction.</p>
+        <blockquote class="drives-quote">
+            <span class="drives-quote-mark" aria-hidden="true">&ldquo;</span>
+            <p>From browsing to unboxing, everything about The Atelier Noir feels intentional. This is how online fashion should feel.</p>
+            <footer>&mdash; Renz Almario, Customer &middot; Batangas City</footer>
+        </blockquote>
+    </div>
 </section>
 <div class="greek-key-divider"></div>
 
 <!-- ══════════ TESTIMONIALS ══════════ -->
 <section class="noir-section testimonial-section reveal-3d">
     <div class="section-head centered container-lux">
-        <span class="noir-kicker center">04 &mdash; Client Voices</span>
+        <span class="noir-kicker center">05 &mdash; Client Voices</span>
         <h2 class="noir-h2 center">What Our Clients Say</h2>
+        <p class="team-intro">Real experiences from clients across the Philippines, in their own words. Tap any card to read the full testimonial.</p>
     </div>
 
     <div class="marquee-row-wrap">
         <div class="marquee-row">
             <div class="marquee-track">
                 <?php foreach (array_merge($testimonials['row1'], $testimonials['row1']) as $t): ?>
-                <article class="testi-card">
+                <article class="testi-card"
+                    data-name="<?= e($t['client_name']) ?>"
+                    data-branch="<?= e($t['client_branch']) ?>"
+                    data-rating="<?= (int)$t['rating'] ?>"
+                    data-full="<?= e($t['quote_text']) ?>"
+                    data-initial="<?= e($t['avatar_initial'] ?: mb_substr($t['client_name'], 0, 2)) ?>"
+                    <?php if (!empty($t['avatar_image'])): ?>data-avatar-img="<?= e($t['avatar_image']) ?>"<?php endif; ?>
+                    tabindex="0" role="button" aria-haspopup="dialog">
                     <div class="testi-stars"><?= str_repeat('&#9733;', (int)$t['rating']) . str_repeat('&#9734;', 5 - (int)$t['rating']) ?></div>
-                    <p class="testi-quote">"<?= e($t['quote_text']) ?>"</p>
+                    <p class="testi-quote">"<?= e(noir_excerpt($t['quote_text'])) ?>"</p>
                     <div class="testi-foot">
-                        <div class="testi-avatar"><?= e($t['avatar_initial'] ?: substr($t['client_name'], 0, 2)) ?></div>
+                        <div class="testi-avatar">
+                            <?php if (!empty($t['avatar_image'])): ?>
+                                <img src="<?= e($t['avatar_image']) ?>" alt="" loading="lazy" data-fallback="<?= e($t['avatar_initial'] ?: mb_substr($t['client_name'], 0, 2)) ?>">
+                            <?php else: ?>
+                                <?= e($t['avatar_initial'] ?: mb_substr($t['client_name'], 0, 2)) ?>
+                            <?php endif; ?>
+                        </div>
                         <div>
                             <div class="testi-name"><?= e($t['client_name']) ?></div>
                             <div class="testi-branch">Customer &middot; <?= e($t['client_branch']) ?></div>
                         </div>
                     </div>
+                    <span class="testi-readmore">Read full testimonial &rarr;</span>
                 </article>
                 <?php endforeach; ?>
             </div>
@@ -270,22 +383,53 @@ $team = [
         <div class="marquee-row">
             <div class="marquee-track reverse">
                 <?php foreach (array_merge($testimonials['row2'], $testimonials['row2']) as $t): ?>
-                <article class="testi-card">
+                <article class="testi-card"
+                    data-name="<?= e($t['client_name']) ?>"
+                    data-branch="<?= e($t['client_branch']) ?>"
+                    data-rating="<?= (int)$t['rating'] ?>"
+                    data-full="<?= e($t['quote_text']) ?>"
+                    data-initial="<?= e($t['avatar_initial'] ?: mb_substr($t['client_name'], 0, 2)) ?>"
+                    <?php if (!empty($t['avatar_image'])): ?>data-avatar-img="<?= e($t['avatar_image']) ?>"<?php endif; ?>
+                    tabindex="0" role="button" aria-haspopup="dialog">
                     <div class="testi-stars"><?= str_repeat('&#9733;', (int)$t['rating']) . str_repeat('&#9734;', 5 - (int)$t['rating']) ?></div>
-                    <p class="testi-quote">"<?= e($t['quote_text']) ?>"</p>
+                    <p class="testi-quote">"<?= e(noir_excerpt($t['quote_text'])) ?>"</p>
                     <div class="testi-foot">
-                        <div class="testi-avatar"><?= e($t['avatar_initial'] ?: substr($t['client_name'], 0, 2)) ?></div>
+                        <div class="testi-avatar">
+                            <?php if (!empty($t['avatar_image'])): ?>
+                                <img src="<?= e($t['avatar_image']) ?>" alt="" loading="lazy" data-fallback="<?= e($t['avatar_initial'] ?: mb_substr($t['client_name'], 0, 2)) ?>">
+                            <?php else: ?>
+                                <?= e($t['avatar_initial'] ?: mb_substr($t['client_name'], 0, 2)) ?>
+                            <?php endif; ?>
+                        </div>
                         <div>
                             <div class="testi-name"><?= e($t['client_name']) ?></div>
                             <div class="testi-branch">Customer &middot; <?= e($t['client_branch']) ?></div>
                         </div>
                     </div>
+                    <span class="testi-readmore">Read full testimonial &rarr;</span>
                 </article>
                 <?php endforeach; ?>
             </div>
         </div>
     </div>
 </section>
+
+<!-- ══════════ TESTIMONIAL MODAL ══════════ -->
+<div class="noir-modal" id="testiModal" aria-hidden="true">
+    <div class="noir-modal-backdrop" data-modal-close></div>
+    <div class="noir-modal-panel" role="dialog" aria-modal="true" aria-labelledby="testiModalName">
+        <button class="noir-modal-close" type="button" aria-label="Close" data-modal-close>&times;</button>
+        <div class="noir-modal-stars" id="testiModalStars"></div>
+        <p class="noir-modal-quote" id="testiModalQuote"></p>
+        <div class="noir-modal-foot">
+            <div class="testi-avatar" id="testiModalAvatar"></div>
+            <div>
+                <div class="testi-name" id="testiModalName"></div>
+                <div class="testi-branch" id="testiModalBranch"></div>
+            </div>
+        </div>
+    </div>
+</div>
 
 </main>
 
@@ -324,10 +468,65 @@ $team = [
             const rect = card.getBoundingClientRect();
             const x = (e.clientX - rect.left) / rect.width - 0.5;
             const y = (e.clientY - rect.top) / rect.height - 0.5;
-            card.style.transform = `perspective(800px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg)`;
+            card.style.transform = `perspective(800px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) translateZ(0)`;
         });
-        card.addEventListener('mouseleave', () => { card.style.transform = 'perspective(800px) rotateY(0) rotateX(0)'; });
+        card.addEventListener('mouseleave', () => { card.style.transform = 'perspective(800px) rotateY(0) rotateX(0) translateZ(0)'; });
     });
+
+    /* Broken/empty avatar images fall back to initials, silently */
+    document.querySelectorAll('.testi-avatar img, .member-avatar img').forEach((img) => {
+        img.addEventListener('error', function () {
+            this.parentElement.textContent = this.dataset.fallback || '';
+        }, { once: true });
+    });
+
+    /* Team & founder cards: tap-to-toggle skill overlay for touch devices
+       (hover already handles this for mouse users). Links inside the
+       overlay are left alone so "View More" still navigates normally. */
+    document.querySelectorAll('.team-card, .founder-card').forEach((card) => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('a')) return;
+            card.classList.toggle('skills-open');
+        });
+    });
+
+    /* Testimonial modal */
+    const modal = document.getElementById('testiModal');
+    if (modal) {
+        const els = {
+            stars: document.getElementById('testiModalStars'),
+            quote: document.getElementById('testiModalQuote'),
+            avatar: document.getElementById('testiModalAvatar'),
+            name: document.getElementById('testiModalName'),
+            branch: document.getElementById('testiModalBranch'),
+        };
+
+        function openModalFrom(card) {
+            const rating = parseInt(card.dataset.rating || '5', 10);
+            els.stars.textContent = '\u2605'.repeat(rating) + '\u2606'.repeat(5 - rating);
+            els.quote.textContent = '\u201C' + (card.dataset.full || '') + '\u201D';
+            els.name.textContent = card.dataset.name || '';
+            els.branch.textContent = 'Customer \u00B7 ' + (card.dataset.branch || '');
+            const img = card.dataset.avatarImg;
+            els.avatar.innerHTML = img
+                ? '<img src="' + img + '" alt="" onerror="this.parentElement.textContent=this.dataset.fb" data-fb="' + (card.dataset.initial || '') + '">'
+                : (card.dataset.initial || '');
+            modal.classList.add('open');
+            modal.setAttribute('aria-hidden', 'false');
+        }
+        function closeModal() {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+        document.querySelectorAll('.testi-card').forEach((card) => {
+            card.addEventListener('click', () => openModalFrom(card));
+            card.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModalFrom(card); }
+            });
+        });
+        modal.querySelectorAll('[data-modal-close]').forEach((el) => el.addEventListener('click', closeModal));
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+    }
 })();
 </script>
 
