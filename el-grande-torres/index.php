@@ -45,7 +45,7 @@ if (is_logged_in()) {
 
 <div class="marquee-strip">
     <div class="marquee-track">
-        <span>Complimentary Shipping Over ₱15,000</span><span>Est. 2026</span><span>Seven-Star Craftsmanship</span><span>Cash on Delivery · GCash · Maya</span>
+        <span>Complimentary Shipping Over ₱15,000</span><span>Est. 1974</span><span>Seven-Star Craftsmanship</span><span>Cash on Delivery · GCash · Maya</span>
         <span>Complimentary Shipping Over ₱15,000</span><span>Est. 2026</span><span>Seven-Star Craftsmanship</span><span>Cash on Delivery · GCash · Maya</span>
     </div>
 </div>

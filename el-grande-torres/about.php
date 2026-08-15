@@ -134,8 +134,8 @@ function noir_coin_face(string $glyph): string {
 /* ---- Team / founder cards: 3D tilt + hover skill reveal ---- */
 .founder-card, .team-card{ position:relative; overflow:hidden; background:var(--bg-card); border:1px solid var(--border-color); padding:2.4rem 2.2rem; transition:border-color .35s ease; cursor:pointer; }
 .founder-card:hover, .team-card:hover{ border-color:rgba(200,169,106,0.45); }
-.member-avatar{ width:58px; height:58px; border-radius:50%; border:1px solid var(--gold); color:var(--gold); display:flex; align-items:center; justify-content:center; font-family:var(--font-greek); font-size:1.05rem; margin-bottom:1.3rem; transform:translateZ(20px); overflow:hidden; }
-.member-avatar img{ width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.member-avatar{ width:100%; aspect-ratio:1/1; max-height:280px; border-radius:10px; border:1px solid var(--noir-line); background:linear-gradient(160deg, rgba(200,169,106,0.16), rgba(200,169,106,0.03)); color:var(--gold); display:flex; align-items:center; justify-content:center; font-family:var(--font-greek); font-size:2rem; margin-bottom:1.4rem; transform:translateZ(20px); overflow:hidden; flex-shrink:0; }
+.member-avatar img{ width:100%; height:100%; object-fit:cover; border-radius:10px; display:block; }
 .founder-card h3, .team-card h3{ font-size:1.25rem; color:var(--text-primary); margin-bottom:.4rem; }
 .founder-card .role, .team-card .role{ font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); margin-bottom:1rem; }
 .founder-card .bio, .team-card .bio{ font-size:.88rem; line-height:1.8; color:var(--text-secondary); }
@@ -177,22 +177,23 @@ function noir_coin_face(string $glyph): string {
 .testimonial-section .section-head{ margin-bottom:1.4rem; }
 .marquee-row-wrap{ display:flex; flex-direction:column; gap:1.6rem; margin-top:2.4rem; }
 .marquee-row{ overflow:hidden; position:relative; -webkit-mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
-.marquee-track{ display:flex; gap:1.4rem; width:max-content; animation:marqueeLeft 42s linear infinite; transform:translateZ(0); backface-visibility:hidden; -webkit-backface-visibility:hidden; will-change:transform; }
+.marquee-track{ display:flex; align-items:stretch; gap:1.4rem; width:max-content; animation:marqueeLeft 42s linear infinite; transform:translateZ(0); backface-visibility:hidden; -webkit-backface-visibility:hidden; will-change:transform; }
 .marquee-track.reverse{ animation-name:marqueeRight; animation-duration:48s; }
 .marquee-row:hover .marquee-track{ animation-play-state:paused; }
 @keyframes marqueeLeft{ from{ transform:translateX(0) translateZ(0); } to{ transform:translateX(-50%) translateZ(0); } }
 @keyframes marqueeRight{ from{ transform:translateX(-50%) translateZ(0); } to{ transform:translateX(0) translateZ(0); } }
 
-.testi-card{ flex:0 0 auto; width:320px; background:var(--bg-card); border:1px solid var(--border-color); padding:1.8rem 1.9rem; transform-style:preserve-3d; transform:translateZ(0); backface-visibility:hidden; -webkit-backface-visibility:hidden; transition:transform .25s cubic-bezier(.2,.7,.3,1), border-color .3s ease; cursor:pointer; }
+.testi-card{ flex:0 0 auto; width:320px; height:280px; display:flex; flex-direction:column; background:var(--bg-card); border:1px solid var(--border-color); padding:1.8rem 1.9rem; overflow:hidden; transform-style:preserve-3d; transform:translateZ(0); backface-visibility:hidden; -webkit-backface-visibility:hidden; transition:transform .25s cubic-bezier(.2,.7,.3,1), border-color .3s ease; cursor:pointer; }
 .testi-card:hover, .testi-card:focus-visible{ border-color:rgba(200,169,106,0.45); outline:none; }
-.testi-stars{ color:var(--gold); font-size:.82rem; letter-spacing:.18em; margin-bottom:.9rem; }
-.testi-quote{ font-family:var(--font-serif); font-size:1rem; line-height:1.7; color:var(--text-primary); margin-bottom:1.2rem; min-height:4.5em; }
-.testi-foot{ display:flex; align-items:center; gap:.8rem; }
+.testi-stars{ color:var(--gold); font-size:.82rem; letter-spacing:.18em; margin-bottom:.9rem; flex-shrink:0; }
+.testi-quote{ flex:1; overflow:hidden; display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; font-family:var(--font-serif); font-size:1rem; line-height:1.7; color:var(--text-primary); margin-bottom:1.2rem; word-wrap:break-word; overflow-wrap:break-word; }
+.testi-foot{ display:flex; align-items:center; gap:.8rem; flex-shrink:0; }
 .testi-avatar{ width:38px; height:38px; border-radius:50%; border:1px solid var(--gold); color:var(--gold); display:flex; align-items:center; justify-content:center; font-family:var(--font-greek); font-size:.78rem; flex-shrink:0; overflow:hidden; }
 .testi-avatar img{ width:100%; height:100%; object-fit:cover; border-radius:50%; }
-.testi-name{ font-size:.85rem; color:var(--text-primary); }
-.testi-branch{ font-size:.72rem; color:var(--text-secondary); }
-.testi-readmore{ display:inline-block; margin-top:1rem; font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); }
+.testi-name{ font-size:.85rem; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.testi-branch{ font-size:.72rem; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.testi-readmore{ display:inline-flex; align-items:center; gap:.4rem; margin-top:1rem; padding-top:.9rem; border-top:1px solid var(--noir-line); font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); flex-shrink:0; transition:gap .25s ease, opacity .25s ease; }
+.testi-card:hover .testi-readmore{ gap:.7rem; opacity:.85; }
 
 /* ---- Testimonial modal ---- */
 .noir-modal{ position:fixed; inset:0; z-index:300; display:flex; align-items:center; justify-content:center; padding:5vw; visibility:hidden; opacity:0; transition:opacity .3s ease, visibility 0s linear .3s; }
@@ -249,7 +250,7 @@ function noir_coin_face(string $glyph): string {
     <div class="container-lux defines-wrap">
         <div class="coin-wrap">
             <div class="coin-3d">
-                <div class="coin-face coin-front"><?= noir_coin_face('Α') ?></div>
+                <div class="coin-face coin-front"><?= noir_coin_face('AN') ?></div>
                 <div class="coin-face coin-back"><?= noir_coin_face('Ω') ?></div>
             </div>
         </div>
@@ -334,7 +335,7 @@ function noir_coin_face(string $glyph): string {
         <blockquote class="drives-quote">
             <span class="drives-quote-mark" aria-hidden="true">&ldquo;</span>
             <p>From browsing to unboxing, everything about The Atelier Noir feels intentional. This is how online fashion should feel.</p>
-            <footer>&mdash; Renz Almario, Customer &middot; Batangas City</footer>
+            <footer>&mdash; Arthur Forgarty, Customer &middot; Texas, USA</footer>
         </blockquote>
     </div>
 </section>
