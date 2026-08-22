@@ -3,7 +3,7 @@
  * about.php — The Atelier Noir
  *
  * Requires: includes/testimonial-functions.php, includes/team-data.php,
- *           database/about_testimonials.sql (+ about_testimonials_update.sql)
+ *           database/about_testimonials.sql (+ about_testimonials_fix.sql)
  */
 require_once __DIR__ . '/config/app.php';
 require_once __DIR__ . '/includes/testimonial-functions.php';
@@ -67,6 +67,25 @@ function noir_coin_face(string $glyph): string {
         <text x="60" y="77" text-anchor="middle" font-family="Cinzel, serif" font-size="44" fill="var(--gold)">' . $glyph . '</text>
     </svg>';
 }
+
+/**
+ * Truncates a testimonial quote for card display so it can never overflow
+ * a fixed-height .testi-card, regardless of how long the source text in
+ * `about_testimonials.quote_text` is. The FULL text still shows in the
+ * read-more modal via the card's data-full attribute.
+ */
+function noir_excerpt(string $text, int $maxLen = 170): string {
+    $text = trim(preg_replace('/\s+/', ' ', $text));
+    if (mb_strlen($text) <= $maxLen) return $text;
+    return rtrim(mb_substr($text, 0, $maxLen)) . '…';
+}
+
+/** Short display date for the testimonial card footer, e.g. "Jul 2, 2026". */
+function noir_testi_date(?string $createdAt): string {
+    if (!$createdAt) return '';
+    $ts = strtotime($createdAt);
+    return $ts ? date('M j, Y', $ts) : '';
+}
 ?>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -80,7 +99,6 @@ function noir_coin_face(string $glyph): string {
 .noir-h2.center{ text-align:center; }
 .center{ text-align:center; margin-left:auto; margin-right:auto; }
 
-/* Respect reduced-motion across every animation on this page */
 @media (prefers-reduced-motion: reduce){
     .noir-page *, .noir-page *::before, .noir-page *::after{
         animation-duration:.001ms !important; animation-iteration-count:1 !important;
@@ -177,23 +195,50 @@ function noir_coin_face(string $glyph): string {
 .testimonial-section .section-head{ margin-bottom:1.4rem; }
 .marquee-row-wrap{ display:flex; flex-direction:column; gap:1.6rem; margin-top:2.4rem; }
 .marquee-row{ overflow:hidden; position:relative; -webkit-mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
-.marquee-track{ display:flex; align-items:stretch; gap:1.4rem; width:max-content; animation:marqueeLeft 42s linear infinite; transform:translateZ(0); backface-visibility:hidden; -webkit-backface-visibility:hidden; will-change:transform; }
+.marquee-track{ display:flex; align-items:stretch; gap:1.4rem; width:max-content; animation:marqueeLeft 42s linear infinite; transform:translateZ(0); will-change:transform; }
 .marquee-track.reverse{ animation-name:marqueeRight; animation-duration:48s; }
 .marquee-row:hover .marquee-track{ animation-play-state:paused; }
 @keyframes marqueeLeft{ from{ transform:translateX(0) translateZ(0); } to{ transform:translateX(-50%) translateZ(0); } }
 @keyframes marqueeRight{ from{ transform:translateX(-50%) translateZ(0); } to{ transform:translateX(0) translateZ(0); } }
 
-.testi-card{ flex:0 0 auto; width:320px; height:280px; display:flex; flex-direction:column; background:var(--bg-card); border:1px solid var(--border-color); padding:1.8rem 1.9rem; overflow:hidden; transform-style:preserve-3d; transform:translateZ(0); backface-visibility:hidden; -webkit-backface-visibility:hidden; transition:transform .25s cubic-bezier(.2,.7,.3,1), border-color .3s ease; cursor:pointer; }
+/* ---- Testimonial card ----
+   Restyled to match the reference layout: stars top-left, a subtle
+   expand hint top-right that only appears on hover (keeps the card
+   clean at rest since the whole card is already clickable — no
+   permanent "Read Full Testimonial" line competing with the quote),
+   a thin divider before the footer, and the footer itself laid out
+   as [avatar] [name / branch-with-dot] ... [date] on the right.
+   backface-visibility + translateZ(0) are intentionally left OFF this
+   rule (only the marquee-track itself uses translateZ(0)) — with ~56
+   of these animating at once, that combo is what caused Chrome to
+   ghost/overlap text from neighboring cards in an earlier version. */
+.testi-card{
+    flex:0 0 auto; width:320px; height:225px;
+    display:flex; flex-direction:column; overflow:hidden;
+    background:var(--bg-card); border:1px solid var(--border-color); padding:1.8rem 1.9rem;
+    transform-style:preserve-3d;
+    transition:transform .25s cubic-bezier(.2,.7,.3,1), border-color .3s ease;
+    cursor:pointer;
+}
 .testi-card:hover, .testi-card:focus-visible{ border-color:rgba(200,169,106,0.45); outline:none; }
-.testi-stars{ color:var(--gold); font-size:.82rem; letter-spacing:.18em; margin-bottom:.9rem; flex-shrink:0; }
-.testi-quote{ flex:1; overflow:hidden; display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; font-family:var(--font-serif); font-size:1rem; line-height:1.7; color:var(--text-primary); margin-bottom:1.2rem; word-wrap:break-word; overflow-wrap:break-word; }
+.testi-card-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:.6rem; margin-bottom:.9rem; flex-shrink:0; }
+.testi-stars{ color:var(--gold); font-size:.82rem; letter-spacing:.18em; }
+.testi-expand-hint{ color:var(--gold); font-size:1rem; line-height:1; opacity:0; transform:translate(-3px, 3px); transition:opacity .25s ease, transform .25s ease; flex-shrink:0; }
+.testi-card:hover .testi-expand-hint{ opacity:1; transform:translate(0,0); }
+.testi-quote{
+    flex:1; overflow:hidden; display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical;
+    font-family:var(--font-serif); font-size:1rem; line-height:1.7; color:var(--text-primary); margin-bottom:1.1rem;
+    word-wrap:break-word; overflow-wrap:break-word;
+}
+.testi-divider{ height:1px; background:var(--noir-line); margin-bottom:1.1rem; flex-shrink:0; }
 .testi-foot{ display:flex; align-items:center; gap:.8rem; flex-shrink:0; }
 .testi-avatar{ width:38px; height:38px; border-radius:50%; border:1px solid var(--gold); color:var(--gold); display:flex; align-items:center; justify-content:center; font-family:var(--font-greek); font-size:.78rem; flex-shrink:0; overflow:hidden; }
 .testi-avatar img{ width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.testi-meta{ flex:1; min-width:0; }
 .testi-name{ font-size:.85rem; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.testi-branch{ font-size:.72rem; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.testi-readmore{ display:inline-flex; align-items:center; gap:.4rem; margin-top:1rem; padding-top:.9rem; border-top:1px solid var(--noir-line); font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); flex-shrink:0; transition:gap .25s ease, opacity .25s ease; }
-.testi-card:hover .testi-readmore{ gap:.7rem; opacity:.85; }
+.testi-branch{ font-size:.72rem; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:.4rem; margin-top:.15rem; }
+.testi-branch-dot{ width:6px; height:6px; border-radius:50%; background:var(--gold); flex-shrink:0; }
+.testi-date{ font-size:.68rem; color:var(--text-secondary); flex-shrink:0; white-space:nowrap; }
 
 /* ---- Testimonial modal ---- */
 .noir-modal{ position:fixed; inset:0; z-index:300; display:flex; align-items:center; justify-content:center; padding:5vw; visibility:hidden; opacity:0; transition:opacity .3s ease, visibility 0s linear .3s; }
@@ -361,8 +406,12 @@ function noir_coin_face(string $glyph): string {
                     data-initial="<?= e($t['avatar_initial'] ?: mb_substr($t['client_name'], 0, 2)) ?>"
                     <?php if (!empty($t['avatar_image'])): ?>data-avatar-img="<?= e($t['avatar_image']) ?>"<?php endif; ?>
                     tabindex="0" role="button" aria-haspopup="dialog">
-                    <div class="testi-stars"><?= str_repeat('&#9733;', (int)$t['rating']) . str_repeat('&#9734;', 5 - (int)$t['rating']) ?></div>
+                    <div class="testi-card-top">
+                        <div class="testi-stars"><?= str_repeat('&#9733;', (int)$t['rating']) . str_repeat('&#9734;', 5 - (int)$t['rating']) ?></div>
+                        <span class="testi-expand-hint" aria-hidden="true">&#8599;</span>
+                    </div>
                     <p class="testi-quote">"<?= e(noir_excerpt($t['quote_text'])) ?>"</p>
+                    <div class="testi-divider"></div>
                     <div class="testi-foot">
                         <div class="testi-avatar">
                             <?php if (!empty($t['avatar_image'])): ?>
@@ -371,12 +420,12 @@ function noir_coin_face(string $glyph): string {
                                 <?= e($t['avatar_initial'] ?: mb_substr($t['client_name'], 0, 2)) ?>
                             <?php endif; ?>
                         </div>
-                        <div>
+                        <div class="testi-meta">
                             <div class="testi-name"><?= e($t['client_name']) ?></div>
-                            <div class="testi-branch">Customer &middot; <?= e($t['client_branch']) ?></div>
+                            <div class="testi-branch"><span class="testi-branch-dot"></span><?= e($t['client_branch']) ?></div>
                         </div>
+                        <div class="testi-date"><?= e(noir_testi_date($t['created_at'] ?? null)) ?></div>
                     </div>
-                    <span class="testi-readmore">Read full testimonial &rarr;</span>
                 </article>
                 <?php endforeach; ?>
             </div>
@@ -392,8 +441,12 @@ function noir_coin_face(string $glyph): string {
                     data-initial="<?= e($t['avatar_initial'] ?: mb_substr($t['client_name'], 0, 2)) ?>"
                     <?php if (!empty($t['avatar_image'])): ?>data-avatar-img="<?= e($t['avatar_image']) ?>"<?php endif; ?>
                     tabindex="0" role="button" aria-haspopup="dialog">
-                    <div class="testi-stars"><?= str_repeat('&#9733;', (int)$t['rating']) . str_repeat('&#9734;', 5 - (int)$t['rating']) ?></div>
+                    <div class="testi-card-top">
+                        <div class="testi-stars"><?= str_repeat('&#9733;', (int)$t['rating']) . str_repeat('&#9734;', 5 - (int)$t['rating']) ?></div>
+                        <span class="testi-expand-hint" aria-hidden="true">&#8599;</span>
+                    </div>
                     <p class="testi-quote">"<?= e(noir_excerpt($t['quote_text'])) ?>"</p>
+                    <div class="testi-divider"></div>
                     <div class="testi-foot">
                         <div class="testi-avatar">
                             <?php if (!empty($t['avatar_image'])): ?>
@@ -402,12 +455,12 @@ function noir_coin_face(string $glyph): string {
                                 <?= e($t['avatar_initial'] ?: mb_substr($t['client_name'], 0, 2)) ?>
                             <?php endif; ?>
                         </div>
-                        <div>
+                        <div class="testi-meta">
                             <div class="testi-name"><?= e($t['client_name']) ?></div>
-                            <div class="testi-branch">Customer &middot; <?= e($t['client_branch']) ?></div>
+                            <div class="testi-branch"><span class="testi-branch-dot"></span><?= e($t['client_branch']) ?></div>
                         </div>
+                        <div class="testi-date"><?= e(noir_testi_date($t['created_at'] ?? null)) ?></div>
                     </div>
-                    <span class="testi-readmore">Read full testimonial &rarr;</span>
                 </article>
                 <?php endforeach; ?>
             </div>
@@ -469,9 +522,9 @@ function noir_coin_face(string $glyph): string {
             const rect = card.getBoundingClientRect();
             const x = (e.clientX - rect.left) / rect.width - 0.5;
             const y = (e.clientY - rect.top) / rect.height - 0.5;
-            card.style.transform = `perspective(800px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) translateZ(0)`;
+            card.style.transform = `perspective(800px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg)`;
         });
-        card.addEventListener('mouseleave', () => { card.style.transform = 'perspective(800px) rotateY(0) rotateX(0) translateZ(0)'; });
+        card.addEventListener('mouseleave', () => { card.style.transform = 'perspective(800px) rotateY(0) rotateX(0)'; });
     });
 
     /* Broken/empty avatar images fall back to initials, silently */

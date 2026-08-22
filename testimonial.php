@@ -456,9 +456,9 @@ footer p span{color:var(--gold-dim)}
         <div class="stat-item">
             <div class="stat-num">2</div>
             <div class="stat-label">Branches</div>
-        </div>
+        </div>  
         <div class="stat-item">
-            <div class="stat-num">6+</div>
+            <div class="stat-num">12+</div>
             <div class="stat-label">Partners</div>
         </div>
     </div>
