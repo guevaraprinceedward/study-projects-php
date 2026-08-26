@@ -20,9 +20,21 @@ $conn->query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT NUL
 $conn->query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'pending'");
 $conn->query("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS price decimal(10,2) DEFAULT NULL");
 
+// ── ADD-ONS: ensure table + order_items columns exist ─────────────────────
+$conn->query("CREATE TABLE IF NOT EXISTS product_addons (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    price DECIMAL(10,2) NOT NULL DEFAULT 0,
+    applies_to VARCHAR(20) DEFAULT 'all',
+    is_active TINYINT(1) DEFAULT 1
+)");
+$conn->query("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS addons TEXT DEFAULT NULL");
+$conn->query("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS addons_total DECIMAL(10,2) DEFAULT 0");
+
 // ── HANDLE REMOVE ─────────────────────────────────────────────────────────
 if (isset($_GET['remove'])) {
     unset($_SESSION['cart'][(int)$_GET['remove']]);
+    unset($_SESSION['cart_addons'][(int)$_GET['remove']]);
     header("Location: cart.php"); exit();
 }
 
@@ -33,6 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update'])) {
         $qty = (int)$qty;
         if ($qty <= 0) {
             unset($_SESSION['cart'][$id]);
+            unset($_SESSION['cart_addons'][$id]);
         } else {
             // Clamp to actual product stock
             $stockRes = $conn->query("SELECT stock FROM products WHERE id = $id");
@@ -63,17 +76,35 @@ if (!empty($_SESSION['cart'])) {
         $qty = min($qty, $maxStock);
         $_SESSION['cart'][$id] = $qty;
 
-        $subtotal   = $row['price'] * $qty;
+        // ── Resolve this item's selected add-ons + their per-unit price total ──
+        $savedAddonIds = json_decode($_SESSION['cart_addons'][$id] ?? '[]', true);
+        if (!is_array($savedAddonIds)) $savedAddonIds = [];
+        $addonUnitTotal = 0.0;
+        if (!empty($savedAddonIds)) {
+            $idList = implode(',', array_map('intval', $savedAddonIds));
+            $aRes = $conn->query("SELECT COALESCE(SUM(price),0) AS total FROM product_addons WHERE id IN ($idList) AND is_active = 1");
+            $addonUnitTotal = (float)($aRes->fetch_assoc()['total'] ?? 0);
+        }
+
+        $subtotal   = ($row['price'] + $addonUnitTotal) * $qty;
         $total     += $subtotal;
         $cartRows[] = array_merge($row, [
-            'qty'       => $qty,
-            'subtotal'  => $subtotal,
-            'max_stock' => $maxStock,
+            'qty'             => $qty,
+            'subtotal'        => $subtotal,
+            'max_stock'       => $maxStock,
+            'addon_ids'       => $savedAddonIds,
+            'addon_unit_total'=> $addonUnitTotal,
         ]);
     }
 }
 
 $itemCount = array_sum(array_column($cartRows, 'qty'));
+
+// ── FETCH ALL ACTIVE ADD-ONS ONCE (grouped by applies_to for quick lookup) ──
+$allAddons = $conn->query("SELECT id, name, price, applies_to FROM product_addons WHERE is_active = 1 ORDER BY name ASC")->fetch_all(MYSQLI_ASSOC);
+function addonsForCategory($allAddons, $category) {
+    return array_values(array_filter($allAddons, fn($a) => $a['applies_to'] === 'all' || $a['applies_to'] === $category));
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -112,11 +143,11 @@ $itemCount = array_sum(array_column($cartRows, 'qty'));
         .item-count{margin-top:10px;font-size:13px;color:var(--muted);letter-spacing:0.05em}
         .cart-layout{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 32px 80px;display:grid;grid-template-columns:1fr 340px;gap:28px;align-items:start}
         .cart-items{display:flex;flex-direction:column;gap:14px}
-        .cart-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px 24px;display:flex;align-items:center;gap:20px;transition:border-color 0.25s;animation:slideIn 0.35s ease both}
+        .cart-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px 24px;display:flex;align-items:flex-start;gap:20px;transition:border-color 0.25s;animation:slideIn 0.35s ease both;flex-wrap:wrap}
         .cart-item:hover{border-color:var(--gold-dim)}
         @keyframes slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
         .item-icon{width:52px;height:52px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--gold-dim)}
-        .item-info{flex:1;min-width:0}
+        .item-info{flex:1;min-width:220px}
         .item-name{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:600;color:var(--cream);margin-bottom:4px}
         .item-unit-price{font-size:12px;color:var(--muted);letter-spacing:0.04em}
         .item-stock-note{font-size:11px;margin-top:3px}
@@ -146,7 +177,7 @@ $itemCount = array_sum(array_column($cartRows, 'qty'));
         .continue-link:hover{color:var(--gold)}
         .summary-note{margin-top:20px;padding-top:16px;border-top:1px solid var(--border);font-size:11.5px;color:var(--muted);line-height:1.6;text-align:center}
         .guest-note{background:rgba(201,168,76,0.06);border:1px solid var(--gold-dim);border-radius:3px;padding:10px 14px;font-size:12px;color:var(--muted);margin-top:14px;line-height:1.5;text-align:center}
-        .guest-note a{color:var(--gold);text-decoration:none;font-weight:500}
+        .guest-note a{color:var(--gold);text-decoration:none}
         .guest-note a:hover{text-decoration:underline}
         .update-bar{position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--surface);border-top:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;transform:translateY(100%);transition:transform 0.3s ease}
         .update-bar.visible{transform:translateY(0)}
@@ -184,6 +215,19 @@ $itemCount = array_sum(array_column($cartRows, 'qty'));
         footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28px 32px;text-align:center}
         footer p{font-size:12px;color:var(--muted);letter-spacing:0.06em}
         footer p span{color:var(--gold-dim)}
+
+        /* ══ ADD-ONS PICKER ══ */
+        .addon-picker{margin-top:10px;width:100%}
+        .addon-toggle{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--gold-dim);color:var(--gold);font-family:'Jost',sans-serif;font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;padding:5px 12px;border-radius:3px;cursor:pointer;transition:all 0.2s}
+        .addon-toggle:hover{background:rgba(201,168,76,0.08)}
+        .addon-count{background:var(--gold);color:#000;border-radius:8px;padding:0 6px;font-size:10px;font-weight:700;min-width:16px;text-align:center;display:inline-block}
+        .addon-panel{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:12px 14px;margin-top:8px;display:flex;flex-direction:column;gap:8px;animation:addonSlide 0.25s ease}
+        @keyframes addonSlide{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+        .addon-row{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--text);cursor:pointer;padding:3px 0}
+        .addon-row input{accent-color:var(--gold);width:15px;height:15px;cursor:pointer}
+        .addon-price{margin-left:auto;color:var(--gold-dim);font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:600}
+        .addon-empty{font-size:12px;color:var(--muted);font-style:italic}
+
         @media(max-width:768px){
             .cart-layout{grid-template-columns:1fr;padding:0 16px 80px}
             .summary-card{position:static}
@@ -250,6 +294,7 @@ $itemCount = array_sum(array_column($cartRows, 'qty'));
                 $isLow     = $maxStock <= 10;
                 $stockNote = $atLimit ? "Max qty reached ($maxStock in stock)" : ($isLow ? "Only $maxStock left in stock" : "$maxStock in stock");
                 $noteClass = $atLimit ? 'limit' : ($isLow ? 'low' : 'ok');
+                $itemAddonOptions = addonsForCategory($allAddons, $item['category'] ?? 'mains');
             ?>
             <div class="cart-item" style="animation-delay:<?= $i * 0.06 ?>s">
                 <div class="item-icon">
@@ -257,12 +302,35 @@ $itemCount = array_sum(array_column($cartRows, 'qty'));
                 </div>
                 <div class="item-info">
                     <div class="item-name"><?= htmlspecialchars($item['name']) ?></div>
-                    <div class="item-unit-price">₱<?= number_format($item['price'], 2) ?> each</div>
+                    <div class="item-unit-price">₱<?= number_format($item['price'], 2) ?> each<?= $item['addon_unit_total'] > 0 ? ' + ₱' . number_format($item['addon_unit_total'], 2) . ' add-ons' : '' ?></div>
                     <div class="item-stock-note <?= $noteClass ?>" id="note-<?= $item['id'] ?>"><?= $stockNote ?></div>
+
+                    <!-- ══ ADD-ONS PICKER ══ -->
+                    <div class="addon-picker" data-item="<?= $item['id'] ?>">
+                        <button type="button" class="addon-toggle" onclick="toggleAddonPanel(<?= $item['id'] ?>)">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add-ons
+                            <span class="addon-count" id="addonCount-<?= $item['id'] ?>"><?= count($item['addon_ids']) ?: '' ?></span>
+                        </button>
+                        <div class="addon-panel" id="addonPanel-<?= $item['id'] ?>" style="display:none">
+                            <?php if (empty($itemAddonOptions)): ?>
+                                <div class="addon-empty">No add-ons available for this item.</div>
+                            <?php else: foreach ($itemAddonOptions as $a):
+                                $checked = in_array((int)$a['id'], $item['addon_ids']) ? 'checked' : '';
+                            ?>
+                            <label class="addon-row">
+                                <input type="checkbox" value="<?= $a['id'] ?>" data-price="<?= $a['price'] ?>" <?= $checked ?>
+                                       onchange="updateAddons(<?= $item['id'] ?>, <?= $item['price'] ?>, <?= $item['qty'] ?>)">
+                                <span><?= htmlspecialchars($a['name']) ?></span>
+                                <span class="addon-price">+₱<?= number_format($a['price'], 2) ?></span>
+                            </label>
+                            <?php endforeach; endif; ?>
+                        </div>
+                    </div>
                 </div>
                 <div class="qty-wrap">
                     <button type="button" class="qty-btn" id="minus-<?= $item['id'] ?>" onclick="changeQty('<?= $item['id'] ?>', -1)" <?= $item['qty'] <= 1 ? 'disabled' : '' ?>>−</button>
-                    <input type="text" inputmode="numeric" autocomplete="off" class="qty-input" name="qty[<?= $item['id'] ?>]" id="qty-<?= $item['id'] ?>" value="<?= $item['qty'] ?>" data-max="<?= $maxStock ?>" data-price="<?= $item['price'] ?>" data-original="<?= $item['qty'] ?>" oninput="onQtyInput(this)" onblur="onQtyBlur(this)">
+                    <input type="text" inputmode="numeric" autocomplete="off" class="qty-input" name="qty[<?= $item['id'] ?>]" id="qty-<?= $item['id'] ?>" value="<?= $item['qty'] ?>" data-max="<?= $maxStock ?>" data-price="<?= $item['price'] ?>" data-addon-total="<?= $item['addon_unit_total'] ?>" data-original="<?= $item['qty'] ?>" oninput="onQtyInput(this)" onblur="onQtyBlur(this)">
                     <button type="button" class="qty-btn" id="plus-<?= $item['id'] ?>" onclick="changeQty('<?= $item['id'] ?>', 1)" <?= $atLimit ? 'disabled' : '' ?>>+</button>
                 </div>
                 <div class="item-subtotal" id="sub-<?= $item['id'] ?>"><small>₱</small><?= number_format($item['subtotal'], 2) ?></div>
@@ -344,7 +412,9 @@ function fmt(v){return '₱'+v.toLocaleString('en-PH',{minimumFractionDigits:2,m
 function recalcAll(){
     let grand=0,totalItems=0;
     document.querySelectorAll('.qty-input').forEach(function(inp){
-        var id=inp.id.replace('qty-',''),qty=parseInt(inp.value)||0,price=parseFloat(inp.dataset.price)||0,sub=qty*price;
+        var id=inp.id.replace('qty-',''),qty=parseInt(inp.value)||0,price=parseFloat(inp.dataset.price)||0;
+        var addonTotal=parseFloat(inp.dataset.addonTotal)||0;
+        var sub=(price+addonTotal)*qty;
         var subEl=document.getElementById('sub-'+id);
         if(subEl)subEl.innerHTML='<small>₱</small>'+sub.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
         grand+=sub;totalItems+=qty;
@@ -402,6 +472,34 @@ function showLoginModal(){document.getElementById('loginModal').classList.add('s
 function closeLoginModal(){document.getElementById('loginModal').classList.remove('show');}
 document.getElementById('loginModal').addEventListener('click',function(e){if(e.target===this)closeLoginModal();});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeLoginModal();});
+
+// ══ ADD-ONS ══
+function toggleAddonPanel(id){
+    var p=document.getElementById('addonPanel-'+id);
+    if(!p)return;
+    p.style.display = p.style.display==='none' ? 'flex' : 'none';
+}
+
+function updateAddons(itemId, unitPrice, qty){
+    var panel=document.getElementById('addonPanel-'+itemId);
+    var checked=[].slice.call(panel.querySelectorAll('input:checked'));
+    var ids=checked.map(function(c){return parseInt(c.value);});
+    var addonUnitTotal=checked.reduce(function(s,c){return s+parseFloat(c.dataset.price);},0);
+
+    var countEl=document.getElementById('addonCount-'+itemId);
+    if(countEl) countEl.textContent = ids.length || '';
+
+    // Update the qty input's stored addon total so recalcAll() reflects it instantly
+    var qtyInput=document.getElementById('qty-'+itemId);
+    if(qtyInput){ qtyInput.dataset.addonTotal = addonUnitTotal; }
+    recalcAll();
+
+    fetch('cart_addons_handler.php',{
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:'item_id='+encodeURIComponent(itemId)+'&addons='+encodeURIComponent(JSON.stringify(ids))
+    }).catch(function(){ /* silent — UI already reflects the change optimistically */ });
+}
 </script>
 </body>
 </html>

@@ -20,7 +20,7 @@ if (isset($_GET['add'])) {
 
     $check   = $conn->query("SELECT stock FROM products WHERE id = $id");
     $product = $check ? $check->fetch_assoc() : null;
-
+    
     if (!$product) {
         echo json_encode(['success' => false, 'message' => 'Product not found']);
         exit();
