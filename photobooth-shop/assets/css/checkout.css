@@ -1,0 +1,43 @@
+/* =====================================================================
+   KISLAP BOOTH ✨ — Checkout & Order Success
+   ===================================================================== */
+
+.checkout-page, .success-page { padding: 3rem 0 5rem; }
+.checkout-grid { display: grid; grid-template-columns: 1fr 360px; gap: 2.5rem; align-items: start; }
+
+.order-recap { padding: 1.6rem; }
+.order-recap img { width: 100%; border-radius: var(--radius-md); margin-bottom: 1.2rem; }
+.order-recap .recap-row { display: flex; justify-content: space-between; font-size: 0.86rem; color: var(--ink-soft); padding: 0.4rem 0; }
+.order-recap .recap-row.total { border-top: 2px dashed var(--line); margin-top: 0.6rem; padding-top: 0.8rem; font-family: var(--font-display); color: var(--ink); font-size: 1.1rem; }
+.order-recap .recap-row.total span:last-child { color: var(--grape); font-size: 1.4rem; }
+.order-num-chip { display: inline-block; background: var(--lilac); color: var(--grape-dark); font-family: var(--font-display); font-size: 0.8rem; padding: 0.4rem 0.9rem; border-radius: 999px; margin-bottom: 1rem; }
+
+.payment-methods { display: flex; flex-direction: column; gap: 0.9rem; margin: 1.4rem 0; }
+.pm-option { position: relative; }
+.pm-option input { position: absolute; opacity: 0; }
+.pm-option label {
+    display: flex; align-items: center; gap: 1rem; padding: 1.1rem 1.3rem;
+    border: 3px solid var(--line); border-radius: var(--radius-md); cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.2s;
+}
+.pm-option label:hover { transform: translateY(-2px); }
+.pm-option input:checked + label { border-color: var(--grape); background: var(--lilac); }
+.pm-icon { font-size: 1.6rem; }
+.pm-text strong { display: block; font-size: 0.95rem; }
+.pm-text span { font-size: 0.78rem; color: var(--ink-soft); }
+
+.pm-detail { display: none; background: var(--cream); border-radius: var(--radius-md); padding: 1.2rem; margin-top: -0.3rem; margin-bottom: 1rem; border: 2px dashed var(--line); }
+.pm-detail.active { display: block; }
+.gcash-qr { width: 130px; height: 130px; margin: 0 auto 1rem; background: var(--white); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 2.4rem; border: 2px solid var(--line); }
+
+/* ---- Success page ---- */
+.success-hero { text-align: center; max-width: 560px; margin: 0 auto 2.5rem; }
+.success-badge { width: 100px; height: 100px; border-radius: 50%; background: var(--sunshine); display: flex; align-items: center; justify-content: center; font-size: 2.6rem; margin: 0 auto 1.4rem; animation: success-pop 0.6s var(--ease-cute); box-shadow: 0 16px 32px rgba(255,211,110,0.5); }
+@keyframes success-pop { from { transform: scale(0); } 70% { transform: scale(1.15); } to { transform: scale(1); } }
+.success-hero h1 { font-size: clamp(1.8rem, 3.6vw, 2.6rem); margin-bottom: 0.7rem; }
+.success-hero p { color: var(--ink-soft); }
+
+.success-strip-wrap { display: flex; justify-content: center; margin-bottom: 2.5rem; }
+.success-strip-wrap img { max-width: 320px; border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); border: 6px solid var(--white); }
+
+.success-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }

@@ -1,0 +1,11 @@
+/* =====================================================================
+   KISLAP BOOTH ✨ — Auth Pages
+   ===================================================================== */
+
+.auth-page { padding: 4rem 0 6rem; display: flex; justify-content: center; }
+.auth-card { max-width: 440px; width: 100%; padding: 2.4rem; }
+.auth-card .auth-icon { font-size: 2.2rem; text-align: center; margin-bottom: 0.6rem; }
+.auth-card h2 { text-align: center; font-size: 1.6rem; margin-bottom: 0.4rem; }
+.auth-card .auth-sub { text-align: center; color: var(--ink-soft); font-size: 0.88rem; margin-bottom: 1.8rem; }
+.auth-switch { text-align: center; margin-top: 1.4rem; font-size: 0.85rem; color: var(--ink-soft); }
+.auth-switch a { color: var(--grape); font-weight: 700; }
