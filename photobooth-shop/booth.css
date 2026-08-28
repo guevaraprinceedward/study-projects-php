@@ -1,0 +1,116 @@
+/* =====================================================================
+   KISLAP BOOTH ✨ — Camera Capture Screen
+   ===================================================================== */
+
+.booth-page { padding: 3rem 0 5rem; }
+.booth-grid { display: grid; grid-template-columns: 1fr 320px; gap: 2rem; align-items: start; }
+
+/* ---- Camera stage ---- */
+.camera-stage {
+    position: relative; background: var(--ink); border-radius: var(--radius-lg);
+    overflow: hidden; aspect-ratio: 4/3; box-shadow: var(--shadow-soft);
+    border: 6px solid var(--white); outline: 3px solid var(--line);
+}
+.camera-stage video, .camera-stage .camera-placeholder-img { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.camera-stage canvas { display: none; }
+
+.camera-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; color: rgba(255,255,255,0.85); text-align: center; padding: 2rem; }
+.camera-placeholder .ph-icon { font-size: 3rem; }
+
+.face-guide { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.face-oval {
+    width: 46%; height: 62%; border-radius: 50%;
+    border: 4px dashed rgba(255,255,255,0.45);
+    transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+}
+.face-oval.detected {
+    border: 4px solid var(--sunshine); border-style: solid;
+    box-shadow: 0 0 0 8px rgba(255,211,110,0.18);
+    animation: face-pulse 1.4s ease-in-out infinite;
+}
+@keyframes face-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+
+.detect-badge {
+    position: absolute; top: 1rem; left: 1rem; z-index: 3;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(6px); color: var(--white);
+    font-size: 0.78rem; font-weight: 700; padding: 0.5rem 0.9rem; border-radius: 999px;
+    display: flex; align-items: center; gap: 0.5rem; transition: background 0.3s;
+}
+.detect-badge .dot { width: 9px; height: 9px; border-radius: 50%; background: #FF7A7A; transition: background 0.3s; }
+.detect-badge.ok { background: rgba(46,158,134,0.75); }
+.detect-badge.ok .dot { background: #6DFFD1; box-shadow: 0 0 8px #6DFFD1; }
+
+.shot-counter-badge {
+    position: absolute; top: 1rem; right: 1rem; z-index: 3;
+    background: var(--white); color: var(--ink); font-family: var(--font-display);
+    font-size: 0.82rem; font-weight: 600; padding: 0.5rem 1rem; border-radius: 999px; box-shadow: var(--shadow-soft);
+}
+
+.flash-overlay { position: absolute; inset: 0; background: var(--white); opacity: 0; pointer-events: none; z-index: 5; }
+.flash-overlay.flashing { animation: flash-pop 0.35s ease-out; }
+@keyframes flash-pop { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ---- Countdown ---- */
+.countdown-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 4; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+.countdown-wrap.active { opacity: 1; }
+.countdown-ring-box { position: relative; width: 160px; height: 160px; }
+.countdown-ring-box svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.countdown-ring-bg { fill: none; stroke: rgba(255,255,255,0.25); stroke-width: 8; }
+.countdown-ring-fg { fill: none; stroke: var(--sunshine); stroke-width: 8; stroke-linecap: round; stroke-dasharray: 440; stroke-dashoffset: 440; transition: stroke-dashoffset 1s linear; }
+.countdown-number { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 3.4rem; color: var(--white); animation: count-pop 0.5s var(--ease-cute); }
+@keyframes count-pop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.pose-hint { position: absolute; bottom: 1.2rem; left: 50%; transform: translateX(-50%); z-index: 3; background: rgba(0,0,0,0.55); backdrop-filter: blur(6px); color: var(--white); font-size: 0.85rem; font-weight: 700; padding: 0.6rem 1.3rem; border-radius: 999px; text-align: center; }
+
+/* ---- Controls ---- */
+.camera-controls { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.6rem; flex-wrap: wrap; }
+.shutter-btn {
+    width: 78px; height: 78px; border-radius: 50%; background: var(--white); border: 5px solid var(--grape);
+    cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.6rem;
+    transition: transform 0.2s var(--ease-cute), box-shadow 0.2s; box-shadow: var(--shadow-soft);
+}
+.shutter-btn:hover { transform: scale(1.08); box-shadow: var(--shadow-pop); }
+.shutter-btn:active { transform: scale(0.94); }
+.shutter-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.upload-alt-label { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+
+/* ---- Shots strip ---- */
+.shots-strip { display: flex; gap: 0.9rem; margin-top: 1.8rem; flex-wrap: wrap; justify-content: center; }
+.shot-slot {
+    width: 92px; height: 92px; border-radius: var(--radius-sm); border: 3px dashed var(--line);
+    display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;
+    background: var(--white); font-size: 1.5rem; color: var(--ink-soft);
+}
+.shot-slot.filled { border-style: solid; border-color: var(--grape); animation: slot-pop 0.5s var(--ease-cute); }
+.shot-slot.filled img { width: 100%; height: 100%; object-fit: cover; }
+@keyframes slot-pop { from { transform: scale(0.6) rotate(-8deg); opacity: 0; } to { transform: scale(1) rotate(0deg); opacity: 1; } }
+.shot-slot .retake-btn {
+    position: absolute; inset: 0; background: rgba(43,33,64,0.65); color: var(--white);
+    display: flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 700;
+    opacity: 0; transition: opacity 0.2s; cursor: pointer; border: none;
+}
+.shot-slot.filled:hover .retake-btn { opacity: 1; }
+.shot-slot .slot-num { position: absolute; top: 4px; left: 6px; font-size: 0.68rem; font-weight: 700; color: var(--ink-soft); }
+
+/* ---- Sidebar ---- */
+.booth-sidebar { position: sticky; top: 100px; }
+.booth-type-card { padding: 1.6rem; margin-bottom: 1.2rem; }
+.booth-type-card .bt-icon { font-size: 2.2rem; margin-bottom: 0.6rem; }
+.booth-type-card h3 { font-size: 1.2rem; margin-bottom: 0.4rem; }
+.booth-type-card p { font-size: 0.84rem; color: var(--ink-soft); margin-bottom: 1rem; }
+.booth-type-card .price-row { display: flex; justify-content: space-between; align-items: baseline; padding-top: 1rem; border-top: 2px dashed var(--line); }
+.booth-type-card .price-row .amt { font-family: var(--font-display); font-size: 1.6rem; color: var(--grape); }
+
+.progress-dots { display: flex; gap: 0.5rem; margin: 1rem 0 1.4rem; }
+.progress-dots .pdot { flex: 1; height: 8px; border-radius: 999px; background: var(--line); transition: background 0.3s; }
+.progress-dots .pdot.done { background: var(--grape); }
+
+.tip-card { padding: 1.4rem; background: var(--lilac); }
+.tip-card h4 { font-size: 0.9rem; margin-bottom: 0.7rem; }
+.tip-card ul { padding-left: 1.1rem; font-size: 0.82rem; color: var(--ink-soft); line-height: 1.8; }
+
+@media (max-width: 980px) {
+    .booth-grid { grid-template-columns: 1fr; }
+    .booth-sidebar { position: static; }
+}
