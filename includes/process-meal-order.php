@@ -1,9 +1,24 @@
 <?php
-// Same defensive pattern as process-reservation.php / process-service-order.php:
-// buffer everything so a stray notice/warning from an include never leaks
-// into the JSON body and breaks the frontend's fetch().json() parse.
-ob_start();
+/**
+ * process-meal-order.php
+ * -------------------------------------------------------------------------
+ * Handles "Send Order to Room" from the Dining & Champagne panel on
+ * dashboard.php (My Bookings). Called via fetch() with a JSON body:
+ *   { "booking_id": 12, "for_date": "2026-09-14", "items": [ { "id": 3, "qty": 2 }, ... ] }
+ *
+ * FIX HISTORY:
+ * Previously failed with "Unknown column 'user_id' in field list" because
+ * an earlier version of this file tried to INSERT (or SELECT) a `user_id`
+ * column directly on `service_orders`. The real schema is:
+ *   id, booking_id, service_id, guest_name, scheduled_date, quantity,
+ *   total_price, status, created_at
+ * There is no user_id column on service_orders — ownership is established
+ * indirectly, through booking_id -> bookings.user_id. This file verifies
+ * that link explicitly (see "OWNERSHIP CHECK" below) instead of ever
+ * trying to store the guest's user id on the order row itself.
+ */
 
+ob_start();
 include_once 'hotel-config.php';
 
 set_exception_handler(function ($e) {
@@ -20,131 +35,107 @@ set_error_handler(function ($severity, $message, $file, $line) {
 if (ob_get_length()) ob_clean();
 header('Content-Type: application/json');
 
+// ── Must be logged in ──────────────────────────────────────────────────
 if (!isHotelLoggedIn()) {
-    echo json_encode(['ok' => false, 'error' => 'Please log in to order for your room.']);
+    echo json_encode(['ok' => false, 'error' => 'Please log in to continue.']);
     exit;
 }
+$userId    = (int)$_SESSION['user']['id'];
+$guestName = $_SESSION['user']['name'];
+$tier      = currentTier();
 
-$userId = $_SESSION['user']['id'];
-$tier   = currentTier();
-$today  = date('Y-m-d');
-
-$input      = json_decode(file_get_contents('php://input'), true);
-$bookingId  = (int)($input['booking_id'] ?? 0);
-$forDate    = $input['for_date'] ?? $today;
-$items      = $input['items'] ?? [];
+// ── Parse the request body ───────────────────────────────────────────────
+$payload   = json_decode(file_get_contents('php://input'), true);
+$bookingId = (int)($payload['booking_id'] ?? 0);
+$forDate   = $payload['for_date'] ?? '';
+$items     = $payload['items'] ?? null;
 
 if (!$bookingId) {
-    echo json_encode(['ok' => false, 'error' => 'Missing booking reference.']);
+    echo json_encode(['ok' => false, 'error' => 'Invalid booking.']);
     exit;
 }
-if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $forDate)) {
-    echo json_encode(['ok' => false, 'error' => 'Invalid date.']);
+if (!$forDate || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $forDate)) {
+    echo json_encode(['ok' => false, 'error' => 'Please choose a valid serve date.']);
     exit;
 }
-if (!is_array($items) || empty($items)) {
-    echo json_encode(['ok' => false, 'error' => 'Please choose at least one item.']);
-    exit;
-}
-if (count($items) > 30) {
-    echo json_encode(['ok' => false, 'error' => 'That order has too many items — please split it up.']);
+if (!is_array($items) || count($items) === 0) {
+    echo json_encode(['ok' => false, 'error' => 'Please choose at least one item first.']);
     exit;
 }
 
-// ── This booking must belong to the guest, and be an active stay ────────
-$stmt = $conn->prepare("SELECT * FROM bookings WHERE id = ? AND user_id = ? LIMIT 1");
-$stmt->bind_param("ii", $bookingId, $userId);
-$stmt->execute();
-$booking = $stmt->get_result()->fetch_assoc();
+// ── OWNERSHIP CHECK — this is how we know the order belongs to this guest,
+//    since service_orders itself has no user_id column to check directly. ──
+$bStmt = $conn->prepare("SELECT id, status, checkin_date, checkout_date FROM bookings WHERE id = ? AND user_id = ? LIMIT 1");
+$bStmt->bind_param("ii", $bookingId, $userId);
+$bStmt->execute();
+$booking = $bStmt->get_result()->fetch_assoc();
 
 if (!$booking) {
     echo json_encode(['ok' => false, 'error' => 'Booking not found.']);
     exit;
 }
 if (!in_array($booking['status'], ['pending', 'confirmed', 'checked_in'])) {
-    echo json_encode(['ok' => false, 'error' => 'This stay is no longer active, so room orders are closed.']);
+    echo json_encode(['ok' => false, 'error' => 'This booking is no longer active.']);
     exit;
 }
-// Requested serving date should fall within (or right up to) the stay window.
 if ($forDate < $booking['checkin_date'] || $forDate > $booking['checkout_date']) {
-    echo json_encode(['ok' => false, 'error' => 'Please choose a date within your stay.']);
+    echo json_encode(['ok' => false, 'error' => 'The serve date must fall within your stay.']);
     exit;
 }
 
+// ── Process each item ────────────────────────────────────────────────────
 $conn->begin_transaction();
+
 try {
-    // One shared reference identifies "this order" to the guest, but every
-    // row in service_orders must have its own UNIQUE order_ref — so each
-    // line item gets the base ref plus a running suffix (DN-XXXXXX-01, -02, ...).
-    $baseRef = generateRef('DN');
-    $addedItems = [];
-    $extraCharge = 0.00; // only champagne carries a charge; food & drinks are complimentary
-    $lineNumber = 0;
+    $svcStmt = $conn->prepare("SELECT id, name, base_price, vip_price, stock, active, category FROM services WHERE id = ? LIMIT 1");
+    $insStmt = $conn->prepare("
+        INSERT INTO service_orders (booking_id, service_id, guest_name, scheduled_date, quantity, total_price, status)
+        VALUES (?, ?, ?, ?, ?, ?, 'pending')
+    ");
 
-    foreach ($items as $it) {
-        $lineNumber++;
-        $ref = $baseRef . '-' . str_pad($lineNumber, 2, '0', STR_PAD_LEFT);
-        $serviceId = (int)($it['id'] ?? 0);
-        $qty       = max(1, min(10, (int)($it['qty'] ?? 1)));
-        if (!$serviceId) continue;
+    $extraCharge = 0.00;
+    $orderedCount = 0;
 
-        // Lock the row so limited-stock champagne can't be oversold by a
-        // concurrent request.
-        $stmt = $conn->prepare("SELECT * FROM services WHERE id = ? AND active = 1 AND category = 'dining' FOR UPDATE");
-        $stmt->bind_param("i", $serviceId);
-        $stmt->execute();
-        $svc = $stmt->get_result()->fetch_assoc();
-        if (!$svc) {
-            throw new Exception('One of the selected items is no longer available.');
+    foreach ($items as $item) {
+        $serviceId = (int)($item['id'] ?? 0);
+        $qty = max(1, min(10, (int)($item['qty'] ?? 0)));
+
+        if ($serviceId <= 0 || $qty <= 0) continue; // skip anything malformed rather than fail the whole order
+
+        $svcStmt->bind_param("i", $serviceId);
+        $svcStmt->execute();
+        $svc = $svcStmt->get_result()->fetch_assoc();
+
+        if (!$svc || (int)$svc['active'] !== 1 || $svc['category'] !== 'dining') {
+            throw new RuntimeException('One of the items you selected is no longer available.');
+        }
+        if ($svc['stock'] !== null && $qty > (int)$svc['stock']) {
+            throw new RuntimeException('Only ' . (int)$svc['stock'] . ' left in stock for "' . $svc['name'] . '".');
         }
 
-        if ($svc['type'] === 'champagne' && $svc['stock'] !== null && $qty > (int)$svc['stock']) {
-            throw new Exception("Only {$svc['stock']} bottle(s) of \"{$svc['name']}\" are available.");
-        }
+        // Price always comes from the database, never trusted from the browser.
+        $unitPrice = $tier === 'vip' ? (float)$svc['vip_price'] : (float)$svc['base_price'];
+        $lineTotal = round($unitPrice * $qty, 2);
 
-        // Food and drinks are always complimentary regardless of the listed
-        // price column; only champagne is a paid add-on.
-        $unitPrice = ($svc['type'] === 'champagne')
-            ? ($tier === 'vip' ? (float)$svc['vip_price'] : (float)$svc['base_price'])
-            : 0.00;
-        $lineTotal = $unitPrice * $qty;
+        $insStmt->bind_param("iissid", $bookingId, $serviceId, $guestName, $forDate, $qty, $lineTotal);
+        $insStmt->execute();
+
         $extraCharge += $lineTotal;
-
-        $ins = $conn->prepare("INSERT INTO service_orders
-            (order_ref, user_id, booking_id, service_id, quantity, scheduled_date, tier_applied, unit_price, total_price, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
-        $ins->bind_param("siiiissdd", $ref, $userId, $bookingId, $serviceId, $qty, $forDate, $tier, $unitPrice, $lineTotal);
-        $ins->execute();
-
-        // Decrement stock for limited champagne bottles.
-        if ($svc['type'] === 'champagne' && $svc['stock'] !== null) {
-            $upd = $conn->prepare("UPDATE services SET stock = stock - ? WHERE id = ?");
-            $upd->bind_param("ii", $qty, $serviceId);
-            $upd->execute();
-        }
-
-        $addedItems[] = [
-            'name' => $svc['name'],
-            'type' => $svc['type'],
-            'qty'  => $qty,
-            'unit_price' => $unitPrice,
-            'line_total' => $lineTotal,
-        ];
+        $orderedCount++;
     }
 
-    if (empty($addedItems)) {
-        throw new Exception('Please choose at least one item.');
+    if ($orderedCount === 0) {
+        throw new RuntimeException('Please choose at least one item first.');
     }
 
     $conn->commit();
+
     echo json_encode([
         'ok' => true,
-        'ref' => $baseRef,
-        'for_date' => $forDate,
-        'items' => $addedItems,
-        'extra_charge' => $extraCharge,
+        'extra_charge' => round($extraCharge, 2),
+        'count' => $orderedCount,
     ]);
-} catch (Exception $e) {
+} catch (Throwable $e) {
     $conn->rollback();
     echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
 }
