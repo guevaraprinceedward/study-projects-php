@@ -40,8 +40,9 @@ function render_product_card($s, $tier, $suiteName) {
                             <button type="button" class="qty-plus">+</button>
                         </div>
                     </div>
-                    <button type="button" class="btn-gold svc-add">Add to Order</button>
+                    
                 </div>
+                <button type="button" class="btn-gold svc-add">Add to Order</button>
             </div>
         </div>
     </div>
@@ -70,9 +71,10 @@ function render_product_card($s, $tier, $suiteName) {
 .svc-body p{font-size:12px;color:var(--h-muted);line-height:1.6}
 .svc-price{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--h-gold);font-weight:700}
 .svc-price span{font-size:10px;font-family:'Jost',sans-serif;color:var(--h-muted);text-transform:uppercase}
-.svc-order{border-top:1px solid var(--h-line);padding-top:12px;margin-top:4px;display:flex;flex-direction:column;gap:10px}
+.svc-order{border-top:1px solid var(--h-line);padding-top:20px;margin-top:auto;display:flex;flex-direction:column;gap:16px}
 .svc-order .form-row{align-items:flex-end}
-.svc-add{width:100%; margin-top:20px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.svc-add{width:100%}
 .cart-fab{position:fixed;bottom:26px;right:26px;z-index:300;background:var(--h-gold);color:#0a0a0c;border:none;border-radius:100px;padding:14px 22px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,0.4)}
 .cart-drawer{position:fixed;top:0;right:0;height:100vh;width:360px;background:#0c0c0e;border-left:1px solid var(--h-line);z-index:301;transform:translateX(100%);transition:transform 0.35s ease;display:flex;flex-direction:column}
 .cart-drawer.open{transform:translateX(0)}
@@ -86,8 +88,12 @@ function render_product_card($s, $tier, $suiteName) {
 .cart-foot{padding:18px 20px;border-top:1px solid var(--h-line)}
 
 /* ══════════ PREMIUM ENHANCEMENT: loader, luxury cards, 3D hover, reveal ══════════ */
-body{opacity:0;transition:opacity .6s ease}
-body.h-loaded{opacity:1}
+/* IMPORTANT: fade only the page content, never the loader itself — the loader
+   is also a child of <body>, so giving <body> opacity:0 would hide the loader
+   too (opacity compounds through descendants), leaving a blank black screen
+   until everything snaps in together. */
+body > *:not(.h-loader){opacity:0;transition:opacity .6s ease}
+body.h-loaded > *:not(.h-loader){opacity:1}
 .h-loader{position:fixed;inset:0;z-index:9999;background:var(--h-bg);display:flex;align-items:center;justify-content:center;transition:opacity .7s ease, visibility 0s linear .7s}
 .h-loader.done{opacity:0;visibility:hidden}
 .h-loader-ring{position:relative;width:64px;height:64px}
@@ -109,7 +115,7 @@ body.h-loaded{opacity:1}
 .svc-card:hover img{transform:scale(1.08)}
 .svc-media::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(7,7,10,.75))}
 .svc-corner{position:absolute;top:12px;left:12px;z-index:2;font-family:'Jost',sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--h-gold);background:rgba(7,7,10,.62);border:1px solid rgba(207,167,107,.35);backdrop-filter:blur(6px);padding:5px 11px;border-radius:100px}
-.svc-body{padding:20px 20px 22px;transform:translateZ(18px)}
+.svc-body{padding:20px 20px 22px;transform:translateZ(18px);flex:1;display:flex;flex-direction:column}
 .svc-body h4{position:relative}
 .svc-body h4::after{content:'';display:block;width:26px;height:1px;background:var(--h-gold-dim);margin-top:9px}
 .svc-price{position:relative;padding-top:13px;margin-top:2px;border-top:1px solid var(--h-line)}
@@ -117,10 +123,15 @@ body.h-loaded{opacity:1}
 .svc-add::after{content:'';position:absolute;top:0;left:-60%;width:35%;height:100%;background:linear-gradient(115deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-18deg);transition:left .6s ease}
 .svc-add:hover::after{left:130%}
 
+.page-hero{opacity:0;transform:translateY(18px);transition:opacity .9s cubic-bezier(.2,.8,.2,1), transform .9s cubic-bezier(.2,.8,.2,1)}
+body.h-loaded .page-hero{opacity:1;transform:translateY(0)}
+.gender-toggle,#suiteTabs{opacity:0;transform:translateY(14px);transition:opacity .8s cubic-bezier(.2,.8,.2,1) .15s, transform .8s cubic-bezier(.2,.8,.2,1) .15s}
+body.h-loaded .gender-toggle,body.h-loaded #suiteTabs{opacity:1;transform:translateY(0)}
+
 @media (prefers-reduced-motion: reduce){
     .h-loader{display:none !important}
-    body{opacity:1 !important;transition:none !important}
-    .svc-card{opacity:1 !important;transform:none !important;transition:none !important}
+    body > *:not(.h-loader){opacity:1 !important;transition:none !important}
+    .svc-card,.page-hero,.gender-toggle,#suiteTabs{opacity:1 !important;transform:none !important;transition:none !important}
 }
 </style>
 </head>
@@ -134,7 +145,7 @@ body.h-loaded{opacity:1}
         </svg>
         <div class="h-loader-mark">N</div>
     </div>
-    <div class="h-loader-word">Nocturne</div>
+    <div class="h-loader-word">Skincare</div>
 </div>
 
 <?php include_once 'sidebar.php'; ?>
@@ -278,7 +289,7 @@ document.getElementById('cartCheckout')?.addEventListener('click', async () => {
         if (l){ l.classList.add('done'); setTimeout(function(){ l.remove(); }, 750); }
     }
     if (reduced) finish();
-    else { window.addEventListener('load', function(){ setTimeout(finish, 450); }); setTimeout(finish, 2200); }
+    else { window.addEventListener('load', function(){ setTimeout(finish, 1100); }); setTimeout(finish, 2800); }
 
     var cards = document.querySelectorAll('.svc-card');
     if (reduced || !('IntersectionObserver' in window)) {
@@ -293,6 +304,10 @@ document.getElementById('cartCheckout')?.addEventListener('click', async () => {
     if (!reduced && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
         cards.forEach(function(card){
             card.addEventListener('mousemove', function(e){
+                /* Never tilt while the pointer is over the order form — native
+                   date/time pickers render their icon in the wrong spot under
+                   a 3D transform, making them hard or impossible to click. */
+                if (e.target.closest('.svc-order')) { card.style.transform = ''; return; }
                 var r = card.getBoundingClientRect();
                 var px = (e.clientX-r.left)/r.width - .5, py = (e.clientY-r.top)/r.height - .5;
                 card.style.transform = 'perspective(1000px) rotateY('+(px*6).toFixed(1)+'deg) rotateX('+(-py*6).toFixed(1)+'deg) translateY(-4px)';

@@ -31,7 +31,10 @@ function render_spa_card($s, $tier, $suiteName, $addons) {
     $price = svcPrice($s, $tier);
     ob_start(); ?>
     <div class="svc-card">
-        <img src="<?= htmlspecialchars($s['image_url']) ?>" alt="<?= htmlspecialchars($s['name']) ?>" loading="lazy">
+        <div class="svc-media">
+            <img src="<?= htmlspecialchars($s['image_url']) ?>" alt="<?= htmlspecialchars($s['name']) ?>" loading="lazy">
+            <span class="svc-corner">Spa</span>
+        </div>
         <div class="svc-body">
             <h4><?= htmlspecialchars($s['name']) ?></h4>
             <p><?= htmlspecialchars($s['description']) ?></p>
@@ -41,6 +44,10 @@ function render_spa_card($s, $tier, $suiteName, $addons) {
                  data-suite="<?= htmlspecialchars($suiteName) ?>" data-price="<?= $price ?>" data-unit="per_session">
                 <div class="form-row">
                     <div class="field"><label>Date</label><input type="date" class="svc-date" min="<?= date('Y-m-d') ?>"></div>
+                    
+                </div>
+                <div class="form-row">
+                    
                     <div class="field"><label>Time</label><input type="time" class="svc-time"></div>
                 </div>
                 <?php if (!empty($addons)): ?>
@@ -66,8 +73,9 @@ function render_spa_card($s, $tier, $suiteName, $addons) {
                             <button type="button" class="qty-plus">+</button>
                         </div>
                     </div>
-                    <button type="button" class="btn-gold svc-add">Add to Order</button>
+                    
                 </div>
+                <button type="button" class="btn-gold svc-add">Add to Order</button>
             </div>
         </div>
     </div>
@@ -82,6 +90,7 @@ function render_spa_card($s, $tier, $suiteName, $addons) {
 <title>Spa, Shop &amp; Entertainment — Nocturne Manila Bay</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="hotel-theme.css">
+<noscript><style>.h-loader{display:none!important}body{opacity:1!important}</style></noscript>
 <style>
 .svc-offers{max-width:1240px;margin:0 auto 24px;padding:0 32px;display:flex;gap:8px;flex-wrap:wrap}
 .svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:20px}
@@ -95,7 +104,7 @@ function render_spa_card($s, $tier, $suiteName, $addons) {
 .svc-price span{font-size:10px;font-family:'Jost',sans-serif;color:var(--h-muted);text-transform:uppercase}
 .svc-order{border-top:1px solid var(--h-line);padding-top:12px;margin-top:4px;display:flex;flex-direction:column;gap:10px}
 .svc-order .form-row{align-items:flex-end}
-.svc-add{width:100%; margin-top:20px; }
+.svc-add{width:100%}
 .addon-block{display:flex;flex-direction:column;gap:6px}
 .addon-label{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--h-gold-dim)}
 .addon-list{display:flex;flex-direction:column;gap:6px}
@@ -128,9 +137,72 @@ function render_spa_card($s, $tier, $suiteName, $addons) {
 .cart-remove{background:none;border:none;color:var(--h-bad);cursor:pointer;margin-left:6px}
 .cart-empty{color:var(--h-muted);font-size:12.5px}
 .cart-foot{padding:18px 20px;border-top:1px solid var(--h-line)}
+
+/* ══════════ PREMIUM ENHANCEMENT: loader, luxury cards, 3D hover, cinematic reveal ══════════ */
+body{opacity:0;transition:opacity .6s ease}
+body.h-loaded{opacity:1}
+.h-loader{position:fixed;inset:0;z-index:9999;background:var(--h-bg);display:flex;align-items:center;justify-content:center;transition:opacity .7s ease, visibility 0s linear .7s}
+.h-loader.done{opacity:0;visibility:hidden}
+.h-loader-ring{position:relative;width:64px;height:64px}
+.h-loader-ring svg{width:100%;height:100%;animation:hlSpin 1.6s linear infinite}
+.h-loader-ring circle{fill:none;stroke:var(--h-gold-dim);stroke-width:1;opacity:.3}
+.h-loader-ring .arc{stroke:var(--h-gold);stroke-width:1.4;stroke-linecap:round;stroke-dasharray:40 220}
+@keyframes hlSpin{to{transform:rotate(360deg)}}
+.h-loader-mark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--h-gold);letter-spacing:.04em}
+.h-loader-word{position:absolute;top:calc(50% + 52px);left:50%;transform:translateX(-50%);font-family:'Jost',sans-serif;font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--h-muted);white-space:nowrap}
+
+.svc-card{position:relative;background:linear-gradient(165deg,rgba(207,167,107,.05),var(--h-card) 55%) !important;border:1px solid var(--h-line);border-radius:6px;overflow:hidden;display:flex;flex-direction:column;
+  transform-style:preserve-3d;will-change:transform;
+  transition:transform .45s cubic-bezier(.2,.8,.2,1),border-color .35s ease,box-shadow .45s ease;
+  opacity:0;transform:translateY(28px)}
+.svc-card.in-view{opacity:1;transform:translateY(0)}
+.svc-card:hover{border-color:var(--h-gold-dim);box-shadow:0 36px 70px -24px rgba(0,0,0,.7)}
+.svc-media{position:relative;aspect-ratio:4/3;overflow:hidden}
+.svc-card img{width:100%;height:100%;object-fit:cover;transition:transform .8s cubic-bezier(.2,.8,.2,1);filter:saturate(1.03)}
+.svc-card:hover img{transform:scale(1.08)}
+.svc-media::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(7,7,10,.75))}
+.svc-corner{position:absolute;top:12px;left:12px;z-index:2;font-family:'Jost',sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--h-gold);background:rgba(7,7,10,.62);border:1px solid rgba(207,167,107,.35);backdrop-filter:blur(6px);padding:5px 11px;border-radius:100px}
+.svc-body{padding:20px 20px 22px;transform:translateZ(18px)}
+.svc-body h4{position:relative}
+.svc-body h4::after{content:'';display:block;width:26px;height:1px;background:var(--h-gold-dim);margin-top:9px}
+.svc-price{position:relative;padding-top:13px;margin-top:2px;border-top:1px solid var(--h-line)}
+.svc-order{border-top:1px solid var(--h-line);padding-top:20px;margin-top:10px;display:flex;flex-direction:column;gap:16px}
+.form-row{grid-template-columns:1fr 1fr;gap:14px}
+.svc-add{position:relative;overflow:hidden;letter-spacing:.12em;width:100%}
+.svc-add::after{content:'';position:absolute;top:0;left:-60%;width:35%;height:100%;background:linear-gradient(115deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-18deg);transition:left .6s ease}
+.svc-add:hover::after{left:130%}
+
+.cat-card{transform-style:preserve-3d;will-change:transform;opacity:0;transform:translateY(28px);
+  transition:transform .5s cubic-bezier(.2,.8,.2,1),border-color .35s ease,box-shadow .45s ease}
+.cat-card.in-view{opacity:1;transform:translateY(0)}    
+.cat-card:hover{box-shadow:0 34px 70px -22px rgba(0,0,0,.7)}
+.cat-card-body{transform:translateZ(20px)}
+
+.page-hero{opacity:0;transform:translateY(18px);transition:opacity .9s cubic-bezier(.2,.8,.2,1), transform .9s cubic-bezier(.2,.8,.2,1)}
+body.h-loaded .page-hero{opacity:1;transform:translateY(0)}
+#suiteTabs{opacity:0;transform:translateY(14px);transition:opacity .8s cubic-bezier(.2,.8,.2,1) .15s, transform .8s cubic-bezier(.2,.8,.2,1) .15s}
+body.h-loaded #suiteTabs{opacity:1;transform:translateY(0)}
+
+@media (prefers-reduced-motion: reduce){
+    .h-loader{display:none !important}
+    body{opacity:1 !important;transition:none !important}
+    .svc-card,.cat-card,.page-hero,#suiteTabs{opacity:1 !important;transform:none !important;transition:none !important}
+}
 </style>
 </head>
 <body>
+
+<div class="h-loader" id="hLoader" aria-hidden="true">
+    <div class="h-loader-ring">
+        <svg viewBox="0 0 64 64">
+            <circle cx="32" cy="32" r="28"></circle>
+            <circle class="arc" cx="32" cy="32" r="28"></circle>
+        </svg>
+        <div class="h-loader-mark">N</div>
+    </div>
+    <div class="h-loader-word">Spa &amp; Shop</div>
+</div>
+
 <?php include_once 'sidebar.php'; ?>
 <?php include_once 'topheader.php'; ?>
 
@@ -300,6 +372,40 @@ document.getElementById('cartCheckout')?.addEventListener('click', async () => {
         }
     } catch (e) { msg.style.color = '#c0574a'; msg.textContent = 'Network error, please try again.'; }
 });
+</script>
+
+<script>
+(function(){
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function finish(){
+        document.body.classList.add('h-loaded');
+        var l = document.getElementById('hLoader');
+        if (l){ l.classList.add('done'); setTimeout(function(){ l.remove(); }, 750); }
+    }
+    if (reduced) finish();
+    else { window.addEventListener('load', function(){ setTimeout(finish, 450); }); setTimeout(finish, 2200); }
+
+    var cards = document.querySelectorAll('.svc-card, .cat-card');
+    if (reduced || !('IntersectionObserver' in window)) {
+        cards.forEach(function(c){ c.classList.add('in-view'); });
+    } else {
+        var io = new IntersectionObserver(function(entries){
+            entries.forEach(function(en){ if (en.isIntersecting){ en.target.classList.add('in-view'); io.unobserve(en.target); } });
+        }, { threshold: .12, rootMargin: '0px 0px -40px 0px' });
+        cards.forEach(function(c){ io.observe(c); });
+    }
+
+    if (!reduced && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
+        cards.forEach(function(card){
+            card.addEventListener('mousemove', function(e){
+                var r = card.getBoundingClientRect();
+                var px = (e.clientX-r.left)/r.width - .5, py = (e.clientY-r.top)/r.height - .5;
+                card.style.transform = 'perspective(1000px) rotateY('+(px*6).toFixed(1)+'deg) rotateX('+(-py*6).toFixed(1)+'deg) translateY(-4px)';
+            });
+            card.addEventListener('mouseleave', function(){ card.style.transform = ''; });
+        });
+    }
+})();
 </script>
 </body>
 </html>

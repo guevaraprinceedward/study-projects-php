@@ -104,7 +104,7 @@ function render_minibar_card($s, $tier, $suiteName, $addons) {
 .svc-price span{font-size:10px;font-family:'Jost',sans-serif;color:var(--h-muted);text-transform:uppercase}
 .svc-order{border-top:1px solid var(--h-line);padding-top:12px;margin-top:4px;display:flex;flex-direction:column;gap:10px}
 .svc-order .form-row{align-items:flex-end}
-.svc-add{width:100%}
+.svc-add{width:100%; margin-top:20px;}
 .addon-block{display:flex;flex-direction:column;gap:6px}
 .addon-label{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--h-gold-dim)}
 .addon-list{display:flex;flex-direction:column;gap:6px}

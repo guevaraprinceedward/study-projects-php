@@ -43,8 +43,9 @@ function render_table_card($s, $tier, $suiteName) {
                             <button type="button" class="qty-plus">+</button>
                         </div>
                     </div>
-                    <button type="button" class="btn-gold svc-add">Reserve Table</button>
+                    
                 </div>
+                <button type="button" class="btn-gold svc-add">Reserve Table</button>   
             </div>
         </div>
     </div>
@@ -71,7 +72,7 @@ function render_table_card($s, $tier, $suiteName) {
 .svc-price span{font-size:10px;font-family:'Jost',sans-serif;color:var(--h-muted);text-transform:uppercase}
 .svc-order{border-top:1px solid var(--h-line);padding-top:20px;margin-top:10px;display:flex;flex-direction:column;gap:16px}
 .svc-order .form-row{align-items:flex-end}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-row{grid-template-columns:1fr 1fr;gap:14px}
 .svc-add{width:100%}
 .cart-fab{position:fixed;bottom:26px;right:26px;z-index:300;background:var(--h-gold);color:#0a0a0c;border:none;border-radius:100px;padding:14px 22px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,0.4)}
 .cart-drawer{position:fixed;top:0;right:0;height:100vh;width:360px;background:#0c0c0e;border-left:1px solid var(--h-line);z-index:301;transform:translateX(100%);transition:transform 0.35s ease;display:flex;flex-direction:column}
@@ -259,36 +260,59 @@ document.getElementById('cartCheckout')?.addEventListener('click', async () => {
 </script>
 
 <script>
-(function(){
+
+(function() {
+
     var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     function finish(){
         document.body.classList.add('h-loaded');
         var l = document.getElementById('hLoader');
         if (l){ l.classList.add('done'); setTimeout(function(){ l.remove(); }, 750); }
     }
-    if (reduced) finish();
-    else { window.addEventListener('load', function(){ setTimeout(finish, 450); }); setTimeout(finish, 2200); }
 
-    var cards = document.querySelectorAll('.svc-card');
+    if (reduced) finish();
+
+    else { 
+        
+        window.addEventListener('load', function(){ setTimeout(finish, 450); }); setTimeout(finish, 2200); }
+
+            var cards = document.querySelectorAll('.svc-card');
+
     if (reduced || !('IntersectionObserver' in window)) {
+        
         cards.forEach(function(c){ c.classList.add('in-view'); });
+
     } else {
-        var io = new IntersectionObserver(function(entries){
+
+        var io = new IntersectionObserver(function(entries) {
+            
             entries.forEach(function(en){ if (en.isIntersecting){ en.target.classList.add('in-view'); io.unobserve(en.target); } });
-        }, { threshold: .12, rootMargin: '0px 0px -40px 0px' });
-        cards.forEach(function(c){ io.observe(c); });
+        
+        }, { 
+            
+            threshold: .12, rootMargin: '0px 0px -40px 0px' });
+                
+                cards.forEach(function(c){ io.observe(c); });
     }
 
     if (!reduced && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
-        cards.forEach(function(card){
+        
+            cards.forEach(function(card) 
+        
+        {
             card.addEventListener('mousemove', function(e){
+                
                 var r = card.getBoundingClientRect();
+                
                 var px = (e.clientX-r.left)/r.width - .5, py = (e.clientY-r.top)/r.height - .5;
                 card.style.transform = 'perspective(1000px) rotateY('+(px*6).toFixed(1)+'deg) rotateX('+(-py*6).toFixed(1)+'deg) translateY(-4px)';
             });
+
             card.addEventListener('mouseleave', function(){ card.style.transform = ''; });
         });
+
     }
+
 })();
 </script>
 </body>

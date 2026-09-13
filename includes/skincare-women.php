@@ -83,8 +83,12 @@ function render_product_card($s, $tier, $suiteName) {
 .cart-foot{padding:18px 20px;border-top:1px solid var(--h-line)}
 
 /* ══════════ PREMIUM ENHANCEMENT: loader, luxury cards, 3D hover, reveal ══════════ */
-body{opacity:0;transition:opacity .6s ease}
-body.h-loaded{opacity:1}
+/* IMPORTANT: fade only the page content, never the loader itself — the loader
+   is also a child of <body>, so giving <body> opacity:0 would hide the loader
+   too (opacity compounds through descendants), leaving a blank black screen
+   until everything snaps in together. */
+body > *:not(.h-loader){opacity:0;transition:opacity .6s ease}
+body.h-loaded > *:not(.h-loader){opacity:1}
 .h-loader{position:fixed;inset:0;z-index:9999;background:var(--h-bg);display:flex;align-items:center;justify-content:center;transition:opacity .7s ease, visibility 0s linear .7s}
 .h-loader.done{opacity:0;visibility:hidden}
 .h-loader-ring{position:relative;width:64px;height:64px}
@@ -106,7 +110,7 @@ body.h-loaded{opacity:1}
 .svc-card:hover img{transform:scale(1.08)}
 .svc-media::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(7,7,10,.75))}
 .svc-corner{position:absolute;top:12px;left:12px;z-index:2;font-family:'Jost',sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--h-gold);background:rgba(7,7,10,.62);border:1px solid rgba(207,167,107,.35);backdrop-filter:blur(6px);padding:5px 11px;border-radius:100px}
-.svc-body{padding:20px 20px 22px;transform:translateZ(18px)}
+.svc-body{padding:20px 20px 22px;transform:translateZ(18px);flex:1;display:flex;flex-direction:column}
 .svc-body h4{position:relative}
 .svc-body h4::after{content:'';display:block;width:26px;height:1px;background:var(--h-gold-dim);margin-top:9px}
 .svc-price{position:relative;padding-top:13px;margin-top:2px;border-top:1px solid var(--h-line)}
