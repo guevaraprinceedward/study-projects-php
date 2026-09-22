@@ -1,0 +1,253 @@
+/* =====================================================================
+   EL GRANDE DE LA TORRES — Product Card & Product Grid/Rail
+   SINGLE SOURCE OF TRUTH. Used by index.php, clothing.php, essentials.php,
+   new-arrivals.php, best-sellers.php, trending.php, featured.php,
+   product.php (related pieces), and customer/wishlist.php.
+
+   Loaded LAST in includes/header.php so it always wins over anything
+   defined earlier in home.css / shop.css / account.css.
+   ===================================================================== */
+
+/* ---- Grid layout (used for card grids like clothing.php / new-arrivals.php) ----
+   IMPORTANT: minmax(0, 1fr) — NOT plain 1fr — on every column. Without the
+   explicit minmax(0, ...), a grid track will grow to fit its content's
+   min-content width (e.g. a long badge label, an unbroken product name),
+   which pushes that column wider than its fair share and makes images
+   bleed / overlap into the next column. This was the root cause of the
+   broken layout on clothing.php, essentials.php and new-arrivals.php. */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3.2rem 2.6rem;
+    align-items: start;
+}
+
+@media (max-width: 992px) {
+    .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.6rem 1.8rem; }
+}
+@media (max-width: 560px) {
+    .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.8rem 1rem; }
+}
+
+/* ---- Horizontal rail (used on the homepage for Featured/New/Best Sellers) ---- */
+.product-scroller {
+    display: flex;
+    gap: 2.6rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 0.5rem 0.3rem 1.5rem;
+    scrollbar-width: thin;
+    align-items: start;
+}
+.product-scroller .product-card { flex: 0 0 auto; width: 300px; scroll-snap-align: start; }
+
+.scroller-nav { display: flex; justify-content: flex-end; gap: 0.9rem; margin-bottom: 2.4rem; }
+.scroller-nav button {
+    width: 46px; height: 46px;
+    border: 1px solid var(--border-color);
+    background: transparent; color: var(--text-primary);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.4s var(--ease-lux);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.scroller-nav button:hover { border-color: var(--gold); color: var(--gold); background: rgba(200,169,106,0.06); }
+
+/* ---- Card shell ----
+   min-width: 0 is essential inside a grid/flex track: without it, the
+   card can refuse to shrink below its content's intrinsic width, which
+   is the second half of the overflow bug (the image + badge inside it
+   otherwise force the card itself to stay wide). */
+.product-card {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.product-card-media {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 3.4 / 4.4;
+    overflow: hidden;
+    background: linear-gradient(145deg, #141414, #0d0d0d);
+    margin-bottom: 1.4rem;
+    border: 1px solid var(--border-color);
+    transition: border-color 0.5s var(--ease-lux);
+}
+.product-card:hover .product-card-media { border-color: rgba(200,169,106,0.35); }
+
+.product-card-media img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 1.3s var(--ease-lux), filter 1.3s var(--ease-lux);
+    filter: saturate(0.94) brightness(0.97);
+}
+.product-card:hover .product-card-media img {
+    transform: scale(1.065);
+    filter: saturate(1.05) brightness(1);
+}
+
+/* Subtle vignette so badges/text always read cleanly over any photo */
+.product-card-media::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.28) 0%, transparent 22%, transparent 78%, rgba(0,0,0,0.32) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* ---- Badges (New / Limited) ----
+   max-width + text truncation keeps a long badge label from ever being
+   able to force the media container (and therefore the grid track) wider
+   than intended. */
+.product-card-badges {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    right: 3.4rem; /* leave room so it never collides with the wishlist button */
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+    pointer-events: none;
+}
+.product-card-badges .badge-lux,
+.product-card-badges .badge-limited {
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+}
+.badge-lux { background: rgba(10,10,10,0.55); }
+.badge-limited { box-shadow: 0 4px 14px rgba(200,169,106,0.25); }
+
+/* ---- Wishlist button — circular glass button, top-right ---- */
+.product-card-media .wish-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 3;
+    background: rgba(10,10,10,0.45);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-primary);
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 0.4s var(--ease-lux), transform 0.4s var(--ease-lux),
+                border-color 0.3s ease, color 0.3s ease, background 0.3s ease;
+}
+.product-card:hover .product-card-media .wish-btn,
+.product-card-media .wish-btn.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+.product-card-media .wish-btn:hover,
+.product-card-media .wish-btn.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(10,10,10,0.7);
+}
+.product-card-media .wish-btn svg { width: 15px; height: 15px; pointer-events: none; }
+
+/* ---- Quick view reveal panel ----
+   Anchored to the media box (which has position:relative), so it can
+   never escape onto the text below it, regardless of card height. */
+.product-card-media .quick-add {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    background: rgba(10,10,10,0.92);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(200,169,106,0.25);
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border-left: none; border-right: none; border-bottom: none;
+    width: 100%;
+    cursor: pointer;
+    transform: translateY(100%);
+    transition: transform 0.45s var(--ease-lux);
+}
+.product-card:hover .product-card-media .quick-add { transform: translateY(0); }
+
+/* ---- Card text block ----
+   white-space handling + line clamp on the title prevents a long product
+   name from ever growing the card taller than its neighbors or forcing
+   width blowout in a grid. */
+.product-card-cat {
+    font-size: 0.66rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.85;
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.product-card-title {
+    font-family: var(--font-display);
+    font-size: 1.12rem;
+    font-weight: 500;
+    line-height: 1.32;
+    margin-bottom: 0.55rem;
+    color: var(--text-primary);
+    transition: color 0.3s var(--ease-lux);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.6em; /* keeps price aligned across a row even when titles wrap differently */
+}
+.product-card:hover .product-card-title { color: var(--gold); }
+
+.product-card-price {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    color: var(--text-primary);
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+}
+.product-card-price .was {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    text-decoration: line-through;
+    font-weight: 300;
+}
+
+/* Thin gold underline accent that grows in on hover — signature touch */
+.product-card::after {
+    content: '';
+    display: block;
+    width: 0;
+    height: 1px;
+    background: var(--gold);
+    margin-top: 0.9rem;
+    transition: width 0.6s var(--ease-lux);
+}
+.product-card:hover::after { width: 42px; }

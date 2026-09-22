@@ -1,0 +1,52 @@
+/* =====================================================================
+   EL GRANDE DE LA TORRES — Admin Dashboard (7-Star)
+   ===================================================================== */
+.admin-body { background: var(--bg-primary); min-height: 100vh; display: flex; }
+.admin-sidebar { width: 260px; background: var(--bg-secondary); border-right: 1px solid var(--border-color); min-height: 100vh; position: fixed; padding: 2rem 0; }
+.admin-sidebar .admin-logo { font-family: var(--font-display); font-size: 1.3rem; padding: 0 1.8rem 2rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
+.admin-sidebar .admin-logo em { color: var(--gold); font-style: italic; }
+.admin-nav a { display: flex; align-items: center; gap: 0.9rem; padding: 0.9rem 1.8rem; font-size: 0.85rem; color: var(--text-secondary); transition: all var(--dur-fast); border-left: 2px solid transparent; }
+.admin-nav a:hover { color: var(--text-primary); background: var(--bg-card); }
+.admin-nav a.active { color: var(--gold); background: var(--bg-card); border-left-color: var(--gold); }
+.admin-nav .nav-section { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-secondary); padding: 1.4rem 1.8rem 0.6rem; }
+.admin-main { flex: 1; margin-left: 260px; padding: 2.5rem 2.8rem; }
+.admin-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; }
+.admin-topbar h1 { font-size: 1.8rem; }
+.admin-topbar .admin-user { font-size: 0.85rem; color: var(--text-secondary); }
+.admin-topbar .admin-user a { color: #E39A9A; margin-left: 1rem; }
+
+.admin-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.3rem; margin-bottom: 2.6rem; }
+.admin-stat-card { background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.8rem; }
+.admin-stat-card .num { font-family: var(--font-display); font-size: 2.1rem; color: var(--gold); }
+.admin-stat-card .lbl { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-secondary); margin-top: 0.4rem; }
+.admin-stat-card .delta { font-size: 0.75rem; color: #8FC9A0; margin-top: 0.6rem; }
+
+.admin-panel { background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.8rem; margin-bottom: 2rem; }
+.admin-panel h3 { font-size: 1.05rem; margin-bottom: 1.4rem; }
+
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table th { text-align: left; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-secondary); padding: 0.9rem 0.8rem; border-bottom: 1px solid var(--border-color); }
+.admin-table td { padding: 1rem 0.8rem; border-bottom: 1px solid var(--border-color); font-size: 0.85rem; }
+.admin-table tr:hover td { background: rgba(255,255,255,0.02); }
+.admin-table img.thumb { width: 44px; height: 54px; object-fit: cover; }
+
+.admin-btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.1rem; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; border: 1px solid var(--border-color); color: var(--text-primary); background: none; cursor: pointer; transition: all var(--dur-fast); }
+.admin-btn:hover { border-color: var(--gold); color: var(--gold); }
+.admin-btn-gold { background: var(--gold); color: var(--bg-primary); border-color: var(--gold); }
+.admin-btn-gold:hover { background: var(--gold-hover); color: var(--bg-primary); }
+.admin-btn-danger:hover { border-color: #C0574A; color: #E39A9A; }
+.admin-btn-sm { padding: 0.4rem 0.8rem; font-size: 0.65rem; }
+
+.chart-bar-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.9rem; }
+.chart-bar-label { width: 110px; font-size: 0.78rem; color: var(--text-secondary); flex-shrink: 0; }
+.chart-bar-track { flex: 1; height: 22px; background: rgba(255,255,255,0.04); position: relative; }
+.chart-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-hover)); transition: width 0.8s var(--ease-lux); }
+.chart-bar-value { width: 90px; text-align: right; font-size: 0.8rem; color: var(--gold); font-family: var(--font-display); flex-shrink: 0; }
+
+.admin-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.admin-tabs { display: flex; gap: 0.6rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); }
+.admin-tabs a { padding: 0.8rem 1.4rem; font-size: 0.78rem; color: var(--text-secondary); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.admin-tabs a.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+@media (max-width: 1100px) { .admin-stat-grid { grid-template-columns: 1fr 1fr; } .admin-form-grid { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .admin-sidebar { display: none; } .admin-main { margin-left: 0; } }
