@@ -27,6 +27,20 @@ $typeLabels = [
     'adjustment' => 'Adjustment',
 ];
 
+$currentPage = basename($_SERVER['PHP_SELF']);
+$isOwner  = ($_SESSION['admin']['role'] ?? '') === 'owner';
+$invOpen  = in_array($currentPage, ['admin-inventory.php', 'admin-products.php']);
+$attOpen  = in_array($currentPage, ['admin-attendance.php', 'admin-leave-overtime.php']);
+
+// Pending count para sa badge (Owner lang). Naka-try/catch kasi baka wala pa ang tables.
+$pendingCount = 0;
+if ($isOwner) {
+    try {
+        $pendingCount += (int)$conn->query("SELECT COUNT(*) c FROM leave_requests WHERE status='pending'")->fetch_assoc()['c'];
+        $pendingCount += (int)$conn->query("SELECT COUNT(*) c FROM overtime_requests WHERE status='pending'")->fetch_assoc()['c'];
+    } catch (Throwable $e) { $pendingCount = 0; }
+}
+
 // ── PRODUCTS (current stock) ────────────────────────────────────────────
 $products = $conn->query("SELECT id, name, branch, category, stock, reorder_level FROM products ORDER BY branch ASC, name ASC")->fetch_all(MYSQLI_ASSOC);
 
@@ -87,6 +101,30 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .nav-item:hover{background:rgba(255,255,255,0.04);color:var(--text)}
 .nav-item.active{background:rgba(192,57,43,0.1);color:#e05a5a}
 .nav-icon{width:20px;height:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px}
+
+/* ── Dropdown groups ── */
+.nav-toggle{width:100%;background:none;border:none;font-family:'Jost',sans-serif;cursor:pointer;text-align:left}
+.nav-chevron{margin-left:auto;display:flex;transition:transform 0.3s ease}
+.nav-group.open > .nav-toggle .nav-chevron{transform:rotate(180deg)}
+.nav-group.open > .nav-toggle{color:var(--text)}
+.nav-group.has-active > .nav-toggle{color:#e05a5a}
+
+.nav-sub{display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.35s ease}
+.nav-group.open > .nav-sub{grid-template-rows:1fr}
+.nav-sub-inner{
+    overflow:hidden;min-height:0;
+    display:flex;flex-direction:column;gap:2px;
+    margin-left:22px;border-left:1px solid var(--border);
+    visibility:hidden;opacity:0;
+    transition:opacity 0.3s ease, visibility 0.35s;
+}
+.nav-group.open > .nav-sub > .nav-sub-inner{visibility:visible;opacity:1}
+.nav-sub .nav-item{padding:9px 12px 9px 18px;font-size:13px}
+.nav-sub .nav-icon{width:18px;height:18px}
+.nav-sub .nav-icon svg{width:15px;height:15px}
+.nav-group.open > .nav-toggle .nav-badge{display:none}
+
 .sb-footer{padding:10px;border-top:1px solid var(--border)}
 .nav-item.logout{color:#e05a5a}
 .nav-item.logout:hover{background:rgba(224,90,90,0.08)}
@@ -187,36 +225,80 @@ tbody tr:hover{background:rgba(255,255,255,0.02)}
     </div>
     <nav class="sb-nav">
         <div class="sb-nav-label">Admin</div>
-        <a href="admin-dashboard.php" class="nav-item">
+
+        <a href="admin-dashboard.php" class="nav-item <?= $currentPage === 'admin-dashboard.php' ? 'active' : '' ?>">
             <span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>
             Dashboard
         </a>
-        <a href="admin-analytics.php" class="nav-item">
+        <a href="admin-analytics.php" class="nav-item <?= $currentPage === 'admin-analytics.php' ? 'active' : '' ?>">
             <span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
             Analytics
         </a>
-        <a href="admin-products.php" class="nav-item">
-            <span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/></svg></span>
-            Products
+        <a href="admin-orders.php" class="nav-item <?= $currentPage === 'admin-orders.php' ? 'active' : '' ?>">
+            <span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+            Orders & Sales
         </a>
-        <a href="admin-inventory.php" class="nav-item active">
-            <span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 7.28a1 1 0 0 0-.5-.86L12.5 2.4a1 1 0 0 0-1 0L4 6.42a1 1 0 0 0-.5.86v9.44a1 1 0 0 0 .5.86l7.5 4.02a1 1 0 0 0 1 0l7.5-4.02a1 1 0 0 0 .5-.86z"/><polyline points="3.5 7.5 12 12.5 20.5 7.5"/><line x1="12" y1="22" x2="12" y2="12.5"/></svg></span>
-            Inventory
+
+        <!-- INVENTORY DROPDOWN -->
+        <div class="nav-group <?= $invOpen ? 'open has-active' : '' ?>">
+            <button type="button" class="nav-item nav-toggle" aria-expanded="<?= $invOpen ? 'true' : 'false' ?>">
+                <span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 7.28a1 1 0 0 0-.5-.86L12.5 2.4a1 1 0 0 0-1 0L4 6.42a1 1 0 0 0-.5.86v9.44a1 1 0 0 0 .5.86l7.5 4.02a1 1 0 0 0 1 0l7.5-4.02a1 1 0 0 0 .5-.86z"/><polyline points="3.5 7.5 12 12.5 20.5 7.5"/><line x1="12" y1="22" x2="12" y2="12.5"/></svg></span>
+                Inventory
+                <span class="nav-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+            </button>
+            <div class="nav-sub">
+                <div class="nav-sub-inner">
+                    <a href="admin-inventory.php" class="nav-item <?= $currentPage === 'admin-inventory.php' ? 'active' : '' ?>">
+                        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+                        Overview
+                    </a>
+                    <a href="admin-products.php" class="nav-item <?= $currentPage === 'admin-products.php' ? 'active' : '' ?>">
+                        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+                        Products
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <a href="admin-customers.php" class="nav-item <?= $currentPage === 'admin-customers.php' ? 'active' : '' ?>">
+            <span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg></span>
+            Customers
         </a>
-        <a href="admin-users.php" class="nav-item">
+        <a href="admin-users.php" class="nav-item <?= $currentPage === 'admin-users.php' ? 'active' : '' ?>">
             <span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>
             User Management
         </a>
-        <a href="admin-attendance.php" class="nav-item">
-            <span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
-            Attendance
-        </a>
-        <?php if (($_SESSION['admin']['role'] ?? '') === 'owner'): ?>
-        <a href="admin-payroll.php" class="nav-item">
+
+        <!-- ATTENDANCE DROPDOWN -->
+        <div class="nav-group <?= $attOpen ? 'open has-active' : '' ?>">
+            <button type="button" class="nav-item nav-toggle" aria-expanded="<?= $attOpen ? 'true' : 'false' ?>">
+                <span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+                Attendance
+                <?php if ($isOwner && $pendingCount > 0): ?><span class="nav-badge"><?= $pendingCount ?></span><?php endif; ?>
+                <span class="nav-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+            </button>
+            <div class="nav-sub">
+                <div class="nav-sub-inner">
+                    <a href="admin-attendance.php" class="nav-item <?= $currentPage === 'admin-attendance.php' ? 'active' : '' ?>">
+                        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><polyline points="9 14 11 16 15 12"/></svg></span>
+                        Overview
+                    </a>
+                    <a href="admin-leave-overtime.php" class="nav-item <?= $currentPage === 'admin-leave-overtime.php' ? 'active' : '' ?>">
+                        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+                        Leave & Overtime
+                        <?php if ($isOwner && $pendingCount > 0): ?><span class="nav-badge"><?= $pendingCount ?></span><?php endif; ?>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <?php if ($isOwner): ?>
+        <a href="admin-payroll.php" class="nav-item <?= $currentPage === 'admin-payroll.php' ? 'active' : '' ?>">
             <span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span>
             Payroll & Employees
         </a>
         <?php endif; ?>
+
         <div class="sb-nav-label">Site</div>
         <a href="../order-type.php" class="nav-item" target="_blank">
             <span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
@@ -391,6 +473,15 @@ tbody tr:hover{background:rgba(255,255,255,0.02)}
 <div id="toast"></div>
 
 <script>
+
+    document.querySelectorAll('.nav-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const group = btn.closest('.nav-group');
+        const isOpen = group.classList.toggle('open');
+        btn.setAttribute('aria-expanded', isOpen);
+    });
+});
+
 let moveState = { productId: null, currentStock: 0, type: null };
 
 function openMovement(id, name, stock) {
