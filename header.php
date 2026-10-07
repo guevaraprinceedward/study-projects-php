@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Restaurant System</title>
+    <title>SIPPERÉ Café</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header>
-    <h2>🍽️ My Restaurant</h2>
+    <h2>🍽️ SIPPERÉ Café</h2>
 
     <nav>
         <a href="index.php">Home</a>
