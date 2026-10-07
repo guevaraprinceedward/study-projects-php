@@ -33,7 +33,7 @@ $chipLabels = ['waiting' => 'At the counter', 'paid' => 'Paid', 'done' => 'Picke
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Reservations — AyosCoffeeNegosyo</title>
+    <title>My Reservations — SIPPERÉ Café</title>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="reservation-pages.css">
 </head>
@@ -44,7 +44,7 @@ $chipLabels = ['waiting' => 'At the counter', 'paid' => 'Paid', 'done' => 'Picke
             <div class="brand-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
             </div>
-            <span class="brand-name">My <span>AyosCoffeeNegosyo</span></span>
+            <span class="brand-name">SIPPERÉ <span> Café</span></span>
         </a>
         <nav>
             <a href="reservation-menu.php">Menu</a>
@@ -172,7 +172,7 @@ $chipLabels = ['waiting' => 'At the counter', 'paid' => 'Paid', 'done' => 'Picke
 </div>
 <div id="toast" role="status"></div>
 
-<footer><p>© 2026 <span>My AyosCoffeeNegosyo</span> — All rights reserved.</p></footer>
+<footer><p>© 2026 <span>SIPPERÉ Café</span> — All rights reserved.</p></footer>
 
 <?php include 'reservation-receipt.inc.php'; ?>
 
