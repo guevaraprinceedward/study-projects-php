@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sign Up — AyosCoffeeNegosyo</title>
+<title>Sign Up — SIPPERÉ Café</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -99,7 +99,7 @@ button[type="submit"]:active{transform:scale(0.98)}
                 <path d="M31 10c0 0 4 3 4 9s-4 7-4 7v10" stroke="#c9a84c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
         </div>
-        <h1>AyosCoffeeNegosyo</h1>
+        <h1>SIPPERÉ Café</h1>
         <p class="subtitle">Create Account</p>
     </div>
     <div class="divider"><div class="divider-line"></div><div class="divider-dot"></div><div class="divider-line"></div></div>
