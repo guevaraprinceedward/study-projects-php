@@ -398,7 +398,7 @@ $conn->close();
                 <path d="M31 10c0 0 4 3 4 9s-4 7-4 7v10" stroke="#c9a84c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
         </div>
-        <h1>AyosCoffeeNegosyo</h1>
+        <h1>SIPPERÉ Café</h1>
         <p class="subtitle">Staff Portal</p>
     </div>
 
