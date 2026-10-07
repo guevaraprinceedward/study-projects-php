@@ -33,7 +33,7 @@ $products = $conn->query("SELECT * FROM products ORDER BY branch ASC, id ASC")->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Product Management — AyosCoffeeNegosyo</title>
+<title>Product Management — SIPPERÉ Café</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -138,6 +138,7 @@ tbody tr:hover{background:rgba(255,255,255,0.02)}
 .type-pill{display:inline-flex;padding:3px 8px;border-radius:3px;font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase}
 .type-pill.meal{background:rgba(201,168,76,0.08);color:var(--gold)}
 .type-pill.coffee{background:rgba(74,122,58,0.1);color:var(--green-lt)}
+.type-pill.champagne{background:rgb(63, 22, 146);color:var(--purple)}
 .type-pill.item{background:rgba(59,130,246,0.1);color:#60a5fa}
 .price-cell{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--gold);font-weight:600}
 .stock-cell{display:flex;align-items:center;gap:8px}
@@ -265,7 +266,7 @@ input[type=range]{width:100%;accent-color:var(--gold);cursor:pointer;height:4px}
 <aside id="sidebar">
     <div class="sb-brand">
         <div class="sb-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e05a5a" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-        <div><div class="sb-title">AyosCoffee<span>Negosyo</span></div><div class="sb-sub">Admin Panel</div></div>
+        <div><div class="sb-title">SIPPERÉ <span>Café</span></div><div class="sb-sub">Admin Panel</div></div>
     </div>
     <nav class="sb-nav">
         <div class="sb-nav-label">Admin</div>
@@ -386,6 +387,7 @@ input[type=range]{width:100%;accent-color:var(--gold);cursor:pointer;height:4px}
                     <option value="">All Types</option>
                     <option value="meal">Meals</option>
                     <option value="coffee">Coffee</option>
+                    <option value="champagne">Champagne</option>
                     <option value="item">Item</option>
                 </select>
             </div>
@@ -500,6 +502,7 @@ input[type=range]{width:100%;accent-color:var(--gold);cursor:pointer;height:4px}
             <select class="form-select" id="f_type">
                 <option value="meal">🍽 Meals</option>
                 <option value="coffee">☕ Coffee</option>
+                <option value="champagne"> Champagne</option>
                 <option value="item">📦 Item / Add-on</option>
             </select>
         </div>
@@ -645,7 +648,7 @@ input[type=range]{width:100%;accent-color:var(--gold);cursor:pointer;height:4px}
 </div>
 
 <script>
-
+// ── SIDEBAR DROPDOWNS ───────────────────────────────────────────────────
 document.querySelectorAll('.nav-toggle').forEach(btn => {
     btn.addEventListener('click', () => {
         const group = btn.closest('.nav-group');
@@ -654,63 +657,109 @@ document.querySelectorAll('.nav-toggle').forEach(btn => {
     });
 });
 
-// ── PAGINATION ──────────────────────────────────────────────────────────
+// ── PAGINATION + SEARCH / FILTER ────────────────────────────────────────
+// Filter state (`matched`) and page state (`currentPage`) are kept separate,
+// so pagination no longer reads its own hidden rows as "filtered out".
 const PER_PAGE = 15;
 let currentPage = 1;
 
-function getVisibleRows() {
-    return Array.from(document.querySelectorAll('#tableBody tr:not([style*="display: none"])'));
+const tableBody = document.getElementById('tableBody');
+const allRows   = Array.from(tableBody.querySelectorAll('tr:not(.empty-row)')); // cached once
+let matched     = allRows.slice();
+
+// Row shown when a search/filter matches nothing
+const noResultRow = document.createElement('tr');
+noResultRow.className = 'empty-row';
+noResultRow.innerHTML = '<td colspan="9">No products match your search.</td>';
+noResultRow.hidden = true;
+tableBody.appendChild(noResultRow);
+
+// Builds [1, '…', 4, 5, 6, '…', 20] style page lists
+function pageList(cur, tot) {
+    if (tot <= 7) return Array.from({ length: tot }, (_, i) => i + 1);
+    const out = [];
+    let prev = 0;
+    for (let i = 1; i <= tot; i++) {
+        if (i === 1 || i === tot || Math.abs(i - cur) <= 1) {
+            if (i - prev > 1) out.push('…');
+            out.push(i);
+            prev = i;
+        }
+    }
+    return out;
 }
 
 function renderPagination() {
-    const rows = getVisibleRows();
-    const total = rows.length, totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
-    if (currentPage > totalPages) currentPage = totalPages;
+    const total = matched.length;
+    const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+    currentPage = Math.min(Math.max(1, currentPage), totalPages);
+
     const start = (currentPage - 1) * PER_PAGE;
-    rows.forEach((r, i) => r.style.display = (i >= start && i < start + PER_PAGE) ? '' : 'none');
+    const end = start + PER_PAGE;
+    const onPage = new Set(matched.slice(start, end));
+
+    allRows.forEach(r => { r.hidden = !onPage.has(r); });
+    noResultRow.hidden = !(allRows.length && total === 0);
 
     document.getElementById('pgInfo').textContent = total
-        ? `Showing ${start + 1}–${Math.min(start + PER_PAGE, total)} of ${total}`
+        ? `Showing ${start + 1}–${Math.min(end, total)} of ${total}`
         : '';
 
-    const container = document.getElementById('pgBtns');
-    container.innerHTML = '';
+    const box = document.getElementById('pgBtns');
+    box.innerHTML = '';
     if (totalPages <= 1) return;
-    const mkBtn = (label, page, disabled, active) => {
+
+    const add = (label, page, { disabled = false, active = false } = {}) => {
         const b = document.createElement('button');
+        b.type = 'button';
         b.className = 'pg-btn' + (active ? ' active' : '');
-        b.textContent = label; b.disabled = !!disabled;
-        b.onclick = () => { currentPage = page; renderPagination(); };
-        return b;
+        b.textContent = label;
+        b.disabled = disabled;
+        if (page) b.dataset.page = page;
+        box.appendChild(b);
     };
-    container.appendChild(mkBtn('←', currentPage - 1, currentPage === 1));
-    for (let i = 1; i <= totalPages; i++) container.appendChild(mkBtn(i, i, false, i === currentPage));
-    container.appendChild(mkBtn('→', currentPage + 1, currentPage === totalPages));
+
+    add('←', currentPage - 1, { disabled: currentPage === 1 });
+    pageList(currentPage, totalPages).forEach(p =>
+        p === '…' ? add('…', 0, { disabled: true }) : add(p, p, { active: p === currentPage })
+    );
+    add('→', currentPage + 1, { disabled: currentPage === totalPages });
 }
 
-// ── SEARCH / FILTER ─────────────────────────────────────────────────────
+// One click listener for all page buttons
+document.getElementById('pgBtns').addEventListener('click', e => {
+    const btn = e.target.closest('.pg-btn');
+    if (!btn || btn.disabled || !btn.dataset.page) return;
+    currentPage = parseInt(btn.dataset.page, 10);
+    try { sessionStorage.setItem('prodPage', currentPage); } catch (_) {}
+    renderPagination();
+    document.querySelector('.table-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
 function filterTable() {
-    const q = document.getElementById('searchInput').value.toLowerCase();
+    const q      = document.getElementById('searchInput').value.trim().toLowerCase();
     const branch = document.getElementById('branchFilter').value;
-    const type = document.getElementById('typeFilter').value;
-    const rows = Array.from(document.querySelectorAll('#tableBody tr'));
-    let vis = 0;
-    rows.forEach(r => {
-        if (r.classList.contains('empty-row')) return;
-        const nm = r.dataset.name || '';
-        const br = r.dataset.branch || '';
-        const tp = r.dataset.type || '';
-        const show = (!q || nm.includes(q))
-            && (!branch || br === branch)
-            && (!type || tp === type);
-        r.style.display = show ? '' : 'none';
-        if (show) vis++;
-    });
-    document.getElementById('countBadge').textContent = vis + ' products';
+    const type   = document.getElementById('typeFilter').value;
+
+    matched = allRows.filter(r =>
+        (!q      || (r.dataset.name   || '').includes(q)) &&
+        (!branch || (r.dataset.branch || '') === branch) &&
+        (!type   || (r.dataset.type   || '') === type)
+    );
+
+    document.getElementById('countBadge').textContent =
+        matched.length + (matched.length === 1 ? ' product' : ' products');
+
     currentPage = 1;
+    try { sessionStorage.setItem('prodPage', 1); } catch (_) {}
     renderPagination();
 }
 
+// Restore the last page after an edit/delete reload
+try {
+    const saved = parseInt(sessionStorage.getItem('prodPage'), 10);
+    if (saved > 0) currentPage = saved;
+} catch (_) {}
 renderPagination();
 
 // ── IMAGE HANDLING ──────────────────────────────────────────────────────
@@ -759,6 +808,14 @@ function syncRange(val) {
 // ── MODAL STATE ─────────────────────────────────────────────────────────
 let editingId = null;
 
+// Sets a <select>; falls back to the first option if the saved value
+// isn't one of the choices (e.g. old rows with type = 'food')
+function setSelect(id, value) {
+    const el = document.getElementById(id);
+    el.value = value;
+    if (el.selectedIndex === -1) el.selectedIndex = 0;
+}
+
 function openAdd() {
     editingId = null;
     document.getElementById('modalEyebrow').textContent = 'New Product';
@@ -773,11 +830,11 @@ function openEdit(p) {
     document.getElementById('modalTitle').textContent = 'Edit Product';
     resetForm();
 
-    document.getElementById('f_type').value = p.type || 'food';
+    setSelect('f_type', p.type || 'meal');
     document.getElementById('f_name').value = p.name || '';
-    document.getElementById('f_branch').value = p.branch || 'laguna';
+    setSelect('f_branch', p.branch || 'laguna');
     document.getElementById('f_desc').value = p.description || '';
-    document.getElementById('f_category').value = p.category || 'mains';
+    setSelect('f_category', p.category || 'mains');
     document.getElementById('f_sku').value = p.sku || '';
     document.getElementById('f_price').value = p.price || '';
     document.getElementById('f_reorder').value = p.reorder_level || 10;
@@ -835,6 +892,8 @@ function closeModal() {
 }
 
 // ── SAVE PRODUCT ────────────────────────────────────────────────────────
+const SAVE_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Save Product';
+
 function saveProduct() {
     const name = document.getElementById('f_name').value.trim();
     const price = document.getElementById('f_price').value;
@@ -875,29 +934,32 @@ function saveProduct() {
             } else {
                 showToast(data.message || 'Failed to save product.', false, true);
                 btn.disabled = false;
-                btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Save Product';
+                btn.innerHTML = SAVE_ICON;
             }
         })
         .catch(() => {
             showToast('Network error. Please try again.', false, true);
             btn.disabled = false;
-            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Save Product';
+            btn.innerHTML = SAVE_ICON;
         });
 }
 
 // ── DELETE ──────────────────────────────────────────────────────────────
 let deleteId = null;
+
 function confirmDelete(id, name) {
     deleteId = id;
     document.getElementById('confirmDesc').textContent = 'Delete "' + name + '"? This action cannot be undone.';
     document.getElementById('confirmModal').classList.add('show');
     document.body.style.overflow = 'hidden';
 }
+
 function closeConfirm() {
     document.getElementById('confirmModal').classList.remove('show');
     document.body.style.overflow = '';
     deleteId = null;
 }
+
 function doDelete() {
     if (!deleteId) return;
     const btn = document.getElementById('btnConfirmDel');
@@ -933,7 +995,7 @@ function showToast(msg, success = true, isErr = false) {
     toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
-// Keyboard close
+// ── KEYBOARD ────────────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { closeModal(); closeConfirm(); }
 });
