@@ -15,6 +15,20 @@ if ($isOwner) {
     } catch (Throwable $e) { $pendingCount = 0; }
 }
 
+// Bilang ng sweldong Paid na hindi pa na-confirm (para sa badge, hindi para sa Owner)
+$toConfirm = 0;
+if (!$isOwner) {
+    try {
+        $conn->query("ALTER TABLE payroll ADD COLUMN IF NOT EXISTS received_at TIMESTAMP NULL DEFAULT NULL");
+        $myEmpAdminId = (int)($_SESSION['admin']['id'] ?? 0);
+        $toConfirm = (int)$conn->query("
+            SELECT COUNT(*) c FROM payroll p
+            JOIN employees e ON e.id = p.employee_id
+            WHERE e.admin_id = $myEmpAdminId AND p.status = 'paid' AND p.received_at IS NULL
+        ")->fetch_assoc()['c'];
+    } catch (Throwable $e) { $toConfirm = 0; }
+}
+
 $conn->query("ALTER TABLE admins ADD COLUMN IF NOT EXISTS profile_photo TEXT DEFAULT NULL");
 $conn->query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'pending'");
 $conn->query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS branch VARCHAR(20) DEFAULT 'laguna'");
@@ -74,7 +88,7 @@ $initials = strtoupper(substr($adminName, 0, 2));
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Dashboard — AyosCoffeeNegosyo</title>
+<title>Admin Dashboard — SIPPERÉ Café</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -212,9 +226,9 @@ tbody tr:hover{background:rgba(255,255,255,0.02)}
 <aside id="sidebar">
     <div class="sb-brand">
         <div class="sb-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e05a5a" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-        <div><div class="sb-title">AyosCoffee<span>Negosyo</span></div><div class="sb-sub">Admin Panel</div></div>
+        <div><div class="sb-title">SIPPERÉ <span>Café</span></div><div class="sb-sub">Admin Panel</div></div>
     </div>
-    <nav class="sb-nav">
+<nav class="sb-nav">
     <div class="sb-nav-label">Admin</div>
 
     <a href="admin-dashboard.php" class="nav-item <?= $currentPage === 'admin-dashboard.php' ? 'active' : '' ?>">
