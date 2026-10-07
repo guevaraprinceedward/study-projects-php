@@ -52,7 +52,7 @@ $categories = $branch === 'manila'
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Order Now — AyosCoffeeNegosyo</title>
+<title>Order Now — SIPPERÉ Café</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
@@ -379,7 +379,7 @@ footer a:hover{color:var(--cream);text-decoration:underline}
                 <div class="brand-icon">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
                 </div>
-                <span class="brand-name">My <span>AyosCoffeeNegosyo</span></span>
+                <span class="brand-name">SIPPERÉ <span>Café</span></span>
             </a>
         </div>
         <div class="header-right">
@@ -533,7 +533,7 @@ footer a:hover{color:var(--cream);text-decoration:underline}
 
 <!-- ═══════════════════════ FOOTER ═══════════════════════ -->
 <footer>
-    <p>© 2026 <span>My AyosCoffeeNegosyo</span> — All rights reserved.</p>
+    <p>© 2026 <span>SIPPERÉ Café</span> — All rights reserved.</p>
     <p>Developed by: <a href="https://www.instagram.com/_theprnx.gvara/" target="_blank" rel="noopener noreferrer">Prince Edward Guevara</a></p>
 </footer>
 
@@ -687,8 +687,10 @@ function showToast(msg,isError=false){
     toast.className=isError?'error':'';toast.classList.add('show');
     clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),2500);
 }
-
+                            
 renderGrid(false);
 </script>
+
 </body>
+
 </html>
