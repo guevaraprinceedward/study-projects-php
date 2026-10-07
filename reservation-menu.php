@@ -32,7 +32,7 @@ $categories = $branch === 'manila'
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reserve — AyosCoffeeNegosyo</title>
+<title>Reserve — SIPPERÉ Café</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
@@ -237,7 +237,7 @@ footer a:hover{color:var(--cream);text-decoration:underline}
 </head>
 <body>
 
-<div id="sidebarOverlay"></div>
+<div id="sidebarOverlay"></div> 
 
 <aside id="sidebar" role="navigation" aria-label="Main navigation">
     <div class="sb-header">
@@ -245,7 +245,7 @@ footer a:hover{color:var(--cream);text-decoration:underline}
             <div class="sb-brand-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
             </div>
-            <div class="sb-brand-name">AyosCoffeeNegosyo<span>Est. 2026</span></div>
+            <div class="sb-brand-name">SIPPERÉ Café<span>Est. 2026</span></div>
         </div>
         <button class="sb-close" id="sidebarClose" aria-label="Close sidebar">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -482,7 +482,7 @@ footer a:hover{color:var(--cream);text-decoration:underline}
 </div>
 
 <footer>
-    <p>© 2026 <span>My AyosCoffeeNegosyo</span> — All rights reserved.</p>
+    <p>© 2026 <span>SIPPERÉ Café</span> — All rights reserved.</p>
     <p>Developed by: <a href="https://www.instagram.com/_theprnx.gvara/" target="_blank" rel="noopener noreferrer">Prince Edward Guevara</a></p>
 </footer>
 
@@ -625,5 +625,6 @@ function showToast(msg,isError=false){
 
 renderGrid(false);
 </script>
+   <?php $czMode = 'serve'; include 'customize-modal.inc.php'; ?>
 </body>
 </html>
