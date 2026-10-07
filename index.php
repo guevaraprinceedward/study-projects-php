@@ -74,9 +74,9 @@ $testiPages = array_chunk($teaser, 3);
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AyosCoffeeNegosyo — The Pursuit of Exceptional Coffee</title>
+<title>SIPPERÉ Café — The Pursuit of Exceptional Coffee</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<noscript><style>.loader{display:none!important}.reveal-el,.cup-stage,[data-reveal],[data-reveal]>*,.bean{opacity:1!important;transform:none!important}</style></noscript>
+<noscript><style>.loader{display:none!important}.reveal-el,.cup-stage,[data-reveal],[data-reveal]>*,.bean,.cb{opacity:1!important;transform:none!important}</style></noscript>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -91,7 +91,7 @@ html{scroll-behavior:smooth}
 @media (prefers-reduced-motion: reduce){
     *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}
     .loader{display:none !important}
-    .reveal-el,.cup-stage,[data-reveal],[data-reveal] > *,.bean,#cursorDot,#cursorRing,.coffee-particle{opacity:1 !important;transform:none !important;display:revert !important}
+    .reveal-el,.cup-stage,[data-reveal],[data-reveal] > *,.bean,.cb,#cursorDot,#cursorRing,.coffee-particle{opacity:1 !important;transform:none !important;display:revert !important}
     #cursorDot,#cursorRing,.coffee-particle{display:none !important}
 }
 /* NOTE: perspective used to live here on body. Any `perspective`/`transform`/`filter`
@@ -207,37 +207,35 @@ body.loaded .badge-ring-svg{animation-play-state:running}
 body.loaded .cup-ring{animation-play-state:running}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* Beans — orbit trick: outer wrapper rotates in 3D, bean sits at translateZ radius */
-.bean-field{position:absolute;inset:-70px;transform-style:preserve-3d;pointer-events:none}
-.bean-orbit{position:absolute;top:50%;left:50%;transform-style:preserve-3d;animation:orbitSpin linear infinite}
-.bean-orbit .bean-inner{position:absolute;width:15px;height:20px;margin:-10px 0 0 -7px;border-radius:52% 48% 50% 50%/62% 62% 38% 38%;
-    background:linear-gradient(140deg,var(--gold-bright),var(--gold-dim) 75%);box-shadow:0 8px 16px rgba(0,0,0,.5)}
-.bean-orbit .bean-inner::after{content:'';position:absolute;top:2px;left:6px;width:2px;height:16px;border-radius:2px;background:rgba(11,11,9,.6)}
-@keyframes orbitSpin{from{transform:rotateY(0deg)}to{transform:rotateY(360deg)}}
-.bo1{animation-duration:9s}.bo2{animation-duration:12s;animation-direction:reverse}
-.bo3{animation-duration:15s}.bo4{animation-duration:18s;animation-direction:reverse}
-.bo5{animation-duration:21s}
+/* ── REALISTIC BEANS (static placement, gentle float) ── */
+.bean-field{position:absolute;inset:0;pointer-events:none}
+.loader .bean-field{inset:-70px}
+.cb{position:absolute;display:block;overflow:visible;height:auto;aspect-ratio:60/84;
+    filter:drop-shadow(0 10px 10px rgba(0,0,0,.55));
+    animation:cbFloat 7s ease-in-out infinite;animation-play-state:paused}
+body.loaded .cb,.loader .cb{animation-play-state:running}
+.cb.far{filter:blur(1.4px) drop-shadow(0 6px 8px rgba(0,0,0,.4));opacity:.65}
+@keyframes cbFloat{
+    0%,100%{transform:translateY(0) rotate(var(--r))}
+    50%{transform:translateY(-9px) rotate(calc(var(--r) + 7deg))}
+}
+.cb1{top:10%;left:18%;width:38px;--r:-28deg;animation-delay:-1s}
+.cb2{top:30%;right:7%;width:28px;--r:38deg;animation-delay:-3s}
+.cb3{top:54%;left:5%;width:42px;--r:72deg;animation-delay:-2s}
+.cb4{top:70%;right:9%;width:34px;--r:-48deg;animation-delay:-4.5s}
+.cb5{bottom:4%;left:30%;width:26px;--r:12deg;animation-delay:-5.5s}
+.cb6{top:6%;right:34%;width:24px;--r:55deg;animation-delay:-2.5s}
 
-.bean{position:absolute;width:14px;height:20px;background:linear-gradient(135deg,var(--gold),var(--gold-dim));border-radius:50% 50% 50% 50%/60% 60% 40% 40%;box-shadow:0 6px 14px rgba(0,0,0,.5);opacity:0;transform:translateY(-18px);transition:opacity .6s ease, transform .6s cubic-bezier(.3,1.3,.4,1)}
-body.loaded .bean{opacity:1;transform:translateY(0)}
-.bean::after{content:'';position:absolute;top:2px;left:6px;width:2px;height:16px;background:rgba(11,11,9,.55);border-radius:2px}
-.bean.b1{top:6%;left:48%;transition-delay:.55s}
-.bean.b2{top:46%;left:0;transition-delay:.68s}
-.bean.b3{top:80%;left:52%;transition-delay:.81s}
-.bean.b4{top:40%;left:88%;transition-delay:.94s}
-
-/* Espresso cup — now an SVG illustration (crema swirl, ceramic shading, sugar
-   cubes, garnish beans) instead of stacked CSS boxes. Same tilt animation, just
-   applied to the SVG's wrapper. Height grew 190→200px to fit the saucer/garnish. */
-.cup3d{position:relative;width:170px;height:200px;transform-style:preserve-3d;animation:tilt 7s ease-in-out infinite;animation-play-state:paused}
+/* ── ESPRESSO CUP (SVG, sits on saucer) ── */
+.cup3d{position:relative;width:240px;height:220px;transform-style:preserve-3d;animation:tilt 8s ease-in-out infinite;animation-play-state:paused}
 body.loaded .cup3d{animation-play-state:running}
-@keyframes tilt{0%,100%{transform:rotateY(-8deg) rotateX(4deg)}50%{transform:rotateY(8deg) rotateX(-2deg)}}
-.cup-svg{display:block;overflow:visible;filter:drop-shadow(0 30px 38px rgba(0,0,0,.55))}
-.steam{position:absolute;top:-36px;left:69px;width:7px;height:60px;opacity:0;filter:blur(1.5px)}
+@keyframes tilt{0%,100%{transform:rotateY(-6deg) rotateX(3deg)}50%{transform:rotateY(6deg) rotateX(-1deg)}}
+.cup-svg{display:block;overflow:visible;filter:drop-shadow(0 18px 22px rgba(0,0,0,.5))}
+.steam{position:absolute;top:-8px;left:105px;width:7px;height:58px;opacity:0;filter:blur(1.5px)}
 .steam span{position:absolute;bottom:0;left:0;width:100%;height:100%;background:linear-gradient(180deg,transparent,rgba(240,234,216,.5),transparent);border-radius:40%;animation:rise 3.2s ease-in infinite;animation-play-state:paused}
 body.loaded .steam span{animation-play-state:running}
-.steam.s2{left:85px}.steam.s2 span{animation-delay:.8s}
-.steam.s3{left:101px}.steam.s3 span{animation-delay:1.6s}
+.steam.s2{left:119px}.steam.s2 span{animation-delay:.8s}
+.steam.s3{left:133px}.steam.s3 span{animation-delay:1.6s}
 @keyframes rise{0%{transform:translateY(0) scaleX(1);opacity:0}20%{opacity:.7}100%{transform:translateY(-72px) scaleX(1.9);opacity:0}}
 @media(max-width:960px){.hero{grid-template-columns:1fr;text-align:center}.hero p.lede{margin-inline:auto}.hero-stats{justify-content:center}.cup-stage{height:320px}.hero-ctas{justify-content:center}}
 
@@ -366,64 +364,86 @@ footer a.credit:hover{color:var(--cream);text-decoration:underline}
 </head>
 <body>
 
+<!-- Shared SVG sprite: realistic bean + full cup/saucer artwork (used by loader and hero) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<defs>
+    <radialGradient id="rbBody" cx="34%" cy="24%" r="85%">
+        <stop offset="0" stop-color="#8b5a33"/><stop offset=".45" stop-color="#5a341a"/><stop offset="1" stop-color="#1e0f06"/>
+    </radialGradient>
+    <radialGradient id="rbShine" cx="50%" cy="50%" r="50%">
+        <stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rbCup" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#3b2f18"/><stop offset=".5" stop-color="#241c0f"/><stop offset="1" stop-color="#120f09"/>
+    </linearGradient>
+    <radialGradient id="rbCrema" cx="32%" cy="30%" r="80%">
+        <stop offset="0" stop-color="#e6c777"/><stop offset=".42" stop-color="#a97a3e"/><stop offset="1" stop-color="#3d2612"/>
+    </radialGradient>
+    <linearGradient id="rbSaucer" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#2a2212"/><stop offset="1" stop-color="#120f09"/>
+    </linearGradient>
+    <filter id="rbBlur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5"/></filter>
+    <filter id="rbBlurS" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.5"/></filter>
+
+    <!-- realistic coffee bean -->
+    <symbol id="rbBean" viewBox="0 0 60 84" overflow="visible">
+        <path d="M30 3C47 3 57 21 57 44S47 81 30 81 3 65 3 42 13 3 30 3Z" fill="url(#rbBody)"/>
+        <path d="M30 3C47 3 57 21 57 44S47 81 30 81 3 65 3 42 13 3 30 3Z" fill="none" stroke="#e6c777" stroke-opacity=".28" stroke-width=".9"/>
+        <ellipse cx="21" cy="21" rx="9" ry="14" fill="url(#rbShine)" transform="rotate(-18 21 21)"/>
+        <path d="M30 6C19 24 41 33 30 46C20 58 40 66 30 79" fill="none" stroke="#0d0603" stroke-width="4.2" stroke-linecap="round"/>
+        <path d="M30 6C19 24 41 33 30 46C20 58 40 66 30 79" fill="none" stroke="#e6c777" stroke-opacity=".3" stroke-width="1.1" stroke-linecap="round" transform="translate(2.6 0)"/>
+    </symbol>
+
+    <!-- full cup + saucer artwork -->
+    <g id="cupArt">
+        <ellipse cx="120" cy="200" rx="104" ry="9" fill="#000" opacity=".5" filter="url(#rbBlur)"/>
+        <!-- saucer -->
+        <ellipse cx="120" cy="184" rx="102" ry="13" fill="#0d0b07"/>
+        <ellipse cx="120" cy="177" rx="108" ry="16" fill="url(#rbSaucer)" stroke="#3a3324" stroke-width="1"/>
+        <ellipse cx="120" cy="175.5" rx="100" ry="14" fill="none" stroke="#e6c777" stroke-width=".6" opacity=".35"/>
+        <ellipse cx="120" cy="178" rx="82" ry="10.5" fill="#0f0d08" stroke="#8a6f2e" stroke-width=".7" opacity=".95"/>
+        <!-- beans resting on saucer -->
+        <use href="#rbBean" x="188" y="166" width="13" height="18" transform="rotate(32 194.5 175)"/>
+        <use href="#rbBean" x="203" y="170" width="11" height="15" transform="rotate(-20 208.5 177.5)"/>
+        <use href="#rbBean" x="20" y="168" width="12" height="16" transform="rotate(15 26 176)"/>
+        <!-- contact shadow (cup sits ON the saucer) -->
+        <ellipse cx="120" cy="176" rx="40" ry="7" fill="#000" opacity=".6" filter="url(#rbBlurS)"/>
+        <!-- handle -->
+        <path d="M176,64 C214,58 216,118 166,126" fill="none" stroke="#8a6f2e" stroke-width="9" stroke-linecap="round"/>
+        <path d="M176,64 C214,58 216,118 166,126" fill="none" stroke="#e6c777" stroke-width="2" stroke-linecap="round" opacity=".45"/>
+        <!-- foot -->
+        <path d="M96,164 L144,164 L142,174 Q120,180 98,174 Z" fill="#14110c" stroke="#8a6f2e" stroke-width="1"/>
+        <!-- body -->
+        <path d="M62,50 C62,118 84,160 100,165 L140,165 C156,160 178,118 178,50 Z" fill="url(#rbCup)" stroke="#8a6f2e" stroke-width="1"/>
+        <path d="M72,64 C73,100 82,136 97,154" stroke="#e6c777" stroke-width="2.2" stroke-linecap="round" fill="none" opacity=".4"/>
+        <path d="M168,70 C167,100 160,130 150,150" stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none" opacity=".05"/>
+        <path d="M62.6,70 Q120,82 177.4,70" stroke="#8a6f2e" stroke-width="1" fill="none" opacity=".7"/>
+        <!-- rim + coffee -->
+        <ellipse cx="120" cy="50" rx="58" ry="11" fill="#1a150c"/>
+        <ellipse cx="120" cy="52" rx="52" ry="9" fill="url(#rbCrema)"/>
+        <path d="M82,52 Q120,62 158,52" stroke="#e6c777" stroke-width=".9" fill="none" opacity=".35"/>
+        <path d="M92,55 Q120,48 148,55" stroke="#3d2612" stroke-width=".9" fill="none" opacity=".4"/>
+        <ellipse cx="120" cy="50" rx="58" ry="11" fill="none" stroke="#e6c777" stroke-width="1.4"/>
+    </g>
+</defs>
+</svg>
+
 <div class="loader" id="loader" aria-hidden="true">
     <div class="loader-glow"></div>
     <div class="loader-stage">
         <div class="bean-field">
-            <div class="bean-orbit bo1"><div class="bean-inner" style="transform:translateZ(150px)"></div></div>
-            <div class="bean-orbit bo2"><div class="bean-inner" style="transform:translateZ(172px) rotateX(18deg)"></div></div>
-            <div class="bean-orbit bo3"><div class="bean-inner" style="transform:translateZ(136px) rotateX(-14deg)"></div></div>
-            <div class="bean-orbit bo4"><div class="bean-inner" style="transform:translateZ(188px)"></div></div>
+            <svg class="cb cb1 far" viewBox="0 0 60 84"><use href="#rbBean"/></svg>
+            <svg class="cb cb3" viewBox="0 0 60 84"><use href="#rbBean"/></svg>
+            <svg class="cb cb4" viewBox="0 0 60 84"><use href="#rbBean"/></svg>
+            <svg class="cb cb6 far" viewBox="0 0 60 84"><use href="#rbBean"/></svg>
         </div>
         <div class="cup3d" style="animation-play-state:running">
-            <svg class="cup-svg" viewBox="0 0 170 200" width="170" height="200" aria-hidden="true">
-                <defs>
-                    <linearGradient id="cupBodyGrad2" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#2e2513"/><stop offset="55%" stop-color="#201a10"/><stop offset="100%" stop-color="#14110c"/>
-                    </linearGradient>
-                    <radialGradient id="cremaGrad2" cx="32%" cy="28%" r="80%">
-                        <stop offset="0%" stop-color="#e6c777"/><stop offset="42%" stop-color="#a97a3e"/><stop offset="100%" stop-color="#3d2612"/>
-                    </radialGradient>
-                    <linearGradient id="saucerGrad2" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#241d10"/><stop offset="100%" stop-color="#100e09"/>
-                    </linearGradient>
-                    <linearGradient id="sugarGrad2" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#f5f0e0"/><stop offset="100%" stop-color="#c9a84c"/>
-                    </linearGradient>
-                    <linearGradient id="beanGrad2" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#e6c777"/><stop offset="100%" stop-color="#8a6f2e"/>
-                    </linearGradient>
-                    <filter id="softShadow2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5"/></filter>
-                </defs>
-                <ellipse cx="85" cy="186" rx="88" ry="10" fill="#000" opacity=".45" filter="url(#softShadow2)"/>
-                <ellipse cx="85" cy="182" rx="92" ry="11" fill="url(#saucerGrad2)" stroke="#2c2c24" stroke-width="1"/>
-                <ellipse cx="85" cy="180.5" rx="80" ry="8.5" fill="none" stroke="#8a6f2e" stroke-width=".6" opacity=".5"/>
-                <g opacity=".95">
-                    <rect x="8" y="163" width="20" height="20" rx="2.5" fill="url(#sugarGrad2)" transform="rotate(-10 18 173)"/>
-                    <rect x="22" y="148" width="18" height="18" rx="2.5" fill="url(#sugarGrad2)" transform="rotate(8 31 157)"/>
-                    <circle cx="15" cy="168" r="1" fill="#fff" opacity=".8"/>
-                    <circle cx="34" cy="153" r="1" fill="#fff" opacity=".8"/>
-                </g>
-                <g>
-                    <g transform="translate(148,168) rotate(18)"><ellipse rx="7" ry="10" fill="url(#beanGrad2)"/><path d="M0,-9 Q3,0 0,9" stroke="#0b0b09" stroke-width="1.3" fill="none" opacity=".65"/></g>
-                    <g transform="translate(133,178) rotate(-24)"><ellipse rx="6" ry="8.5" fill="url(#beanGrad2)"/><path d="M0,-7.5 Q2.5,0 0,7.5" stroke="#0b0b09" stroke-width="1.1" fill="none" opacity=".65"/></g>
-                    <g transform="translate(158,180) rotate(6)"><ellipse rx="5.5" ry="7.5" fill="url(#beanGrad2)"/><path d="M0,-6.5 Q2,0 0,6.5" stroke="#0b0b09" stroke-width="1" fill="none" opacity=".65"/></g>
-                </g>
-                <path d="M124,52 C152,52 152,98 124,98" fill="none" stroke="#8a6f2e" stroke-width="8" stroke-linecap="round"/>
-                <path d="M124,52 C152,52 152,98 124,98" fill="none" stroke="#c9a84c" stroke-width="2" stroke-linecap="round" opacity=".5"/>
-                <path d="M34,20 L136,20 L124,128 Q122,141 85,141 Q48,141 46,128 Z" fill="url(#cupBodyGrad2)" stroke="#8a6f2e" stroke-width="1"/>
-                <path d="M42,26 L44,118" stroke="#e6c777" stroke-width="1.6" stroke-linecap="round" opacity=".45"/>
-                <path d="M120,30 Q126,60 120,95" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".05"/>
-                <ellipse cx="85" cy="22" rx="49" ry="8" fill="url(#cremaGrad2)"/>
-                <path d="M60,20 Q85,26 110,20" stroke="#e6c777" stroke-width="1" fill="none" opacity=".4"/>
-                <path d="M66,23 Q85,18 104,23" stroke="#3d2612" stroke-width="1" fill="none" opacity=".35"/>
-                <ellipse cx="85" cy="20" rx="51" ry="9" fill="none" stroke="#e6c777" stroke-width="1.4"/>
-            </svg>
+            <svg class="cup-svg" viewBox="0 0 240 220" width="240" height="220" aria-hidden="true"><use href="#cupArt"/></svg>
             <div class="steam s1" style="opacity:1"><span></span></div>
             <div class="steam s2" style="opacity:1"><span></span></div>
             <div class="steam s3" style="opacity:1"><span></span></div>
         </div>
-        <div class="loader-word">AyosCoffeeNegosyo</div>
+        <div class="loader-word">SIPPERÉ Café</div>
         <div class="loader-bar"><span></span></div>
     </div>
 </div>
@@ -438,7 +458,7 @@ footer a.credit:hover{color:var(--cream);text-decoration:underline}
     <div class="header-inner">
         <a href="index.php" class="brand">
             <div class="brand-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0b0b09" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
-            <span class="brand-name">My <span>AyosCoffeeNegosyo</span></span>
+            <span class="brand-name">SIPPERÉ <span> Café</span></span>
         </a>
         <nav>
             <a href="index.php" class="active">Home</a>
@@ -492,65 +512,15 @@ footer a.credit:hover{color:var(--cream);text-decoration:underline}
         <div class="cup-ring"></div>
         <div class="cup-ring r2"></div>
         <div class="bean-field">
-            <div class="bean-orbit bo1"><div class="bean-inner" style="transform:translateZ(150px)"></div></div>
-            <div class="bean-orbit bo2"><div class="bean-inner" style="transform:translateZ(175px) rotateX(18deg)"></div></div>
-            <div class="bean-orbit bo3"><div class="bean-inner" style="transform:translateZ(135px) rotateX(-14deg)"></div></div>
-            <div class="bean-orbit bo4"><div class="bean-inner" style="transform:translateZ(190px)"></div></div>
-            <div class="bean-orbit bo5"><div class="bean-inner" style="transform:translateZ(160px) rotateX(10deg)"></div></div>
+            <svg class="cb cb1" viewBox="0 0 60 84"><use href="#rbBean"/></svg>
+            <svg class="cb cb2 far" viewBox="0 0 60 84"><use href="#rbBean"/></svg>
+            <svg class="cb cb3" viewBox="0 0 60 84"><use href="#rbBean"/></svg>
+            <svg class="cb cb4" viewBox="0 0 60 84"><use href="#rbBean"/></svg>
+            <svg class="cb cb5 far" viewBox="0 0 60 84"><use href="#rbBean"/></svg>
+            <svg class="cb cb6 far" viewBox="0 0 60 84"><use href="#rbBean"/></svg>
         </div>
-        <div class="bean b1"></div><div class="bean b2"></div><div class="bean b3"></div><div class="bean b4"></div>
         <div class="cup3d">
-            <svg class="cup-svg" viewBox="0 0 170 200" width="170" height="200" aria-hidden="true">
-                <defs>
-                    <linearGradient id="cupBodyGrad" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#2e2513"/><stop offset="55%" stop-color="#201a10"/><stop offset="100%" stop-color="#14110c"/>
-                    </linearGradient>
-                    <radialGradient id="cremaGrad" cx="32%" cy="28%" r="80%">
-                        <stop offset="0%" stop-color="#e6c777"/><stop offset="42%" stop-color="#a97a3e"/><stop offset="100%" stop-color="#3d2612"/>
-                    </radialGradient>
-                    <linearGradient id="saucerGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#241d10"/><stop offset="100%" stop-color="#100e09"/>
-                    </linearGradient>
-                    <linearGradient id="sugarGrad" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#f5f0e0"/><stop offset="100%" stop-color="#c9a84c"/>
-                    </linearGradient>
-                    <linearGradient id="beanGrad" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#e6c777"/><stop offset="100%" stop-color="#8a6f2e"/>
-                    </linearGradient>
-                    <filter id="softShadow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5"/></filter>
-                </defs>
-                <!-- contact shadow -->
-                <ellipse cx="85" cy="186" rx="88" ry="10" fill="#000" opacity=".45" filter="url(#softShadow)"/>
-                <!-- saucer -->
-                <ellipse cx="85" cy="182" rx="92" ry="11" fill="url(#saucerGrad)" stroke="#2c2c24" stroke-width="1"/>
-                <ellipse cx="85" cy="180.5" rx="80" ry="8.5" fill="none" stroke="#8a6f2e" stroke-width=".6" opacity=".5"/>
-                <!-- sugar cubes -->
-                <g opacity=".95">
-                    <rect x="8" y="163" width="20" height="20" rx="2.5" fill="url(#sugarGrad)" transform="rotate(-10 18 173)"/>
-                    <rect x="22" y="148" width="18" height="18" rx="2.5" fill="url(#sugarGrad)" transform="rotate(8 31 157)"/>
-                    <circle cx="15" cy="168" r="1" fill="#fff" opacity=".8"/>
-                    <circle cx="34" cy="153" r="1" fill="#fff" opacity=".8"/>
-                </g>
-                <!-- garnish beans -->
-                <g>
-                    <g transform="translate(148,168) rotate(18)"><ellipse rx="7" ry="10" fill="url(#beanGrad)"/><path d="M0,-9 Q3,0 0,9" stroke="#0b0b09" stroke-width="1.3" fill="none" opacity=".65"/></g>
-                    <g transform="translate(133,178) rotate(-24)"><ellipse rx="6" ry="8.5" fill="url(#beanGrad)"/><path d="M0,-7.5 Q2.5,0 0,7.5" stroke="#0b0b09" stroke-width="1.1" fill="none" opacity=".65"/></g>
-                    <g transform="translate(158,180) rotate(6)"><ellipse rx="5.5" ry="7.5" fill="url(#beanGrad)"/><path d="M0,-6.5 Q2,0 0,6.5" stroke="#0b0b09" stroke-width="1" fill="none" opacity=".65"/></g>
-                </g>
-                <!-- handle -->
-                <path d="M124,52 C152,52 152,98 124,98" fill="none" stroke="#8a6f2e" stroke-width="8" stroke-linecap="round"/>
-                <path d="M124,52 C152,52 152,98 124,98" fill="none" stroke="#c9a84c" stroke-width="2" stroke-linecap="round" opacity=".5"/>
-                <!-- cup body -->
-                <path d="M34,20 L136,20 L124,128 Q122,141 85,141 Q48,141 46,128 Z" fill="url(#cupBodyGrad)" stroke="#8a6f2e" stroke-width="1"/>
-                <path d="M42,26 L44,118" stroke="#e6c777" stroke-width="1.6" stroke-linecap="round" opacity=".45"/>
-                <path d="M120,30 Q126,60 120,95" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".05"/>
-                <!-- espresso crema -->
-                <ellipse cx="85" cy="22" rx="49" ry="8" fill="url(#cremaGrad)"/>
-                <path d="M60,20 Q85,26 110,20" stroke="#e6c777" stroke-width="1" fill="none" opacity=".4"/>
-                <path d="M66,23 Q85,18 104,23" stroke="#3d2612" stroke-width="1" fill="none" opacity=".35"/>
-                <!-- rim -->
-                <ellipse cx="85" cy="20" rx="51" ry="9" fill="none" stroke="#e6c777" stroke-width="1.4"/>
-            </svg>
+            <svg class="cup-svg" viewBox="0 0 240 220" width="240" height="220" aria-hidden="true"><use href="#cupArt"/></svg>
             <div class="steam"><span></span></div>
             <div class="steam s2"><span></span></div>
             <div class="steam s3"><span></span></div>
@@ -642,7 +612,7 @@ footer a.credit:hover{color:var(--cream);text-decoration:underline}
             <div class="section-eyebrow">Our Philosophy</div>
             <h2>From Bean to <em>Experience.</em></h2>
             <p>It begins long before the espresso hits the cup — with beans sourced for character, roasted in small batches, and rested until they're ready to be pulled at exactly the right pressure and temperature.</p>
-            <p>Every barista at AyosCoffeeNegosyo is trained to read a shot the way a sommelier reads a glass of wine — adjusting grind, dose, and time until the cup in front of you tastes the way it was meant to.</p>
+            <p>Every barista at SIPPERÉ Café is trained to read a shot the way a sommelier reads a glass of wine — adjusting grind, dose, and time until the cup in front of you tastes the way it was meant to.</p>
             <p>That discipline is the same across both branches, on every order, every single day. It's not a slogan. It's the standard we hold ourselves to.</p>
             <a href="includes/about-us.php" class="btn-ghost magnetic" style="margin-top:6px">Read Our Story</a>
         </div>
@@ -652,7 +622,7 @@ footer a.credit:hover{color:var(--cream);text-decoration:underline}
 <!-- VALUE PROPS -->
 <section class="section">
     <div class="section-hd" data-reveal>
-        <div class="section-eyebrow" style="justify-content:center">Why AyosCoffeeNegosyo</div>
+        <div class="section-eyebrow" style="justify-content:center">Why SIPPERÉ Café</div>
         <h2>Built on the <em>Details</em></h2>
     </div>
     <div class="props-grid" data-reveal="stagger">
@@ -733,7 +703,7 @@ footer a.credit:hover{color:var(--cream);text-decoration:underline}
 
 <footer>
     <div class="footer-inner">
-        <div class="footer-brand"><div class="dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0b0b09" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>My AyosCoffeeNegosyo</div>
+        <div class="footer-brand"><div class="dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0b0b09" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>SIPPERÉ Café</div>
         <div class="footer-links">
             <a href="index.php">Home</a>
             <a href="menu.php">Menu</a>
@@ -742,7 +712,7 @@ footer a.credit:hover{color:var(--cream);text-decoration:underline}
         </div>
     </div>
     <div class="footer-bottom">
-        <span>&copy; 2026 My AyosCoffeeNegosyo. All rights reserved.</span>
+        <span>&copy; 2026 SIPPERÉ Café. All rights reserved.</span>
         <span>Developed by <a class="credit" href="https://www.instagram.com/_theprnx.gvara/" target="_blank" rel="noopener noreferrer">Prince Edward Guevara</a></span>
     </div>
 </footer>
@@ -795,6 +765,7 @@ footer a.credit:hover{color:var(--cream);text-decoration:underline}
             requestAnimationFrame(step);
             cio.unobserve(el);
         });
+        
     }, {threshold:.6});
     counters.forEach(function(el){ cio.observe(el); });
 
