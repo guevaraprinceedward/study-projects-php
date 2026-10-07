@@ -201,7 +201,7 @@ tbody tr:hover{background:rgba(255,255,255,0.02)}
 <aside id="sidebar">
     <div class="sb-brand">
         <div class="sb-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e05a5a" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-        <div><div class="sb-title">AyosCoffee<span>Negosyo</span></div><div class="sb-sub">Admin Panel</div></div>
+        <div><div class="sb-title">SIPPERÉ <span>Café</span></div><div class="sb-sub">Admin Panel</div></div>
     </div>
     <nav class="sb-nav">
         <div class="sb-nav-label">Admin</div>
