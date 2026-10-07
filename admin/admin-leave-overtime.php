@@ -75,7 +75,7 @@ $pendingCount = count($pendingLeaves) + count($pendingOvertime);
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Leave & Overtime — AyosCoffeeNegosyo</title>
+<title>Leave & Overtime — SIPPERÉ Café</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -185,7 +185,7 @@ tbody tr:hover{background:rgba(255,255,255,0.02)}
 <aside id="sidebar">
     <div class="sb-brand">
         <div class="sb-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e05a5a" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-        <div><div class="sb-title">AyosCoffee<span>Negosyo</span></div><div class="sb-sub">Admin Panel</div></div>
+        <div><div class="sb-title">SIPPERÉ <span>Café</span></div><div class="sb-sub">Admin Panel</div></div>
     </div>
     <nav class="sb-nav">
         <div class="sb-nav-label">Admin</div>
