@@ -1,6 +1,21 @@
 <?php
 include_once 'hotel-config.php';
 $activePage = 'about';
+
+// ── CLIENT TESTIMONIALS (table: personal_testimonials) ─────────────────
+// Fails gracefully (empty carousel, section simply doesn't render) if the
+// table hasn't been migrated yet — see personal_testimonials.sql.
+$testimonials = [];
+$ttr = $conn->query("SELECT client_name, client_location, avatar_url, rating, testimonial, venture
+                      FROM personal_testimonials
+                      WHERE is_active = 1
+                      ORDER BY sort_order ASC, id ASC");
+if ($ttr) {
+    while ($row = $ttr->fetch_assoc()) {
+        $row['rating'] = max(1, min(5, (int)$row['rating']));
+        $testimonials[] = $row;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -191,6 +206,42 @@ $activePage = 'about';
     .venture-features{grid-template-columns:1fr}
 }
 
+/* ── Collaborations ── */
+.collab-intro{max-width:640px;margin-bottom:50px}
+.collab-card{display:grid;grid-template-columns:0.7fr 1.3fr;gap:58px;align-items:center;margin-bottom:86px;padding-bottom:86px;border-bottom:1px solid var(--h-line)}
+.collab-card:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.collab-card.reverse{grid-template-columns:1.3fr 0.7fr}
+.collab-card.reverse .collab-emblem-wrap{order:2}
+.collab-card.reverse .collab-copy{order:1}
+
+.collab-emblem-wrap{position:relative}
+.collab-emblem{position:relative;border-radius:6px;overflow:hidden;background:linear-gradient(160deg,#f4ecd9,#e3d5b2);border:1px solid var(--h-gold-dim);box-shadow:0 30px 70px rgba(0,0,0,0.5);padding:15%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center}
+.collab-emblem img{width:100%;height:100%;object-fit:contain;border-radius:3px;box-shadow:0 14px 30px rgba(0,0,0,0.3)}
+.collab-emblem.is-compact img{width:86%;height:86%}
+.collab-emblem.is-zoomed img{width:200%;height:200%}
+.collab-emblem-tag{position:absolute;left:16px;bottom:14px;z-index:2;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--h-gold);background:rgba(7,7,10,0.75);backdrop-filter:blur(4px);padding:6px 12px;border-radius:100px;border:1px solid rgba(207,167,107,0.35)}
+
+.collab-copy .collab-eyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--h-gold-dim);margin-bottom:14px}
+.collab-copy h3{font-family:var(--f-serif);font-size:30px;color:var(--h-champagne);margin-bottom:3px}
+.collab-copy .collab-by{font-family:var(--f-serif);font-style:italic;font-size:15px;color:var(--h-gold);margin-bottom:22px}
+.collab-copy p{font-size:13.5px;line-height:1.85;color:var(--h-muted);font-weight:300;margin-bottom:0}
+.collab-story{border-left:2px solid var(--h-gold-dim);padding-left:20px;margin-top:20px;margin-bottom:26px}
+.collab-story p{color:var(--h-text)}
+
+.collab-owner-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-top:24px;border-top:1px solid var(--h-line)}
+.collab-owner-id{display:flex;align-items:center;gap:12px}
+.collab-owner-avatar{width:40px;height:40px;border-radius:50%;background:rgba(207,167,107,0.1);border:1px solid var(--h-gold-dim);color:var(--h-gold);font-family:var(--f-serif);font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.collab-owner-text .ow-name{font-family:var(--f-serif);font-size:14.5px;color:var(--h-champagne)}
+.collab-owner-text .ow-role{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--h-gold-dim)}
+.collab-owner-row .btn-outline-gh{margin-left:auto;padding:10px 20px;font-size:11px}
+
+@media(max-width:900px){
+    .collab-card,.collab-card.reverse{grid-template-columns:1fr;gap:30px;margin-bottom:60px;padding-bottom:60px}
+    .collab-card.reverse .collab-emblem-wrap,.collab-card.reverse .collab-copy{order:unset}
+    .collab-emblem{max-width:260px;margin:0 auto}
+    .collab-owner-row .btn-outline-gh{margin-left:0}
+}
+
 /* ── Monte Carlo panel ── */
 .mc-panel{background:linear-gradient(160deg,rgba(207,167,107,0.05),var(--h-card) 60%);border:1px solid var(--h-line);border-radius:6px;padding:44px;display:flex;flex-direction:column;gap:38px}
 .mc-shot .browser-frame{box-shadow:0 30px 70px rgba(0,0,0,.5)}
@@ -227,6 +278,37 @@ $activePage = 'about';
 .contact-cell .cc-sub{font-size:11.5px;color:var(--h-muted)}
 @media(max-width:820px){ .contact-panel{grid-template-columns:1fr} }
 
+/* ── Testimonials ── */
+.testi-wrap{position:relative;max-width:720px;margin:0 auto}
+.testi-track-wrap{overflow:hidden}
+.testi-track{display:flex;transition:transform .5s cubic-bezier(.4,0,.2,1)}
+.testi-slide{flex:0 0 100%;min-width:0;text-align:center;padding:0 6px}
+.testi-stars{display:flex;justify-content:center;gap:4px;margin-bottom:24px}
+.testi-stars svg{width:15px;height:15px;flex-shrink:0}
+.testi-stars svg.filled{color:var(--h-gold)}
+.testi-stars svg.empty{color:var(--h-line)}
+.testi-quote{font-family:var(--f-serif);font-style:italic;font-size:clamp(19px,2.3vw,24px);line-height:1.62;color:var(--h-champagne);font-weight:500;margin-bottom:30px}
+.testi-quote::before{content:'"';color:var(--h-gold)}
+.testi-quote::after{content:'"';color:var(--h-gold)}
+.testi-person{display:flex;flex-direction:column;align-items:center;gap:8px}
+.testi-avatar{width:46px;height:46px;border-radius:50%;background:rgba(207,167,107,0.1);border:1px solid var(--h-gold-dim);color:var(--h-gold);font-family:var(--f-serif);font-size:18px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-bottom:2px;overflow:hidden;flex-shrink:0}
+.testi-avatar img{width:100%;height:100%;object-fit:cover}
+.testi-name{font-family:var(--f-serif);font-size:15px;color:var(--h-champagne)}
+.testi-loc{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--h-gold-dim)}
+.testi-venture{font-size:10.5px;color:var(--h-muted);font-style:italic;font-family:var(--f-serif)}
+
+.testi-nav{display:flex;align-items:center;justify-content:center;gap:22px;margin-top:42px}
+.testi-arrow{width:36px;height:36px;border-radius:50%;border:1px solid var(--h-line);background:transparent;color:var(--h-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;padding:0}
+.testi-arrow:hover{border-color:var(--h-gold-dim);color:var(--h-gold)}
+.testi-dots{display:flex;align-items:center;gap:7px}
+.testi-dots span{width:6px;height:6px;border-radius:50%;background:var(--h-line);cursor:pointer;transition:all .25s}
+.testi-dots span.active{background:var(--h-gold);width:18px;border-radius:3px}
+
+@media(max-width:620px){
+    .testi-nav{gap:16px}
+    .testi-quote{font-size:18px}
+}
+
 .closing-line{text-align:center;padding:70px 32px 20px;font-family:var(--f-serif);font-style:italic;font-size:16px;color:var(--h-muted);max-width:640px;margin:0 auto}
 </style>
 </head>
@@ -240,10 +322,12 @@ $activePage = 'about';
     <a href="#family" data-target="family"><span class="ir-num">II</span><span class="ir-bar"></span><span class="ir-label">Family Background</span></a>
     <a href="#skills" data-target="skills"><span class="ir-num">III</span><span class="ir-bar"></span><span class="ir-label">Skills &amp; Strengths</span></a>
     <a href="#leadership" data-target="leadership"><span class="ir-num">IV</span><span class="ir-bar"></span><span class="ir-label">Organizations</span></a>
-    <a href="#ventures" data-target="ventures"><span class="ir-num">V</span><span class="ir-bar"></span><span class="ir-label">Ventures</span></a>
-    <a href="#montecarlo" data-target="montecarlo"><span class="ir-num">VI</span><span class="ir-bar"></span><span class="ir-label">Monte Carlo</span></a>
-    <a href="#vision" data-target="vision"><span class="ir-num">VII</span><span class="ir-bar"></span><span class="ir-label">Vision</span></a>
-    <a href="#contact" data-target="contact"><span class="ir-num">VIII</span><span class="ir-bar"></span><span class="ir-label">Contact</span></a>
+    <a href="#collaborations" data-target="collaborations"><span class="ir-num">V</span><span class="ir-bar"></span><span class="ir-label">Collaborations</span></a>
+    <a href="#ventures" data-target="ventures"><span class="ir-num">VI</span><span class="ir-bar"></span><span class="ir-label">Ventures</span></a>
+    <a href="#montecarlo" data-target="montecarlo"><span class="ir-num">VII</span><span class="ir-bar"></span><span class="ir-label">Monte Carlo</span></a>
+    <a href="#vision" data-target="vision"><span class="ir-num">VIII</span><span class="ir-bar"></span><span class="ir-label">Vision</span></a>
+    <a href="#testimonials" data-target="testimonials"><span class="ir-num">IX</span><span class="ir-bar"></span><span class="ir-label">Testimonials</span></a>
+    <a href="#contact" data-target="contact"><span class="ir-num">X</span><span class="ir-bar"></span><span class="ir-label">Contact</span></a>
 </nav>
 
 <!-- ══════════ HERO ══════════ -->
@@ -492,10 +576,126 @@ $activePage = 'about';
     </div>
 </section>
 
-<!-- ══════════ V. VENTURES / PROJECTS ══════════ -->
+<!-- ══════════ V. COLLABORATIONS ══════════ -->
+<section class="dossier-section" id="collaborations">
+    <div class="ds-head">
+        <div class="ds-tag"><span class="ds-num">V.</span><div><span class="ds-eyebrow">In Partnership</span><h2>Collaborations</h2></div></div>
+        <p class="ds-lede collab-intro">A few businesses built or strengthened alongside their owners, credited here by name rather than left behind the scenes.</p>
+    </div>
+
+    <div class="collab-card">
+        <div class="collab-emblem-wrap">
+            <div class="collab-emblem">
+                <span class="dh-frame-tl"></span>
+                <img src="images/collab-axlrose-cafe.jpg" alt="Axl Rose Café logo">
+                <span class="dh-frame-br"></span>
+            </div>
+            <span class="collab-emblem-tag">Brand Identity</span>
+        </div>
+        <div class="collab-copy">
+            <div class="collab-eyebrow">Collaboration I</div>
+            <h3>Axl Rose Café</h3>
+            <div class="collab-by">by Mr. Felix</div>
+            <p>Axl Rose Café is a coffee house built around sound as much as flavor — a place where live bands and spontaneous jam sessions are a near-daily occurrence, and guests are welcomed to sing along rather than simply watch. Even on quieter days, there is always someone filling the room with music and easy conversation, the kind of atmosphere that lets a visitor slow down and stay a while. The coffee holds to the same standard: the sort that settles into your taste and keeps pulling you back for another cup.</p>
+            <div class="collab-story">
+                <p>I helped Axl Rose Café grow from its earliest days at Paseo, back when the shop was still finding its footing. I encouraged Mr. Felix to keep pushing — to treat every hard week as proof the business was worth the effort, and to think bigger about what it could become. Mr. Felix has been one of the kindest people in our circle in return, never leaving us behind and always pushing us to do our best. It was with his encouragement that we set out to build a coffee-themed digital platform of our own, carrying the Axl Rose name into a business idea of its own.</p>
+            </div>
+            <div class="collab-owner-row">
+                <div class="collab-owner-id">
+                    <span class="collab-owner-avatar">F</span>
+                    <div class="collab-owner-text"><div class="ow-name">Mr. Felix</div><div class="ow-role">Owner, Axl Rose Café</div></div>
+                </div>
+                <a href="#" class="btn-outline-gh">Visit Axl Rose Café</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="collab-card reverse">
+        <div class="collab-emblem-wrap">
+            <div class="collab-emblem is-compact">
+                <span class="dh-frame-tl"></span>
+                <img src="images/collab-busybrees-manju.jpg" alt="Busy Bree's Manju logo">
+                <span class="dh-frame-br"></span>
+            </div>
+            <span class="collab-emblem-tag">Brand Identity</span>
+        </div>
+        <div class="collab-copy">
+            <div class="collab-eyebrow">Collaboration II</div>
+            <h3>Busy Bree's Manju</h3>
+            <div class="collab-by">by Mr. Brylle Balbuena</div>
+            <p>Busy Bree's Manju, founded by Mr. Brylle Balbuena, turns a familiar fish-shaped waffle into a small catalog of flavor — Chocolate, Mango, Ube, Strawberry, Cookies and Cream, and more — built with the tourists and locals around San Pablo Lake in mind. Mr. Brylle's instinct was never just to make a product; it was to make one worth stopping for, something that earns a second visit on taste alone.</p>
+            <div class="collab-story">
+                <p>Busy Bree's Manju was the very first client of AyosNegosyoPH, the all-in-one point-of-sale platform we built — complete with a staff monitoring system that tracks time-in and time-out, alongside a wider set of operational features. We spent nearly a month alongside Mr. Brylle, thinking carefully through how the product would sell and what would make it work for his customers. Our team mapped out every likely problem around the business, strategized around each one, and timed the launch with care. We're glad to say it took off well.</p>
+            </div>
+            <div class="collab-owner-row">
+                <div class="collab-owner-id">
+                    <span class="collab-owner-avatar">B</span>
+                    <div class="collab-owner-text"><div class="ow-name">Mr. Brylle Balbuena</div><div class="ow-role">Owner, Busy Bree's Manju</div></div>
+                </div>
+                <a href="#" class="btn-outline-gh">Visit Busy Bree's Manju</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="collab-card">
+        <div class="collab-emblem-wrap">
+            <div class="collab-emblem">
+                <span class="dh-frame-tl"></span>
+                <img src="images/collab-hotel-101.png" alt="Hotel 101 logo">
+                <span class="dh-frame-br"></span>
+            </div>
+            <span class="collab-emblem-tag">Brand Identity</span>
+        </div>
+        <div class="collab-copy">
+            <div class="collab-eyebrow">Collaboration III</div>
+            <h3>Hotel 101</h3>
+            <div class="collab-by">by Mr. George Uy</div>
+            <p>Hotel 101 is built around a distinctive hotel-and-investment model — a "condotel" format where individual units are owned by investors while the hotel itself operates day to day around them, serving tourists, business travelers, and every guest in between. Founded and led by Mr. George Uy, a Filipino entrepreneur who runs a wide portfolio of companies under his own direction, Hotel 101 has grown into one of his strongest-performing ventures: dozens of branches across the Philippines, each carrying a full slate of in-house services within the building itself.</p>
+            <div class="collab-story">
+                <p>We helped Hotel 101 grow further by putting our own product, AyosNegosyoPH, to work as the point-of-sale system behind its food and essentials operations. Mr. George Uy uses it to track every transaction that happens on the property and to monitor staff performance — keeping a clear read on who's working and how the floor is running. It has since become one of the core systems inside the condominium, and as the partnership has grown, we've been building biometric facial recognition and RFID scanning into the same AyosNegosyoPH platform.</p>
+            </div>
+            <div class="collab-owner-row">
+                <div class="collab-owner-id">
+                    <span class="collab-owner-avatar">G</span>
+                    <div class="collab-owner-text"><div class="ow-name">Mr. George Uy</div><div class="ow-role">Founder &amp; CEO, Hotel 101</div></div>
+                </div>
+                <a href="https://hotel101.com/" class="btn-outline-gh">Visit Hotel 101</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="collab-card reverse">
+        <div class="collab-emblem-wrap">
+            <div class="collab-emblem is-zoomed">
+                <span class="dh-frame-tl"></span>
+                <img src="images/collab-ca-phe.jpg" alt="Cà Phê Vietnam Style logo">
+                <span class="dh-frame-br"></span>
+            </div>
+            <span class="collab-emblem-tag">Brand Identity</span>
+        </div>
+        <div class="collab-copy">
+            <div class="collab-eyebrow">Collaboration IV</div>
+            <h3>Cà Phê</h3>
+            <div class="collab-by">by Mr. Eric</div>
+            <p>Cà Phê is a Vietnamese-style coffee shop founded by Mr. Eric, who also runs a fitness gym right next door and built this one as a second, passive stream of income. It draws a steady crowd of tourists looking for something different from the usual cup — the beans are sourced from Vietnam rather than the typical local blend, giving the coffee a noticeably sweeter, smoother character than what most nearby cafés serve.</p>
+            <div class="collab-story">
+                <p>Our role with Mr. Eric has been less about building software and more about thinking alongside him — helping him spot new business ideas worth exploring and pushing his plans further than he'd first imagined. We continue to work through strategy with him and advise on where it makes sense to invest next.</p>
+            </div>
+            <div class="collab-owner-row">
+                <div class="collab-owner-id">
+                    <span class="collab-owner-avatar">E</span>
+                    <div class="collab-owner-text"><div class="ow-name">Mr. Eric</div><div class="ow-role">Owner, Cà Phê</div></div>
+                </div>
+                <a href="https://www.facebook.com/cafe.suada9/" class="btn-outline-gh">Visit Cà Phê</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════ VI. VENTURES / PROJECTS ══════════ -->
 <section class="dossier-section" id="ventures">
     <div class="ds-head">
-        <div class="ds-tag"><span class="ds-num">V.</span><div><span class="ds-eyebrow">Personal Projects</span><h2>Ventures</h2></div></div>
+        <div class="ds-tag"><span class="ds-num">VI.</span><div><span class="ds-eyebrow">Personal Projects</span><h2>Ventures</h2></div></div>
         <p class="ds-lede">Two full business management platforms, founded, architected, and built from the ground up.</p>
     </div>
 
@@ -575,10 +775,10 @@ $activePage = 'about';
     </div>
 </section>
 
-<!-- ══════════ VI. MONTE CARLO TECHNOLOGIES ══════════ -->
+<!-- ══════════ VII. MONTE CARLO TECHNOLOGIES ══════════ -->
 <section class="dossier-section" id="montecarlo">
     <div class="ds-head">
-        <div class="ds-tag"><span class="ds-num">VI.</span><div><span class="ds-eyebrow">Professional Home</span><h2>Monte Carlo<br>Technologies</h2></div></div>
+        <div class="ds-tag"><span class="ds-num">VII.</span><div><span class="ds-eyebrow">Professional Home</span><h2>Monte Carlo<br>Technologies</h2></div></div>
         <p class="ds-lede">An early professional environment that continues to sharpen both the technical and creative sides of the craft.</p>
     </div>
 
@@ -609,10 +809,10 @@ $activePage = 'about';
     </div>
 </section>
 
-<!-- ══════════ VII. VISION & PHILOSOPHY ══════════ -->
+<!-- ══════════ VIII. VISION & PHILOSOPHY ══════════ -->
 <section class="dossier-section" id="vision">
     <div class="ds-head">
-        <div class="ds-tag"><span class="ds-num">VII.</span><div><span class="ds-eyebrow">Looking Ahead</span><h2>Vision &amp;<br>Philosophy</h2></div></div>
+        <div class="ds-tag"><span class="ds-num">VIII.</span><div><span class="ds-eyebrow">Looking Ahead</span><h2>Vision &amp;<br>Philosophy</h2></div></div>
         <p class="ds-lede">Success built through discipline, consistency, humility, and continuous self-improvement.</p>
     </div>
 
@@ -633,10 +833,61 @@ $activePage = 'about';
     </div>
 </section>
 
-<!-- ══════════ VIII. CONTACT ══════════ -->
+<!-- ══════════ IX. TESTIMONIALS ══════════ -->
+<?php if (!empty($testimonials)): ?>
+<section class="dossier-section" id="testimonials">
+    <div class="ds-head">
+        <div class="ds-tag"><span class="ds-num">IX.</span><div><span class="ds-eyebrow">Client Voices</span><h2>Testimonials</h2></div></div>
+        <p class="ds-lede">A few words from the people and businesses this work was built for.</p>
+    </div>
+
+    <div class="testi-wrap">
+        <div class="testi-track-wrap">
+            <div class="testi-track" id="testiTrack">
+                <?php foreach ($testimonials as $t):
+                    $initial = strtoupper(mb_substr(trim($t['client_name']), 0, 1));
+                ?>
+                <div class="testi-slide">
+                    <div class="testi-stars">
+                        <?php for ($i = 1; $i <= 5; $i++): ?>
+                        <svg viewBox="0 0 24 24" fill="currentColor" class="<?= $i <= $t['rating'] ? 'filled' : 'empty' ?>"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.8L6 21l1.6-7L2.2 9.2l7.1-.6z"/></svg>
+                        <?php endfor; ?>
+                    </div>
+                    <p class="testi-quote"><?= htmlspecialchars($t['testimonial']) ?></p>
+                    <div class="testi-person">
+                        <span class="testi-avatar">
+                            <?php if (!empty($t['avatar_url'])): ?>
+                                <img src="<?= htmlspecialchars($t['avatar_url']) ?>" alt="<?= htmlspecialchars($t['client_name']) ?>">
+                            <?php else: ?>
+                                <?= htmlspecialchars($initial) ?>
+                            <?php endif; ?>
+                        </span>
+                        <span class="testi-name"><?= htmlspecialchars($t['client_name']) ?></span>
+                        <span class="testi-loc"><?= htmlspecialchars($t['client_location']) ?></span>
+                        <?php if (!empty($t['venture'])): ?><span class="testi-venture"><?= htmlspecialchars($t['venture']) ?></span><?php endif; ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <?php if (count($testimonials) > 1): ?>
+        <div class="testi-nav">
+            <button class="testi-arrow" id="testiPrev" aria-label="Previous testimonial"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+            <div class="testi-dots" id="testiDots">
+                <?php foreach ($testimonials as $di => $_): ?><span class="<?= $di === 0 ? 'active' : '' ?>"></span><?php endforeach; ?>
+            </div>
+            <button class="testi-arrow" id="testiNext" aria-label="Next testimonial"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+        <?php endif; ?>
+    </div>
+</section>
+<?php endif; ?>
+
+<!-- ══════════ X. CONTACT ══════════ -->
 <section class="dossier-section" id="contact" style="border-bottom:1px solid var(--h-line)">
     <div class="ds-head">
-        <div class="ds-tag"><span class="ds-num">VIII.</span><div><span class="ds-eyebrow">Say Hello</span><h2>Contact<br>Information</h2></div></div>
+        <div class="ds-tag"><span class="ds-num">X.</span><div><span class="ds-eyebrow">Say Hello</span><h2>Contact<br>Information</h2></div></div>
         <p class="ds-lede">Open to collaboration, networking, and opportunities that value innovation.</p>
     </div>
 
@@ -691,6 +942,43 @@ railLinks.forEach(a => {
         document.getElementById(a.dataset.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 });
+
+// Testimonials carousel
+(function(){
+    const track = document.getElementById('testiTrack');
+    if (!track) return;
+    const slides = track.children;
+    const total = slides.length;
+    if (total <= 1) return;
+
+    const dots = document.querySelectorAll('#testiDots span');
+    const prevBtn = document.getElementById('testiPrev');
+    const nextBtn = document.getElementById('testiNext');
+    const wrap = track.closest('.testi-wrap');
+    let idx = 0;
+    let auto;
+
+    function go(n){
+        idx = (n + total) % total;
+        track.style.transform = `translateX(-${idx * 100}%)`;
+        dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+    }
+    function startAuto(){
+        auto = setInterval(() => go(idx + 1), 6000);
+    }
+    function stopAuto(){
+        clearInterval(auto);
+    }
+
+    prevBtn?.addEventListener('click', () => { go(idx - 1); stopAuto(); startAuto(); });
+    nextBtn?.addEventListener('click', () => { go(idx + 1); stopAuto(); startAuto(); });
+    dots.forEach((d, i) => d.addEventListener('click', () => { go(i); stopAuto(); startAuto(); }));
+    wrap?.addEventListener('mouseenter', stopAuto);
+    wrap?.addEventListener('mouseleave', startAuto);
+
+    go(0);
+    startAuto();
+})();
 </script>
 </body>
 </html>
