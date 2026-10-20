@@ -1,0 +1,113 @@
+/* ==========================================================================
+   cops-menu.css — premium polish for menu.php
+   White Carrara marble · Aegean navy · burnished gold, with smooth motion.
+   Loaded AFTER the normal menu styles, so it refines them without replacing them.
+   ========================================================================== */
+:root{
+    --cm-navy:#13294b;--cm-navy2:#1f3d6e;--cm-gold:#b08d3c;--cm-gold-d:#8a6a1f;--cm-gold-b:#d9b45a;
+    --cm-line:#e5dcc6;--cm-champ:#f5ecd2;--cm-ease:cubic-bezier(.2,.8,.2,1);
+    --cm-serif:'Cinzel',Georgia,serif;--cm-body:'EB Garamond',Georgia,serif;
+}
+html{scroll-behavior:smooth}
+@view-transition{navigation:auto}               /* soft cross-fade between menu.php pages (Chrome / Edge) */
+body{animation:cmFade .6s ease both}
+@keyframes cmFade{from{opacity:0}to{opacity:1}}
+[id^="item-"]{scroll-margin-top:120px}
+
+/* scroll progress bar */
+.cm-progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:400;transform-origin:left;transform:scaleX(0);
+    background:linear-gradient(90deg,#f0d78e,#b08d3c 60%,#13294b);pointer-events:none;transition:transform .12s linear}
+
+/* ── hero ── */
+.menu-hero.is-school{position:relative;overflow:hidden;padding:54px 0 0;
+    background:
+      radial-gradient(ellipse 60% 70% at 85% 10%,rgba(217,187,104,.22),transparent 65%),
+      radial-gradient(ellipse 50% 60% at 0% 100%,rgba(44,90,160,.08),transparent 60%),
+      linear-gradient(180deg,#fffefb,var(--cm-champ));
+    border-bottom:1px solid #c9b373}
+.menu-hero.is-school h1{font-family:var(--cm-serif);font-weight:600;font-size:clamp(30px,4vw,50px);line-height:1.15;color:var(--cm-navy);letter-spacing:.02em}
+.menu-hero.is-school .hero-copy p{font-family:var(--cm-body);font-size:19px;color:#5b6070;max-width:44ch}
+.menu-hero.is-school .meander{margin-top:6px}
+.menu-hero .hero-copy>*{animation:cmUp .9s var(--cm-ease) backwards}
+.menu-hero .hero-copy>*:nth-child(2){animation-delay:.12s}
+.menu-hero .hero-copy>*:nth-child(3){animation-delay:.24s}
+.menu-hero .hero-scene{perspective:1100px;animation:cmScene 1.25s var(--cm-ease) .1s backwards}
+.menu-hero .scene-frame{transition:transform .6s var(--cm-ease),box-shadow .6s;transform-style:preserve-3d}
+@keyframes cmUp{from{opacity:0;transform:translateY(20px)}}
+@keyframes cmScene{from{opacity:0;transform:translateY(30px) scale(.965)}}
+
+/* ── today's pickup slots ── */
+.strip{background:linear-gradient(180deg,#fff,var(--cm-champ));border-top:1px solid #c9b373;border-bottom:1px solid #c9b373}
+.slot-chip{border:1px solid var(--cm-line);background:linear-gradient(180deg,#fff,#fbf9f3);
+    box-shadow:inset 0 0 0 3px #fff,inset 0 0 0 4px rgba(176,141,60,.3);
+    transition:transform .35s var(--cm-ease),box-shadow .35s,border-color .3s;animation:cmUp .7s var(--cm-ease) backwards}
+.slot-chip:nth-child(2){animation-delay:.06s}.slot-chip:nth-child(3){animation-delay:.12s}.slot-chip:nth-child(4){animation-delay:.18s}
+.slot-chip:nth-child(5){animation-delay:.24s}.slot-chip:nth-child(6){animation-delay:.3s}
+.slot-chip:not(.full):hover{transform:translateY(-4px);border-color:var(--cm-gold);box-shadow:inset 0 0 0 3px #fff,inset 0 0 0 4px rgba(176,141,60,.6),0 14px 22px -14px rgba(19,41,75,.45)}
+.slot-chip.full{opacity:.55;filter:grayscale(.45)}
+
+/* ── toolbar: search · categories · sort ── */
+.toolbar{background:rgba(255,255,255,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--cm-line)}
+.chip{transition:background .35s var(--cm-ease),color .3s,border-color .3s,transform .3s var(--cm-ease),box-shadow .3s}
+.chip:hover{transform:translateY(-2px);border-color:var(--cm-gold);box-shadow:0 10px 16px -12px rgba(138,106,31,.8)}
+.chip[aria-current="true"]{background:linear-gradient(180deg,var(--cm-navy2),var(--cm-navy));color:#fff;border-color:var(--cm-navy)}
+.chip:active{transform:scale(.96)}
+.input,.select{transition:border-color .25s,box-shadow .3s,background .25s}
+.input:focus,.select:focus{outline:none;border-color:var(--cm-gold);box-shadow:0 0 0 4px rgba(176,141,60,.16);background:#fff}
+
+/* ── category headings: the gold rule draws itself in ── */
+.cat-section h2{position:relative;padding-bottom:14px;font-family:var(--cm-serif);color:var(--cm-navy);letter-spacing:.04em}
+.cat-section h2 small{font-family:var(--cm-body);font-style:italic;font-weight:400;letter-spacing:0;color:#7a5c19}
+.cat-section h2::after{content:'';display:block;position:absolute;left:0;bottom:0;height:2px;width:0;
+    background:linear-gradient(90deg,var(--cm-gold),var(--cm-gold-b),transparent);transition:width 1.2s var(--cm-ease) .15s}
+.cat-section.cm-seen h2::after,.cat-section h2.rv-in::after{width:170px}
+
+/* ── product cards (works with any card markup inside .grid-products) ── */
+.grid-products>*{position:relative;overflow:hidden;
+    background:linear-gradient(180deg,#fff,#fbf9f3);border:1px solid var(--cm-line);
+    box-shadow:inset 0 0 0 4px #fff,inset 0 0 0 5px rgba(176,141,60,.32),0 22px 44px -32px rgba(19,41,75,.5);
+    transition:transform .5s var(--cm-ease),box-shadow .5s,border-color .35s}
+.grid-products>*:hover{transform:translateY(-8px);border-color:#c9b373;
+    box-shadow:inset 0 0 0 4px #fff,inset 0 0 0 5px rgba(176,141,60,.7),0 38px 56px -30px rgba(19,41,75,.55)}
+.grid-products>*:active{transform:translateY(-3px)}
+.grid-products [class*="media"],.grid-products [class*="thumb"],.grid-products [class*="photo"],.grid-products [class*="image"]{overflow:hidden}
+.grid-products img{transition:transform 1s var(--cm-ease),filter .6s;transform-origin:center}
+.grid-products>*:hover img{transform:scale(1.08)}
+/* make sure a product photo is never hidden by a leftover lazy-load / placeholder rule */
+.grid-products img.cops-photo{display:block;opacity:1;visibility:visible}
+.grid-products .cops-photo-in{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.grid-products [class*="media"]:has(.cops-photo-in),.grid-products [class*="thumb"]:has(.cops-photo-in),
+.grid-products [class*="photo"]:has(.cops-photo-in),.grid-products [class*="image"]:has(.cops-photo-in){position:relative}
+.grid-products .cops-photo-top{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+.grid-products button,.grid-products .btn{transition:transform .3s var(--cm-ease),filter .25s,box-shadow .3s,background .25s,color .25s}
+.grid-products button:not(:disabled):hover,.grid-products .btn:not(:disabled):hover{transform:translateY(-2px);filter:brightness(1.06)}
+.grid-products button:not(:disabled):active,.grid-products .btn:not(:disabled):active{transform:scale(.96)}
+
+/* reveal as you scroll (classes are added by cops-menu.js, so nothing hides if JS is off) */
+.rv-pending{opacity:0;transform:translateY(30px)}
+.rv-pending.rv-in{opacity:1;transform:none;transition:opacity .9s var(--cm-ease),transform .9s var(--cm-ease)}
+.cm-enter{animation:cmUp .85s var(--cm-ease) backwards}
+
+/* empty state + flash messages */
+.no-results{border:1px dashed #c9b373;background:rgba(255,255,255,.7);padding:56px 20px;text-align:center}
+.flash-bar .alert{animation:cmUp .6s var(--cm-ease) backwards}
+
+/* ── reservation drawer ── */
+.veil{transition:opacity .45s ease,backdrop-filter .45s ease,-webkit-backdrop-filter .45s ease}
+.veil.is-open{backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.drawer:not(.static){transition:transform .55s var(--cm-ease),opacity .4s ease}
+.drawer{box-shadow:-34px 0 70px -30px rgba(19,41,75,.55);border-left:1px solid #c9b373}
+.drawer-head h2{font-family:var(--cm-serif);color:var(--cm-navy);letter-spacing:.05em}
+.drawer-tabs a{background-image:linear-gradient(var(--cm-gold),var(--cm-gold));background-repeat:no-repeat;background-position:50% 100%;background-size:0 2px;transition:background-size .45s var(--cm-ease),color .3s}
+.drawer-tabs a:hover{background-size:50% 2px}
+.drawer-tabs a[aria-current="true"]{background-size:80% 2px}
+#drawerPanel>*{animation:cmPanel .5s var(--cm-ease) backwards}
+@keyframes cmPanel{from{opacity:0;transform:translateX(18px)}}
+.icon-btn{transition:transform .35s var(--cm-ease),color .25s}
+.icon-btn:hover{transform:rotate(90deg)}
+
+@media(max-width:900px){.cat-section h2::after{width:120px}}
+@media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+    .rv-pending{opacity:1;transform:none}
+}

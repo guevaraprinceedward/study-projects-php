@@ -20,10 +20,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($result->num_rows === 1) {
             $admin = $result->fetch_assoc();
-            if (password_verify($password, $admin['password'])) {
+            $stored = $admin['password'];
+
+            // A real bcrypt hash always starts with one of these prefixes.
+            $isHashed = (bool) preg_match('/^\$2[axy]\$/', $stored);
+
+            $ok = false;
+            if ($isHashed) {
+                // Normal case: stored password is already a proper hash.
+                $ok = password_verify($password, $stored);
+            } else {
+                // Legacy / seeded row: password was saved as plain text
+                // (this is why correct credentials were being rejected —
+                // password_verify() can never match a non-hash string).
+                // Accept it once, then silently upgrade it to a real hash
+                // so every login after this works the normal secure way.
+                if (hash_equals($stored, $password)) {
+                    $ok = true;
+                    $newHash = password_hash($password, PASSWORD_DEFAULT);
+                    $upd = $conn->prepare("UPDATE admins SET password = ? WHERE id = ?");
+                    $upd->bind_param("si", $newHash, $admin['id']);
+                    $upd->execute();
+                }
+            }
+
+            if ($ok) {
                 $_SESSION['admin'] = [
                     'id'       => $admin['id'],
-                    'username' => $admin['username']
+                    'username' => $admin['username'],
+                    'role'     => $admin['role'] ?? 'admin',
                 ];
                 header("Location: admin-dashboard.php");
                 exit();
@@ -49,7 +74,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 :root{--bg:#0e0f0c;--card:#161710;--border:#2a2c24;--green:#5a7a3a;--green-lt:#7aad4a;--gold:#c9a84c;--red:#c0392b;--text:#e8e6df;--muted:#7a7a6a;--input-bg:#1e201a}
 body{min-height:100vh;background:var(--bg);display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;color:var(--text);padding:20px;overflow:hidden;position:relative}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 20% 20%,rgba(192,57,43,0.06) 0%,transparent 60%),radial-gradient(ellipse 60% 80% at 80% 80%,rgba(201,168,76,0.06) 0%,transparent 60%);pointer-events:none}
-body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
 .card{background:var(--card);border:1px solid var(--border);border-radius:4px;width:100%;max-width:400px;padding:48px 40px 40px;position:relative;z-index:1;animation:fadeUp 0.5s ease both}
 .card::before{content:'';position:absolute;top:0;left:0;width:40px;height:40px;border-top:2px solid var(--red);border-left:2px solid var(--red);border-radius:3px 0 0 0}
 .card::after{content:'';position:absolute;bottom:0;right:0;width:40px;height:40px;border-bottom:2px solid var(--red);border-right:2px solid var(--red);border-radius:0 0 3px 0}

@@ -798,30 +798,47 @@ document.querySelectorAll('.checkout-form').forEach(form => {
         btn.textContent = 'Checking out...';
 
         try {
+
             const r = await fetch('process-checkout.php', {
+
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: 'booking_id=' + encodeURIComponent(form.dataset.bookingId)
+
             });
+
             const raw = await r.text();
             let data;
+
             try { data = JSON.parse(raw); }
-            catch (parseErr) {
-                throw new Error(`Server returned an unexpected response (HTTP ${r.status}). ${raw.slice(0, 200)}`);
+
+                catch (parseErr) {
+                    
+                    throw new Error(`Server returned an unexpected response (HTTP ${r.status}). ${raw.slice(0, 200)}`);
             }
+
             if (data.ok) {
+
                 openReceiptModal(data.receipt, true); // reload the dashboard once the guest closes the receipt
+            
             } else {
+                
                 alert(data.error || 'Something went wrong. Please try again.');
                 btn.disabled = false;
                 btn.textContent = originalText;
+            
             }
+
         } catch (err) {
+
             alert(err.message || 'Network error — please check your connection and try again.');
             btn.disabled = false;
             btn.textContent = originalText;
+
         }
+
     });
+    
 });
 
 // ── Past Stays: "View Receipt" reads the pre-built data embedded above ──

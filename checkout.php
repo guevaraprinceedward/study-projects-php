@@ -1,917 +1,440 @@
 <?php
+/**
+ * checkout.php (v3) — checkout for the serve cart.
+ *   - reads the line cart ($_SESSION['cart']) and the order type chosen in cart.php ($_SESSION['order_svc'])
+ *   - payment: Cash / GCash / Maya / Card (only the last 4 digits of a card are kept, never the PIN)
+ *   - creates orders + order_items (size, hot/iced, sugar, add-ons, note) and deducts stock in ONE transaction
+ *   - then redirects to checkout.php?receipt=TOKEN (refresh never orders twice) and opens the receipt
+ *   - delivery orders start as 'pending' and wait for staff approval (admin-delivery.php)
+ */
 if (session_status() === PHP_SESSION_NONE) session_start();
-include 'config.php';
+include_once 'config.php';
+include_once 'customize-lib.php';
+include_once 'delivery-checkout.inc.php';
+include_once 'order-lib.php';
+ordEnsureSchema($conn);
 
-// ── GUEST OR LOGGED IN ────────────────────────────────────────────────────
-$isLoggedIn = false;
-$uid        = 0;
-$userName   = 'Guest';
-$isGuest    = isset($_GET['guest']) && $_GET['guest'] == '1';
+$uid        = ordValidUserId($conn);
+$isLoggedIn = $uid > 0;
+$sessName   = $isLoggedIn ? (string)($_SESSION['user']['username'] ?? '') : '';
+$methods    = ordPayMethods();
+$types      = custOrderTypes();
+$h          = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES);
 
-if (isset($_SESSION["user"])) {
-    $uid   = (int)($_SESSION["user"]["id"] ?? 0);
-    $uname = $conn->real_escape_string($_SESSION["user"]["username"] ?? '');
-    $chk   = $conn->query("SELECT id FROM users WHERE id = $uid AND username = '$uname' LIMIT 1");
-    if ($chk && $chk->num_rows > 0) {
-        $isLoggedIn = true;
-        $userName   = htmlspecialchars($_SESSION["user"]["username"]);
-        $isGuest    = false;
-    } else {
-        session_unset(); session_destroy();
-    }
+// ══ RECEIPT VIEW (after a successful order) ═══════════════════════════════
+$success = false; $receipt = null;
+if (isset($_GET['receipt'])) {
+    $tok = preg_replace('/[^a-f0-9]/', '', strtolower((string)$_GET['receipt']));
+    $o   = ordLoadByToken($conn, $tok);
+    if (!$o) { header('Location: menu.php'); exit(); }
+    $mine    = $isLoggedIn && (int)$o['user_id'] === $uid;
+    $receipt = ordReceiptData($conn, $o, $mine ? $sessName : '');
+    $success = true;
 }
 
-// If not logged in and not explicitly guest, redirect
-if (!$isLoggedIn && !$isGuest) {
-    header("Location: log-in.php"); exit();
-}
+$error = ''; $cartRows = []; $subtotal = 0.0; $osvc = null; $isDelivery = false; $fee = 0.0; $total = 0.0; $branch = 'laguna';
+$payKey = 'cash'; $cashValue = ''; $refValue = '';
 
-// Ensure columns
-$conn->query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT NULL");
-$conn->query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'pending'");
-$conn->query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS branch VARCHAR(20) DEFAULT 'laguna'");
-$conn->query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50) DEFAULT 'cash'");
-$conn->query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS guest_name VARCHAR(100) DEFAULT NULL");
-$conn->query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS guest_phone VARCHAR(20) DEFAULT NULL");
-$conn->query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS receipt_code VARCHAR(40) DEFAULT NULL");
-$conn->query("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS price decimal(10,2) DEFAULT NULL");
+if (!$success) {
+    // guests must come through the "Continue as Guest" button of the cart
+    if (isset($_GET['guest']) && !$isLoggedIn) $_SESSION['guest_checkout'] = 1;
+    if ($isLoggedIn) unset($_SESSION['guest_checkout']);
+    if (!$isLoggedIn && empty($_SESSION['guest_checkout'])) { header('Location: cart.php'); exit(); }
 
-// ── ADD-ONS: ensure table + order_items columns exist ─────────────────────
-$conn->query("CREATE TABLE IF NOT EXISTS product_addons (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    price DECIMAL(10,2) NOT NULL DEFAULT 0,
-    applies_to VARCHAR(20) DEFAULT 'all',
-    is_active TINYINT(1) DEFAULT 1
-)");
-$conn->query("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS addons TEXT DEFAULT NULL");
-$conn->query("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS addons_total DECIMAL(10,2) DEFAULT 0");
+    if (!isset($_SESSION['cart']) || !is_array($_SESSION['cart'])) $_SESSION['cart'] = [];
+    custMigrateCart($_SESSION['cart']);
+    [$cartRows, $subtotal] = custBuildCart($conn, $_SESSION['cart']);
+    $osvc = $_SESSION['order_svc'] ?? null;
+    if (!$cartRows || !is_array($osvc) || !isset($types[$osvc['type'] ?? ''])) { header('Location: cart.php'); exit(); }
 
-if (empty($_SESSION['cart'])) { header("Location: cart.php"); exit(); }
+    $isDelivery = $osvc['type'] === 'delivery';
+    $fee        = $isDelivery ? (float)$osvc['fee'] : 0.0;
+    $total      = $subtotal + $fee;
+    $branches   = array_values(array_unique(array_map(fn($r) => (string)$r['branch'], $cartRows)));
+    $mixed      = count($branches) > 1;
+    $branch     = $branches[0] ?? 'laguna';
+    $whenLabel  = ($isDelivery && !empty($osvc['scheduled_for'])) ? date('D, M j · g:i A', strtotime($osvc['scheduled_for'])) : '';
 
-// ── HELPER: pull the first non-empty column from a row, checking a list of
-//    possible names — products tables vary (image / image_url / photo…),
-//    so the receipt/detail modal degrades gracefully instead of breaking. ──
-function pickField($row, array $candidates, $default = null) {
-    foreach ($candidates as $c) {
-        if (!empty($row[$c])) return $row[$c];
-    }
-    return $default;
-}
+    $postPay   = is_string($_POST['payment'] ?? null) ? $_POST['payment'] : '';
+    $payKey    = isset($methods[$postPay]) ? $postPay : 'cash';
+    $cashValue = $_POST['cash_amount'] ?? number_format($total, 2, '.', '');
+    $refValue  = $_POST['pay_ref'] ?? '';
+    $gName     = trim((string)($_POST['guest_name'] ?? ''));
+    $gPhone    = trim((string)($_POST['guest_phone'] ?? ($isDelivery ? $osvc['phone'] : '')));
 
-// ── HELPER: strip stray HTML/quote artifacts from display text ────────────
-// Defense-in-depth: some rows in `products` (name / ingredients / etc.) may
-// contain leftover junk like  '">  or  ">  from old bad input that got saved
-// verbatim (e.g. via an unescaped add/edit-product form). This keeps that
-// junk from leaking into the customer-facing receipt/detail modal even if
-// the underlying data hasn't been cleaned up yet. The real fix is cleaning
-// the DB row itself — see the accompanying note.
-function cleanDisplayText($str) {
-    if ($str === null) return $str;
-    $str = (string)$str;
+    // ── PLACE ORDER ──
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
+        $custNotes = mb_substr(trim((string)($_POST['notes'] ?? '')), 0, 400);
+        $payRef = null; $cardLast4 = null; $cashTendered = null;
 
-    // Pass 1: strip a leading run of ASCII quote/bracket junk (straight quotes,
-    // angle brackets, whitespace/control chars).
-    $prev = null;
-    while ($prev !== $str) {
-        $prev = $str;
-        $str = preg_replace('/^[\'"<>\x00-\x20]+/u', '', $str);
-    }
-
-    // Pass 2: also strip "smart"/curly quote variants some editors or copy-paste
-    // sources introduce (’ ‘ “ ” and similar), which the ASCII-only class above
-    // would miss.
-    $prev = null;
-    while ($prev !== $str) {
-        $prev = $str;
-        $str = preg_replace('/^[\x{2018}\x{2019}\x{201C}\x{201D}\x{FF02}\x{FF07}]+/u', '', $str);
-    }
-
-    // Trailing cleanup, same two passes in reverse.
-    $prev = null;
-    while ($prev !== $str) {
-        $prev = $str;
-        $str = preg_replace('/[\'"<>\x00-\x20]+$/u', '', $str);
-    }
-    $prev = null;
-    while ($prev !== $str) {
-        $prev = $str;
-        $str = preg_replace('/[\x{2018}\x{2019}\x{201C}\x{201D}\x{FF02}\x{FF07}]+$/u', '', $str);
-    }
-
-    return trim($str);
-}
-
-// ── BUILD CART (with add-ons carried over from cart.php selections) ───────
-$cartRows = [];
-$total    = 0;
-$branch   = $_SESSION['branch'] ?? 'laguna';
-
-foreach ($_SESSION['cart'] as $id => $qty) {
-    $id  = (int)$id;
-    $qty = (int)$qty;
-    if ($qty <= 0) continue;
-
-    $res = $conn->query("SELECT * FROM products WHERE id = $id LIMIT 1");
-    if (!$res || !($row = $res->fetch_assoc())) continue;
-
-    $qty = min($qty, (int)($row['stock'] ?? 100));
-    if ($qty <= 0) continue;
-
-    // Resolve saved add-ons for this item
-    $savedAddonIds = json_decode($_SESSION['cart_addons'][$id] ?? '[]', true);
-    if (!is_array($savedAddonIds)) $savedAddonIds = [];
-    $addonNames = [];
-    $addonUnitTotal = 0.0;
-    if (!empty($savedAddonIds)) {
-        $idList = implode(',', array_map('intval', $savedAddonIds));
-        $aRes = $conn->query("SELECT name, price FROM product_addons WHERE id IN ($idList) AND is_active = 1");
-        if ($aRes) {
-            while ($a = $aRes->fetch_assoc()) {
-                $addonNames[] = ['name' => cleanDisplayText($a['name']), 'price' => (float)$a['price']];
-                $addonUnitTotal += (float)$a['price'];
+        do {
+            if ($mixed) { $error = 'Your cart has items from both branches. Please keep one branch per order.'; break; }
+            if (!$isLoggedIn) {
+                if ($gName === '' || mb_strlen($gName) > 100) { $error = 'Please enter your name.'; break; }
+                if (!preg_match('/^[0-9+\-\s()]{7,20}$/', $gPhone)) { $error = 'Please enter a valid phone number.'; break; }
             }
-        }
-    }
+            if ($isDelivery) {                                   // time may have passed while the customer was paying
+                $chk = dlvResolveSchedule(substr((string)$osvc['scheduled_for'], 0, 10), substr((string)$osvc['scheduled_for'], 11, 5));
+                if (!$chk['ok']) { $error = $chk['error'] . ' Please go back to the cart and choose a new delivery time.'; break; }
+            }
+            if (!isset($methods[$postPay])) { $error = 'Please choose a payment method.'; break; }
 
-    $subtotal  = ($row['price'] + $addonUnitTotal) * $qty;
-    $total    += $subtotal;
-    $cartRows[] = array_merge($row, [
-        'name'                  => cleanDisplayText($row['name']),
-        'qty'                   => $qty,
-        'subtotal'              => $subtotal,
-        'addon_ids'             => $savedAddonIds,
-        'addon_names'           => $addonNames,
-        'addon_unit_total'      => $addonUnitTotal,
-        'image_resolved'        => pickField($row, ['image_url', 'image', 'photo', 'thumbnail', 'img'], null),
-        'ingredients_resolved'  => cleanDisplayText(pickField($row, ['ingredients', 'description', 'details'], 'Made with our house blend, fresh milk, and signature syrups — crafted fresh per order.')),
-    ]);
-}
-
-if (empty($cartRows)) { header("Location: cart.php"); exit(); }
-
-$error          = '';
-$success        = false;
-$successOrderId = null;
-$successReceiptCode = null;
-$successName    = '';
-$paymentUsed    = 'cash';
-
-// ── HANDLE SUBMIT ──────────────────────────────────────────────────────────
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
-
-    $notes         = $conn->real_escape_string(trim($_POST['notes'] ?? ''));
-    $paymentMethod = $conn->real_escape_string(trim($_POST['payment'] ?? 'cash'));
-    $paymentUsed   = trim($_POST['payment'] ?? 'cash');
-    // Branch travels with the form as a hidden field so it reflects what the
-    // customer was actually browsing, falling back to the session value.
-    $branchEsc     = $conn->real_escape_string(trim($_POST['branch'] ?? $branch) ?: 'laguna');
-
-    // Guest info
-    $guestName  = null;
-    $guestPhone = null;
-
-    if (!$isLoggedIn) {
-        $guestName  = $conn->real_escape_string(trim($_POST['guest_name'] ?? ''));
-        $guestPhone = $conn->real_escape_string(trim($_POST['guest_phone'] ?? ''));
-        if (empty($guestName)) {
-            $error = 'Please enter your name.';
-            goto skipOrder;
-        }
-        $userName    = htmlspecialchars($_POST['guest_name']);
-        $successName = $userName;
-    } else {
-        $successName = $userName;
-    }
-
-    // Re-validate stock BEFORE opening the transaction so a shortage produces
-    // a clean, readable error instead of a mid-transaction rollback surprise.
-    foreach ($cartRows as $chk) {
-        $pid = (int)$chk['id'];
-        $sRes = $conn->query("SELECT stock FROM products WHERE id = $pid LIMIT 1");
-        $sRow = $sRes ? $sRes->fetch_assoc() : null;
-        if (!$sRow || (int)$sRow['stock'] < (int)$chk['qty']) {
-            $error = 'Sorry, "' . htmlspecialchars($chk['name']) . '" no longer has enough stock. Please update your cart.';
-            goto skipOrder;
-        }
-    }
-
-    $conn->begin_transaction();
-    try {
-        $userIdSql      = $isLoggedIn ? $uid : 'NULL';
-        $guestNameSql   = $guestName  ? "'$guestName'"  : 'NULL';
-        $guestPhoneSql  = $guestPhone ? "'$guestPhone'" : 'NULL';
-
-        $conn->query("INSERT INTO orders (user_id, total, notes, status, branch, payment_method, guest_name, guest_phone, created_at)
-                      VALUES ($userIdSql, $total, '$notes', 'pending', '$branchEsc', '$paymentMethod', $guestNameSql, $guestPhoneSql, NOW())");
-        $orderId = $conn->insert_id;
-        if (!$orderId) throw new Exception("Could not create order. Please try again.");
-
-        // Build a human-friendly receipt/reference code now that we have the
-        // real order id: BRANCHPREFIX-YYYYMMDD-00000. Example: AYS-20260826-00019.
-        // Branch prefix defaults to "AYS" (AyosCoffeeNegosyo) for unrecognized
-        // branch values so the format never breaks even for new branches.
-        $branchPrefixMap = ['laguna' => 'AYS', 'manila' => 'AYS', 'cavite' => 'AYS'];
-        $branchPrefix    = $branchPrefixMap[$branchEsc] ?? 'AYS';
-        $receiptCode     = $branchPrefix . '-' . date('Ymd') . '-' . str_pad($orderId, 5, '0', STR_PAD_LEFT);
-        $receiptCodeEsc  = $conn->real_escape_string($receiptCode);
-        $conn->query("UPDATE orders SET receipt_code = '$receiptCodeEsc' WHERE id = $orderId");
-
-        foreach ($cartRows as $item) {
-            $pid         = (int)$item['id'];
-            $qty         = (int)$item['qty'];
-            $price       = (float)$item['price'];
-            $addonNamesFlat = array_column($item['addon_names'], 'name');
-            $addonsJson  = $conn->real_escape_string(json_encode($addonNamesFlat));
-            $addonsTotal = (float)$item['addon_unit_total'];
-
-            $stockCheck = $conn->query("SELECT stock FROM products WHERE id = $pid FOR UPDATE");
-            $stockRow   = $stockCheck ? $stockCheck->fetch_assoc() : null;
-            if (!$stockRow || (int)$stockRow['stock'] < $qty) {
-                throw new Exception("Sorry, not enough stock for: " . htmlspecialchars($item['name']));
+            if ($payKey === 'cash') {
+                $raw = str_replace([',', ' ', '₱'], '', (string)($_POST['cash_amount'] ?? ''));
+                if ($raw === '' || !is_numeric($raw)) { $error = 'Enter the cash amount you will pay.'; break; }
+                $cashTendered = round((float)$raw, 2);
+                if ($cashTendered + 0.001 < $total) { $error = 'The cash amount is less than the total of ₱' . number_format($total, 2) . '.'; break; }
+                if ($cashTendered > 9999999) { $error = 'Please enter a valid cash amount.'; break; }
+            } elseif ($payKey === 'gcash' || $payKey === 'maya') {
+                $ref = strtoupper(preg_replace('/\s+/', '', trim((string)($_POST['pay_ref'] ?? ''))));
+                if (!preg_match('/^[A-Z0-9]{8,20}$/', $ref)) { $error = 'Enter a valid ' . $methods[$payKey] . ' reference number (8 to 20 letters or numbers).'; break; }
+                $dup = $conn->prepare("SELECT id FROM orders WHERE payment_ref = ? AND payment_method = ? LIMIT 1");
+                $dup->bind_param('ss', $ref, $payKey);
+                $dup->execute(); $dup->store_result();
+                $isDup = $dup->num_rows > 0; $dup->close();
+                if ($isDup) { $error = 'That reference number was already used for another payment.'; break; }
+                $payRef = $ref;
+            } else {
+                $num = preg_replace('/\D/', '', (string)($_POST['card_number'] ?? ''));
+                $pin = (string)($_POST['card_pin'] ?? '');
+                if (strlen($num) < 13 || strlen($num) > 19) { $error = 'Enter a valid card number (13 to 19 digits).'; break; }
+                if (!preg_match('/^(\d{4}|\d{6})$/', $pin)) { $error = 'Enter your 4 or 6 digit card PIN.'; break; }
+                $payRef = 'CARD ****' . substr($num, -4);   // the full number and PIN are thrown away
+                $num = $pin = null;
+                unset($_POST['card_number'], $_POST['card_pin']);
             }
 
-            $conn->query("INSERT INTO order_items (order_id, product_id, quantity, price, addons, addons_total)
-                          VALUES ($orderId, $pid, $qty, $price, '$addonsJson', $addonsTotal)");
-            $conn->query("UPDATE products SET stock = GREATEST(0, stock - $qty) WHERE id = $pid");
-        }
+            $conn->begin_transaction();
+            try {
+                // lock + re-check stock (one customer can't take what another just bought)
+                $need = [];
+                foreach ($cartRows as $r) { $need[(int)$r['id']] = ($need[(int)$r['id']] ?? 0) + (int)$r['qty']; }
+                ksort($need);
+                $lock = $conn->prepare("SELECT name, stock FROM products WHERE id = ? FOR UPDATE");
+                foreach ($need as $pid => $qty) {
+                    $lock->bind_param('i', $pid); $lock->execute();
+                    $p = $lock->get_result()->fetch_assoc();
+                    if (!$p || (int)$p['stock'] < $qty) throw new Exception('Sorry, "' . ($p['name'] ?? 'an item') . '" no longer has enough stock. Please update your cart.');
+                }
+                $lock->close();
 
-        $conn->commit();
-        unset($_SESSION['cart']);
-        unset($_SESSION['cart_addons']);
-        $success        = true;
-        $successOrderId = $orderId;
-        $successReceiptCode = $receiptCode;
+                $userParam = $isLoggedIn ? $uid : null;
+                $nameParam = $isLoggedIn ? null : $gName;
+                $phoneParam = $isLoggedIn ? null : $gPhone;
+                $svcType = $osvc['type'];
+                $dAddr   = $isDelivery ? $osvc['address'] : null;
+                $dPhone  = $isDelivery ? $osvc['phone'] : null;
+                $dFee    = $isDelivery ? $fee : 0.0;
+                $sched   = $isDelivery ? $osvc['scheduled_for'] : null;
+                $token   = dlvNewToken();
+                $notes   = $custNotes;
 
-    } catch (Exception $e) {
-        $conn->rollback();
-        $error = $e->getMessage();
+                $st = $conn->prepare("INSERT INTO orders
+                    (user_id, total, notes, status, branch, payment_method, payment_ref, guest_name, guest_phone,
+                     service_type, delivery_address, delivery_phone, delivery_fee, scheduled_for, track_token, cash_tendered, created_at)
+                    VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+                $st->bind_param('idsssssssssdssd', $userParam, $total, $notes, $branch, $payKey, $payRef, $nameParam, $phoneParam,
+                                $svcType, $dAddr, $dPhone, $dFee, $sched, $token, $cashTendered);
+                if (!$st->execute()) throw new Exception('Could not create the order. Please try again.');
+                $orderId = (int)$conn->insert_id;
+                $st->close();
+                if (!$orderId) throw new Exception('Could not create the order. Please try again.');
+
+                $code = 'AYS-' . date('Ymd') . '-' . str_pad((string)$orderId, 5, '0', STR_PAD_LEFT);
+                $st = $conn->prepare("UPDATE orders SET receipt_code = ? WHERE id = ?");
+                $st->bind_param('si', $code, $orderId); $st->execute(); $st->close();
+
+                $ins = $conn->prepare("INSERT INTO order_items (order_id, product_id, quantity, price, addons, addons_total, spec, item_note)
+                                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                foreach ($cartRows as $r) {
+                    $pid = (int)$r['id']; $qty = (int)$r['qty']; $price = (float)$r['price'];
+                    $ad  = json_encode(array_column($r['addon_names'], 'name'), JSON_UNESCAPED_UNICODE);
+                    $adT = (float)$r['addon_unit_total']; $spec = (string)$r['spec']; $inote = (string)$r['note'];
+                    $ins->bind_param('iiidsdss', $orderId, $pid, $qty, $price, $ad, $adT, $spec, $inote);
+                    if (!$ins->execute()) throw new Exception('Could not save the order items. Please try again.');
+                }
+                $ins->close();
+
+                $dec = $conn->prepare("UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?");
+                foreach ($need as $pid => $qty) {
+                    $dec->bind_param('iii', $qty, $pid, $qty); $dec->execute();
+                    if ($dec->affected_rows < 1) throw new Exception('Stock changed while you were paying. Please review your cart.');
+                }
+                $dec->close();
+
+                $conn->commit();
+                unset($_SESSION['cart'], $_SESSION['order_svc'], $_SESSION['svc_type']);
+                header('Location: checkout.php?receipt=' . $token); exit();
+            } catch (Throwable $e) {
+                $conn->rollback();
+                $error = $e->getMessage();
+            }
+        } while (false);
     }
-
-    skipOrder:;
 }
 
-$itemCount = array_sum(array_column($cartRows, 'qty'));
-
-// Data for the JS-driven brewing overlay: one entry per cart item, with the
-// category so brew-icons.js can pick the right icon/label per item.
-$brewQueue = array_map(function ($i) {
-    return ['name' => $i['name'], 'category' => $i['category'] ?? 'mains'];
-}, $cartRows);
-
-// Data for the product-detail modal (used by both the success list and the
-// receipt) — one entry per line item, keyed by index.
-$detailQueue = array_map(function ($i) {
-    return [
-        'name'        => $i['name'],
-        'image'       => $i['image_resolved'],
-        'ingredients' => $i['ingredients_resolved'],
-        'qty'         => (int)$i['qty'],
-        'unit_price'  => (float)$i['price'],
-        'addons'      => $i['addon_names'],
-        'addon_total' => (float)$i['addon_unit_total'],
-        'subtotal'    => (float)$i['subtotal'],
-    ];
-}, $cartRows);
+$payIcons = [
+    'cash'  => '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>',
+    'gcash' => '<path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 2a10 10 0 0 1 10 10"/>',
+    'maya'  => '<circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/>',
+    'card'  => '<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>',
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout — AyosCoffeeNegosyo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style>
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        :root{
-            --bg:#0b0b09;--surface:#131310;--card:#1a1a16;--border:#2c2c24;
-            --gold:#c9a84c;--gold-dim:#8a6f2e;--green:#4a7a3a;--green-lt:#6aaa52;
-            --red:#8b2e2e;--red-lt:#c0392b;--cream:#f0ead8;--muted:#6b6b58;--text:#e8e4d8;
-        }
-        html{scroll-behavior:smooth}
-        body{font-family:'Jost',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
-        body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 10% 0%,rgba(201,168,76,0.06) 0%,transparent 55%),radial-gradient(ellipse 50% 70% at 90% 100%,rgba(74,122,58,0.07) 0%,transparent 55%);pointer-events:none;z-index:0}
-
-        header{position:sticky;top:0;z-index:100;background:rgba(11,11,9,0.88);backdrop-filter:blur(18px);border-bottom:1px solid var(--border)}
-        .header-inner{max-width:1100px;margin:0 auto;padding:0 32px;height:68px;display:flex;align-items:center;justify-content:space-between}
-        .brand{display:flex;align-items:center;gap:12px;text-decoration:none}
-        .brand-icon{width:36px;height:36px;border:1px solid var(--gold-dim);border-radius:50%;display:flex;align-items:center;justify-content:center}
-        .brand-name{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--cream);letter-spacing:0.04em}
-        .brand-name span{color:var(--gold)}
-        nav{display:flex;align-items:center;gap:6px}
-        nav a{font-size:12.5px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:8px 14px;border-radius:3px;transition:color 0.2s,background 0.2s}
-        nav a:hover{color:var(--cream);background:rgba(255,255,255,0.04)}
-        .nav-back{display:flex!important;align-items:center;gap:8px;padding:8px 18px!important;border:1px solid var(--border)!important;border-radius:3px;color:var(--muted)!important;transition:all 0.2s!important}
-        .nav-back:hover{border-color:var(--gold-dim)!important;color:var(--gold)!important;background:transparent!important}
-
-        .page-hero{position:relative;z-index:1;text-align:center;padding:60px 32px 48px}
-        .hero-eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:16px}
-        .hero-eyebrow::before,.hero-eyebrow::after{content:'';width:28px;height:1px;background:var(--gold-dim)}
-        .page-hero h1{font-family:'Cormorant Garamond',serif;font-size:clamp(36px,5vw,56px);font-weight:700;color:var(--cream)}
-        .page-hero h1 em{font-style:italic;color:var(--gold)}
-
-        .checkout-layout{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 32px 80px;display:grid;grid-template-columns:1fr 360px;gap:28px;align-items:start}
-        .form-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:32px}
-        .section-label{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--cream);display:flex;align-items:center;gap:12px;margin-bottom:22px}
-        .section-label::after{content:'';flex:1;height:1px;background:var(--border)}
-        .field-row{margin-bottom:18px}
-        .field-row label{display:block;font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
-        .field-row input,.field-row textarea,.field-row select{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:3px;color:var(--cream);font-family:'Jost',sans-serif;font-size:14px;padding:11px 14px;outline:none;transition:border-color 0.2s}
-        .field-row input:focus,.field-row textarea:focus{border-color:var(--gold-dim)}
-        .field-row input[readonly]{color:var(--muted);cursor:not-allowed}
-        .field-row textarea{resize:vertical;min-height:80px}
-        .pay-methods{display:flex;gap:10px;flex-wrap:wrap}
-        .pay-method{flex:1;min-width:130px;background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;color:var(--muted);transition:all 0.2s;user-select:none}
-        .pay-method input{display:none}
-        .pay-method:has(input:checked){border-color:var(--gold-dim);background:rgba(201,168,76,0.06);color:var(--cream)}
-        .pay-icon{width:28px;height:28px;background:var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--gold-dim)}
-        .error-banner{background:rgba(139,46,46,0.15);border:1px solid var(--red);border-radius:3px;padding:12px 16px;color:#e07b7b;font-size:13px;margin-bottom:20px;display:flex;align-items:center;gap:10px}
-
-        .summary-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:28px 26px;position:sticky;top:88px}
-        .summary-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--cream);padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:20px}
-        .order-item-row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:4px;gap:10px}
-        .order-item-row .name{flex:1}
-        .order-item-row .qty{color:var(--gold-dim);min-width:30px}
-        .order-item-row .price{font-weight:500;color:var(--text)}
-        .order-item-addons{font-size:11px;color:var(--gold-dim);margin:0 0 10px 2px;font-style:italic}
-        .divider{height:1px;background:var(--border);margin:14px 0}
-        .summary-row{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;color:var(--muted);margin-bottom:10px}
-        .summary-row.total{font-size:15px;color:var(--cream);font-weight:500;padding-top:14px;border-top:1px solid var(--border);margin-top:6px;margin-bottom:0}
-        .summary-row .val{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--text);font-weight:600}
-        .summary-row.total .val{font-size:26px;color:var(--gold)}
-        .place-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px;margin-top:22px;background:var(--green);border:none;border-radius:3px;font-family:'Jost',sans-serif;font-size:13px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:#fff;cursor:pointer;transition:background 0.2s,transform 0.15s;position:relative;overflow:hidden}
-        .place-btn:hover{background:var(--green-lt)}
-        .place-btn:active{transform:scale(0.98)}
-        .place-btn::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);transition:left 0.4s ease}
-        .place-btn:hover::after{left:160%}
-        .place-btn:disabled{opacity:0.6;cursor:not-allowed}
-        .back-link{display:block;text-align:center;margin-top:14px;font-size:12.5px;color:var(--muted);text-decoration:none;letter-spacing:0.06em;transition:color 0.2s}
-        .back-link:hover{color:var(--gold)}
-        .summary-note{margin-top:20px;padding-top:16px;border-top:1px solid var(--border);font-size:11.5px;color:var(--muted);line-height:1.6;text-align:center}
-
-        /* success */
-        .success-wrap{position:relative;z-index:1;max-width:520px;margin:0 auto;text-align:center;padding:60px 32px 80px}
-        .success-icon{width:88px;height:88px;margin:0 auto 28px;border:1px solid var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--green-lt);animation:popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both}
-        @keyframes popIn{from{opacity:0;transform:scale(0.5)}to{opacity:1;transform:scale(1)}}
-        .success-wrap h2{font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:700;color:var(--cream);margin-bottom:12px}
-        .success-wrap h2 em{font-style:italic;color:var(--gold)}
-        .success-wrap p{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:8px}
-        .order-badge{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--gold-dim);border-radius:3px;padding:8px 18px;font-size:13px;color:var(--gold);margin:18px 0 28px;letter-spacing:0.08em}
-        .success-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-        .btn-primary{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;background:var(--green);border-radius:3px;font-family:'Jost',sans-serif;font-size:13px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#fff;text-decoration:none;transition:background 0.2s;border:none;cursor:pointer}
-        .btn-primary:hover{background:var(--green-lt)}
-        .btn-ghost{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border:1px solid var(--border);border-radius:3px;font-family:'Jost',sans-serif;font-size:13px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:all 0.2s;cursor:pointer;background:transparent}
-        .btn-ghost:hover{border-color:var(--gold-dim);color:var(--gold)}
-
-        .success-items{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:12px 16px;margin:0 auto 28px;max-width:420px;text-align:left}
-        .success-item-row{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted);padding:10px 4px;border-bottom:1px solid rgba(44,44,36,0.4);cursor:pointer;border-radius:3px;transition:background .2s}
-        .success-item-row:hover{background:rgba(255,255,255,0.03)}
-        .success-item-row:last-child{border-bottom:none}
-        .success-item-row.grand-total{cursor:default}
-        .success-item-row.grand-total:hover{background:transparent}
-        .row-thumb{width:38px;height:38px;border-radius:50%;flex-shrink:0;object-fit:cover;border:1px solid var(--gold-dim);background:var(--surface)}
-        .row-thumb-fallback{width:38px;height:38px;border-radius:50%;flex-shrink:0;border:1px solid var(--gold-dim);background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--gold-dim)}
-        .row-text{flex:1;min-width:0}
-        .row-text .sname{color:var(--cream);font-size:13.5px}
-        .row-text .saddons{color:var(--gold-dim);font-size:11px;font-style:italic;margin-top:2px}
-        .row-qty{color:var(--gold-dim);font-size:12px;flex-shrink:0}
-        .row-price{color:var(--text);font-size:13.5px;flex-shrink:0;min-width:70px;text-align:right}
-        .success-item-row.grand-total .row-text .sname{font-weight:600}
-        .success-item-row.grand-total .row-price{color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:19px}
-
-        .success-hint{font-size:11px;color:var(--muted);margin:-14px auto 24px;letter-spacing:.04em}
-
-        footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28px 32px;text-align:center}
-        footer p{font-size:12px;color:var(--muted);letter-spacing:0.06em}
-        footer p span{color:var(--gold-dim)}
-
-        /* ══ 3D BREWING OVERLAY (multi-item, category-aware) ══ */
-        #checkoutBrewOverlay{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(6,6,5,0.92);backdrop-filter:blur(12px);opacity:0;pointer-events:none;transition:opacity 0.35s ease}
-        #checkoutBrewOverlay.show{opacity:1;pointer-events:all}
-        .brew-stage{text-align:center;max-width:300px;perspective:800px}
-        .brew-ring-wrap{position:relative;width:140px;height:140px;margin:0 auto 30px;transform-style:preserve-3d;animation:brewTilt 4s ease-in-out infinite}
-        @keyframes brewTilt{0%,100%{transform:rotateY(-6deg) rotateX(3deg)}50%{transform:rotateY(6deg) rotateX(-3deg)}}
-        .brew-ring{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(201,168,76,0.15);border-top-color:var(--gold);animation:brewspin 1.1s linear infinite}
-        .brew-ring.r2{inset:14px;border-top-color:var(--green-lt);animation:brewspin 1.7s linear infinite reverse;opacity:0.6}
-        @keyframes brewspin{to{transform:rotate(360deg)}}
-        #brewSvg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);animation:brewpulse 1.4s ease-in-out infinite;filter:drop-shadow(0 4px 12px rgba(201,168,76,0.35))}
-        @keyframes brewpulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.12)}}
-        #brewItemName{font-family:'Cormorant Garamond',serif;font-size:21px;font-weight:600;color:var(--cream)}
-        #brewStepText{font-size:12.5px;color:var(--muted);margin-top:6px;letter-spacing:0.02em}
-        #brewDots{display:flex;gap:6px;justify-content:center;margin-top:18px}
-        .brew-dot{width:6px;height:6px;border-radius:50%;background:var(--border);transition:background 0.3s,transform 0.3s}
-        .brew-dot.active{background:var(--gold);transform:scale(1.3)}
-
-        /* ══ RECEIPT MODAL ══ */
-        #receiptModal{position:fixed;inset:0;z-index:600;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity 0.3s ease}
-        #receiptModal.show{opacity:1;pointer-events:all}
-        .receipt-card{background:var(--card);border:1px solid var(--gold-dim);border-radius:8px;padding:32px;max-width:380px;width:92%;transform:translateY(20px) scale(0.98);transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);position:relative;box-shadow:0 30px 80px rgba(0,0,0,0.6);max-height:86vh;overflow-y:auto}
-        #receiptModal.show .receipt-card{transform:translateY(0) scale(1)}
-        .receipt-close{position:absolute;top:12px;right:12px;width:28px;height:28px;border:1px solid var(--border);border-radius:50%;background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;z-index:2}
-        .receipt-close:hover{border-color:var(--gold-dim);color:var(--cream)}
-        .receipt-head{text-align:center;margin-bottom:18px}
-        .receipt-brand{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold);letter-spacing:0.02em}
-        .receipt-sub{font-size:10.5px;color:var(--muted);letter-spacing:0.14em;margin-top:4px;text-transform:uppercase}
-        .receipt-body{border-top:1px dashed var(--border);border-bottom:1px dashed var(--border);padding:14px 0;margin-bottom:14px}
-        .receipt-line-wrap{padding:6px 4px;border-radius:3px;cursor:pointer;transition:background .2s}
-        .receipt-line-wrap:hover{background:rgba(255,255,255,0.04)}
-        .receipt-line{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text);padding:0}
-        .receipt-line-addon{font-size:10.5px;color:var(--gold-dim);padding-left:10px;font-style:italic}
-        .receipt-tap-note{font-size:9.5px;color:var(--muted);padding-left:10px;letter-spacing:.04em}
-        .receipt-total{display:flex;justify-content:space-between;font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--gold);font-weight:700}
-        .receipt-foot{text-align:center;font-size:11px;color:var(--muted);margin-top:16px}
-
-        /* ══ PRODUCT DETAIL MODAL (image · ingredients · add-ons · subtotal) ══ */
-        #itemDetailModal{position:fixed;inset:0;z-index:700;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity 0.3s ease;padding:20px}
-        #itemDetailModal.show{opacity:1;pointer-events:all}
-        .detail-card{background:var(--card);border:1px solid var(--gold-dim);border-radius:8px;max-width:400px;width:100%;overflow:hidden;transform:translateY(20px) scale(0.97);transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);position:relative;box-shadow:0 30px 80px rgba(0,0,0,0.65);max-height:88vh;display:flex;flex-direction:column}
-        #itemDetailModal.show .detail-card{transform:translateY(0) scale(1)}
-        .detail-close{position:absolute;top:12px;right:12px;width:30px;height:30px;border:1px solid rgba(240,234,216,.25);border-radius:50%;background:rgba(11,11,9,.55);backdrop-filter:blur(4px);color:var(--cream);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;z-index:2}
-        .detail-close:hover{border-color:var(--gold);color:var(--gold)}
-        .detail-media{width:100%;height:190px;background:var(--surface);position:relative;flex-shrink:0}
-        .detail-media img{width:100%;height:100%;object-fit:cover;display:block}
-        .detail-media-fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--gold-dim)}
-        .detail-body{padding:22px 24px 26px;overflow-y:auto}
-        .detail-name{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--cream);margin-bottom:4px}
-        .detail-qtyprice{font-size:12.5px;color:var(--gold-dim);margin-bottom:16px;letter-spacing:.03em}
-        .detail-block-label{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;margin-top:16px}
-        .detail-block-label:first-of-type{margin-top:0}
-        .detail-ingredients{font-size:13px;color:var(--text);line-height:1.65}
-        .detail-addon-row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text);padding:4px 0;border-bottom:1px solid rgba(44,44,36,.5)}
-        .detail-addon-row:last-child{border-bottom:none}
-        .detail-addon-empty{font-size:12px;color:var(--muted);font-style:italic}
-        .detail-subtotal{display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding-top:16px;border-top:1px solid var(--border)}
-        .detail-subtotal .lbl{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-        .detail-subtotal .amt{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:var(--gold)}
-
-        @media(max-width:768px){
-            .checkout-layout{grid-template-columns:1fr;padding:0 16px 60px}
-            .summary-card{position:static}
-            .header-inner{padding:0 16px}
-            nav a:not(.nav-back){display:none}
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout — SIPPERÉ Café</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0b0b09;--surface:#131310;--card:#1a1a16;--border:#2c2c24;--gold:#c9a84c;--gold-dim:#8a6f2e;--green:#4a7a3a;--green-lt:#6aaa52;--red:#8b2e2e;--red-lt:#c0392b;--cream:#f0ead8;--muted:#6b6b58;--text:#e8e4d8}
+body{font-family:'Jost',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 10% 0%,rgba(201,168,76,.06) 0%,transparent 55%),radial-gradient(ellipse 50% 70% at 90% 100%,rgba(74,122,58,.07) 0%,transparent 55%);pointer-events:none;z-index:0}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+header{position:sticky;top:0;z-index:100;background:rgba(11,11,9,.88);backdrop-filter:blur(18px);border-bottom:1px solid var(--border)}
+.header-inner{max-width:1100px;margin:0 auto;padding:0 32px;height:68px;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+.brand-icon{width:36px;height:36px;border:1px solid var(--gold-dim);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.brand-name{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--cream);letter-spacing:.04em}
+.brand-name span{color:var(--gold)}
+nav{display:flex;align-items:center;gap:6px}
+nav a{font-size:12.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:8px 14px;border-radius:3px}
+nav a:hover{color:var(--cream);background:rgba(255,255,255,.04)}
+.nav-back{border:1px solid var(--border)}
+.page-hero{position:relative;z-index:1;text-align:center;padding:56px 32px 40px}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+.hero-eyebrow::before,.hero-eyebrow::after{content:'';width:28px;height:1px;background:var(--gold-dim)}
+.page-hero h1{font-family:'Cormorant Garamond',serif;font-size:clamp(36px,5vw,56px);font-weight:700;color:var(--cream)}
+.page-hero h1 em{font-style:italic;color:var(--gold)}
+.error-banner{max-width:1100px;margin:0 auto 22px;padding:0 32px;position:relative;z-index:1}
+.error-banner div{background:rgba(139,46,46,.15);border:1px solid var(--red);border-radius:3px;padding:12px 16px;color:#e07b7b;font-size:13px;line-height:1.5}
+.checkout-layout{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 32px 80px;display:grid;grid-template-columns:1fr 370px;gap:28px;align-items:start}
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:30px}
+.section-label{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--cream);display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.info{background:var(--surface);border:1px solid var(--gold-dim);border-radius:4px;padding:14px 16px;margin-bottom:26px;display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;font-size:13px}
+.info .k{display:block;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.info .v{color:var(--cream);word-break:break-word}.info .full{grid-column:1/-1}
+.info a{color:var(--gold);font-size:12px;text-decoration:none}
+.field-row{margin-bottom:16px}
+.field-row label{display:block;font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.field-row textarea,.field-row input[type=text],.field-row input[type=tel],.field-row input[type=password]{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:3px;color:var(--cream);font-family:'Jost',sans-serif;font-size:14px;padding:11px 14px;outline:none}
+.field-row textarea{resize:vertical;min-height:76px}
+.field-row input:focus,.field-row textarea:focus{border-color:var(--gold-dim)}
+.hint{font-size:11.5px;color:var(--muted);margin-top:7px;line-height:1.55}
+.pay-methods{display:flex;gap:10px;flex-wrap:wrap}
+.pay-method{position:relative;flex:1;min-width:130px;background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:13px 15px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;color:var(--muted);user-select:none}
+.pay-method input{position:absolute;opacity:0;pointer-events:none}
+.pay-method:has(input:checked){border-color:var(--gold-dim);background:rgba(201,168,76,.06);color:var(--cream)}
+.pay-method:has(input:focus-visible){outline:2px solid var(--gold);outline-offset:2px}
+.pay-icon{width:28px;height:28px;background:var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--gold-dim)}
+.pay-panel{margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:16px 16px 2px}
+.pay-panel[hidden]{display:none}
+.pay-panel input{background:var(--card)!important}
+.change-line{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--muted);margin:-4px 0 14px}
+.change-line strong{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--green-lt)}.change-line strong.short{color:var(--red-lt)}
+.pay-error{display:none;margin-top:14px;background:rgba(139,46,46,.15);border:1px solid var(--red);border-radius:3px;padding:10px 14px;color:#e07b7b;font-size:13px}
+.pay-error.show{display:block}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:26px 24px;position:sticky;top:88px}
+.summary-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--cream);padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.oi{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--text);margin-top:9px}
+.oi .q{color:var(--gold-dim)}.oi .p{font-weight:500}
+.oi-sub{font-size:11px;color:var(--gold-dim);font-style:italic;margin:1px 0 0 2px}
+.divider{height:1px;background:var(--border);margin:14px 0}
+.summary-row{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;color:var(--muted);margin-bottom:10px}
+.summary-row.total{font-size:15px;color:var(--cream);font-weight:500;padding-top:14px;border-top:1px solid var(--border);margin-top:6px;margin-bottom:0}
+.summary-row .val{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--text);font-weight:600}
+.summary-row.total .val{font-size:26px;color:var(--gold)}
+.place-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px;margin-top:20px;background:var(--green);border:none;border-radius:3px;font-family:'Jost',sans-serif;font-size:13px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:#fff;cursor:pointer}
+.place-btn:hover:not(:disabled){background:var(--green-lt)}.place-btn:disabled{opacity:.55;cursor:not-allowed}
+.back-link{display:block;text-align:center;margin-top:14px;font-size:12.5px;color:var(--muted);text-decoration:none}.back-link:hover{color:var(--gold)}
+.summary-note{margin-top:18px;padding-top:14px;border-top:1px solid var(--border);font-size:11.5px;color:var(--muted);line-height:1.6;text-align:center}
+.success-wrap{position:relative;z-index:1;max-width:520px;margin:0 auto;text-align:center;padding:6px 32px 80px}
+.success-icon{width:88px;height:88px;margin:0 auto 24px;border:1px solid var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--green-lt)}
+.success-wrap h2{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:700;color:var(--cream);margin-bottom:12px}
+.success-wrap h2 em{font-style:italic;color:var(--gold)}
+.success-wrap p{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:8px}.success-wrap p strong{color:var(--gold);font-weight:500}
+.order-badge{display:inline-flex;background:var(--card);border:1px solid var(--gold-dim);border-radius:3px;padding:8px 18px;font-size:13px;color:var(--gold);margin:12px 0 22px;letter-spacing:.08em}
+.success-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-primary,.btn-ghost{display:inline-flex;align-items:center;padding:13px 26px;border-radius:3px;font-family:'Jost',sans-serif;font-size:13px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;cursor:pointer}
+.btn-primary{background:var(--green);color:#fff;border:none}.btn-primary:hover{background:var(--green-lt)}
+.btn-ghost{border:1px solid var(--border);color:var(--muted);background:transparent}.btn-ghost:hover{border-color:var(--gold-dim);color:var(--gold)}
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28px 32px;text-align:center}
+footer p{font-size:12px;color:var(--muted)}footer p span{color:var(--gold-dim)}
+@media(max-width:768px){.checkout-layout{grid-template-columns:1fr;padding:0 16px 60px}.summary-card{position:static}.header-inner{padding:0 16px}nav a:not(.nav-back){display:none}.form-card{padding:22px 18px}.error-banner{padding:0 16px}.info{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-
 <header>
     <div class="header-inner">
         <a href="index.php" class="brand">
-            <div class="brand-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
-            </div>
-            <span class="brand-name">My <span>AyosCoffeeNegosyo</span></span>
+            <div class="brand-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
+            <span class="brand-name">SIPPERÉ <span>Café</span></span>
         </a>
         <nav>
-            <a href="index.php">Menu</a>
-            <a href="profile.php">Profile</a>
-            <a href="log-out.php">Logout</a>
-            <a href="cart.php" class="nav-back">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                Back to Cart
-            </a>
+            <a href="menu.php">Menu</a>
+            <?php if ($isLoggedIn): ?><a href="orders.php">Orders</a><a href="log-out.php">Logout</a><?php endif; ?>
+            <a href="<?= $success ? 'menu.php' : 'cart.php' ?>" class="nav-back">← <?= $success ? 'Back to Menu' : 'Back to Cart' ?></a>
         </nav>
     </div>
 </header>
 
 <?php if ($success): ?>
-<!-- ══ SUCCESS ══ -->
-<div class="page-hero">
-    <div class="hero-eyebrow">Thank you!</div>
-    <h1>Order <em>Confirmed</em></h1>
-</div>
+<div class="page-hero"><div class="hero-eyebrow">Order confirmed</div><h1>Order <em>Placed</em></h1></div>
 <div class="success-wrap">
-    <div class="success-icon">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-    </div>
-    <h2>Order <em>Placed!</em></h2>
-    <p>
-        <?php if ($isLoggedIn): ?>
-            Thank you, <strong style="color:var(--gold)"><?= $successName ?></strong>! Your order has been received and is being prepared.
-        <?php else: ?>
-            Thank you, <strong style="color:var(--gold)"><?= $successName ?></strong>! Your guest order has been received.
-        <?php endif; ?>
-    </p>
-    <?php if (!$isLoggedIn): ?>
-    <div style="margin:12px 0;background:rgba(201,168,76,0.06);border:1px solid var(--gold-dim);border-radius:3px;padding:12px 16px;font-size:13px;color:var(--muted);line-height:1.6;max-width:400px;margin:14px auto">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" style="vertical-align:-2px;margin-right:6px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <a href="register.php" style="color:var(--gold);text-decoration:none;font-weight:500">Create an account</a> to track your orders and get faster checkout next time!
-    </div>
+    <div class="success-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <h2>Thank <em>you!</em></h2>
+    <p>Hi <strong><?= $h($receipt['name']) ?></strong>, we received your <strong><?= $h(strtolower($receipt['service_label'] ?: 'order')) ?></strong> order.</p>
+    <?php if ($receipt['service'] === 'delivery'): ?>
+    <p>The staff will review it first. Once approved you will see the estimated time on the tracking page.</p>
+    <?php else: ?>
+    <p>The staff will start on it shortly.</p>
     <?php endif; ?>
-
-    <div class="order-badge">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-        <?= htmlspecialchars($successReceiptCode ?: ('Order #' . str_pad($successOrderId, 5, '0', STR_PAD_LEFT))) ?>
-    </div>
-
-    <div class="success-items" id="successItemsList"></div>
-    <p class="success-hint">Tap any item to see its ingredients &amp; add-ons</p>
-
+    <div class="order-badge"><?= $h($receipt['code']) ?></div>
     <div class="success-actions">
-        <button type="button" class="btn-primary" onclick="openReceipt()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/></svg>
-            View Receipt
-        </button>
-        <a href="orders.php" class="btn-ghost">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            View My Orders
-        </a>
-        <a href="index.php" class="btn-ghost">Browse Menu</a>
+        <button type="button" class="btn-primary" onclick="openOrderReceipt(ORD_RECEIPT,{fresh:true})">View Receipt</button>
+        <?php if ($isLoggedIn): ?><a href="orders.php" class="btn-ghost">My Orders</a><?php endif; ?>
+        <?php if ($receipt['track_url']): ?><a href="<?= $h($receipt['track_url']) ?>" class="btn-ghost">Track Order</a><?php endif; ?>
+        <a href="menu.php" class="btn-ghost">Back to Menu</a>
     </div>
 </div>
-
-<!-- ══ RECEIPT MODAL ══ -->
-<div id="receiptModal" onclick="if(event.target===this)closeReceipt()">
-    <div class="receipt-card">
-        <button class="receipt-close" onclick="closeReceipt()">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-        <div class="receipt-head">
-            <div class="receipt-brand">AyosCoffeeNegosyo</div>
-            <div class="receipt-sub">Official Receipt · <?= htmlspecialchars($successReceiptCode ?: ('#' . str_pad($successOrderId, 5, '0', STR_PAD_LEFT))) ?></div>
-            <div class="receipt-sub" style="margin-top:2px"><?= ucfirst($branch) ?> Branch · <?= date('M j, Y g:i A') ?></div>
-        </div>
-        <div class="receipt-body" id="receiptBody"></div>
-        <div class="receipt-total">
-            <span>Total</span><span>₱<?= number_format($total, 2) ?></span>
-        </div>
-        <div class="receipt-foot">Thank you for choosing us ☕<br>Paid via <?= ucfirst($paymentUsed) ?></div>
-    </div>
-</div>
-
-<!-- ══ PRODUCT DETAIL MODAL (shared by success list + receipt) ══ -->
-<div id="itemDetailModal" onclick="if(event.target===this)closeItemDetail()">
-    <div class="detail-card">
-        <button class="detail-close" onclick="closeItemDetail()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-        <div class="detail-media" id="detailMedia"></div>
-        <div class="detail-body">
-            <div class="detail-name" id="detailName"></div>
-            <div class="detail-qtyprice" id="detailQtyPrice"></div>
-
-            <div class="detail-block-label">Ingredients</div>
-            <div class="detail-ingredients" id="detailIngredients"></div>
-
-            <div class="detail-block-label">Add-ons</div>
-            <div id="detailAddons"></div>
-
-            <div class="detail-subtotal">
-                <span class="lbl">Subtotal</span>
-                <span class="amt" id="detailSubtotal"></span>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
-// One entry per order line — powers both the success list, the receipt, and
-// the shared product-detail modal (image · ingredients · add-ons · subtotal).
-const RECEIPT_ITEMS = <?= json_encode($detailQueue) ?>;
-
-function fmtPeso(v){ return '₱' + Number(v).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-
-// Second-layer safety net: strips the same kind of stray leading/trailing
-// quote-and-bracket junk (e.g. a literal  '">  saved into a product name)
-// that cleanDisplayText() already handles server-side in PHP. Having it here
-// too means the receipt/detail views stay clean even if a stale cached page,
-// an old row, or a future code path ever skips the PHP-side cleanup.
-function cleanName(s){
-    if (s === null || s === undefined) return s;
-    s = String(s);
-    s = s.replace(/^[\s'"<>\u2018\u2019\u201C\u201D]+/, '');
-    s = s.replace(/[\s'"<>\u2018\u2019\u201C\u201D]+$/, '');
-    return s;
-}
-
-function fallbackThumbSvg(){
-    return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg>';
-}
-
-function renderRowThumb(item){
-    if (item.image) {
-        // NOTE: no inline onerror="..." attribute here on purpose — see
-        // wireThumbFallbacks() below for why and how the fallback is attached.
-        return '<img class="row-thumb" data-thumb-fallback src="' + item.image.replace(/"/g,'&quot;') + '" alt="">';
-    }
-    return '<div class="row-thumb-fallback">' + fallbackThumbSvg() + '</div>';
-}
-
-// Attaches broken-image fallback handling via a real JS event listener
-// instead of an inline onerror="..." HTML attribute.
-//
-// WHY: the fallback SVG markup itself contains double-quoted attributes
-// (width="16", height="16", d="M18 8h1a4...", etc). Trying to inline that
-// whole SVG string inside an onerror="..." attribute — which is ALSO
-// delimited by double quotes — meant the very first quote inside the SVG
-// prematurely closed the onerror attribute. The browser's parser then choked
-// on the leftover fragment, and the tail end of that fragment ('">) leaked
-// out as a stray, literal text node right next to the image. That's exactly
-// the '"> artifact that was showing up on every product card, regardless of
-// what was actually stored in the database — this was a markup-construction
-// bug, not corrupted data.
-//
-// Attaching the handler as a real DOM event listener sidesteps the whole
-// nested-quoting problem: no HTML string ever needs to contain the SVG.
-function wireThumbFallbacks(container){
-    container.querySelectorAll('img[data-thumb-fallback]').forEach(function(img){
-        img.addEventListener('error', function(){
-            const fallback = document.createElement('div');
-            fallback.className = 'row-thumb-fallback';
-            fallback.innerHTML = fallbackThumbSvg();
-            img.replaceWith(fallback);
-        }, { once: true });
-    });
-}
-
-function buildSuccessList(){
-    const wrap = document.getElementById('successItemsList');
-    if (!wrap) return;
-    let html = '';
-    RECEIPT_ITEMS.forEach(function(item, idx){
-        const addonNote = item.addons.length ? item.addons.map(a => a.name).join(', ') : '';
-        html += '<div class="success-item-row" onclick="openItemDetail(' + idx + ')">'
-              +   renderRowThumb(item)
-              +   '<div class="row-text"><div class="sname">' + escapeHtml(cleanName(item.name)) + '</div>'
-              +     (addonNote ? '<div class="saddons">+ ' + escapeHtml(addonNote) + '</div>' : '')
-              +   '</div>'
-              +   '<div class="row-qty">×' + item.qty + '</div>'
-              +   '<div class="row-price">' + fmtPeso(item.subtotal) + '</div>'
-              + '</div>';
-    });
-    const grandTotal = RECEIPT_ITEMS.reduce((s, i) => s + i.subtotal, 0);
-    html += '<div class="success-item-row grand-total"><div class="row-text"><div class="sname">Total</div></div><div class="row-price">' + fmtPeso(grandTotal) + '</div></div>';
-    wrap.innerHTML = html;
-    wireThumbFallbacks(wrap);
-}
-
-function buildReceiptBody(){
-    const wrap = document.getElementById('receiptBody');
-    if (!wrap) return;
-    let html = '';
-    RECEIPT_ITEMS.forEach(function(item, idx){
-        const addonNote = item.addons.length ? item.addons.map(a => a.name).join(', ') : '';
-        html += '<div class="receipt-line-wrap" onclick="openItemDetail(' + idx + ')">'
-              +   '<div class="receipt-line"><span>' + escapeHtml(cleanName(item.name)) + ' ×' + item.qty + '</span><span>' + fmtPeso(item.subtotal) + '</span></div>'
-              +   (addonNote ? '<div class="receipt-line-addon">+ ' + escapeHtml(addonNote) + '</div>' : '')
-              +   '<div class="receipt-tap-note">Tap for details</div>'
-              + '</div>';
-    });
-    wrap.innerHTML = html;
-}
-
-function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-function openItemDetail(idx){
-    const item = RECEIPT_ITEMS[idx];
-    if (!item) return;
-
-    const media = document.getElementById('detailMedia');
-    if (item.image) {
-        media.innerHTML = '<img data-thumb-fallback src="' + item.image.replace(/"/g,'&quot;') + '" alt="">';
-        const detailImg = media.querySelector('img[data-thumb-fallback]');
-        detailImg.addEventListener('error', function(){
-            const fallback = document.createElement('div');
-            fallback.className = 'detail-media-fallback';
-            fallback.innerHTML = fallbackThumbSvg().replace('width="16" height="16"', 'width="34" height="34"');
-            media.innerHTML = '';
-            media.appendChild(fallback);
-        }, { once: true });
-    } else {
-        media.innerHTML = '<div class="detail-media-fallback">' + fallbackThumbSvg().replace('width="16" height="16"','width="34" height="34"') + '</div>';
-    }
-
-    document.getElementById('detailName').textContent = cleanName(item.name);
-    document.getElementById('detailQtyPrice').textContent = '×' + item.qty + ' · ' + fmtPeso(item.unit_price) + ' each';
-    document.getElementById('detailIngredients').textContent = cleanName(item.ingredients) || 'Details for this item aren\'t available yet.';
-
-    const addonsWrap = document.getElementById('detailAddons');
-    if (item.addons.length) {
-        addonsWrap.innerHTML = item.addons.map(a =>
-            '<div class="detail-addon-row"><span>' + escapeHtml(a.name) + '</span><span>+' + fmtPeso(a.price) + '</span></div>'
-        ).join('');
-    } else {
-        addonsWrap.innerHTML = '<div class="detail-addon-empty">No add-ons selected for this item.</div>';
-    }
-
-    document.getElementById('detailSubtotal').textContent = fmtPeso(item.subtotal);
-    document.getElementById('itemDetailModal').classList.add('show');
-}
-function closeItemDetail(){ document.getElementById('itemDetailModal').classList.remove('show'); }
-
-function openReceipt(){ buildReceiptBody(); document.getElementById('receiptModal').classList.add('show'); }
-function closeReceipt(){ document.getElementById('receiptModal').classList.remove('show'); }
-
-document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape') { closeReceipt(); closeItemDetail(); }
-});
-document.addEventListener('DOMContentLoaded', buildSuccessList);
+var ORD_LOGGED_IN = <?= $isLoggedIn ? 'true' : 'false' ?>;
+var ORD_RECEIPT = <?= ordJson($receipt) ?>;
+document.addEventListener('DOMContentLoaded', function(){ openOrderReceipt(ORD_RECEIPT, {fresh:true}); });
 </script>
+<?php include 'order-receipt.inc.php'; ?>
 
 <?php else: ?>
-<!-- ══ CHECKOUT FORM ══ -->
-<div class="page-hero">
-    <div class="hero-eyebrow">Almost there</div>
-    <h1>Complete your <em>Order</em></h1>
-</div>
+<div class="page-hero"><div class="hero-eyebrow">Almost there</div><h1>Check<em>out</em></h1></div>
+<?php if ($error): ?><div class="error-banner"><div><?= $h($error) ?></div></div><?php endif; ?>
+<?php if (!empty($mixed)): ?><div class="error-banner"><div>Your cart has items from both branches. <a href="cart.php" style="color:var(--gold)">Go back to the cart</a> and remove the items of one branch.</div></div><?php endif; ?>
 
-<?php if ($error): ?>
-<div style="max-width:1100px;margin:0 auto 24px;padding:0 32px">
-    <div class="error-banner">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <?= htmlspecialchars($error) ?>
-    </div>
-</div>
-<?php endif; ?>
-
-<form method="POST" action="checkout.php" id="checkoutForm">
-<input type="hidden" name="branch" value="<?= htmlspecialchars($branch) ?>">
-<!-- Always present regardless of how the form ends up being submitted (a
-     programmatic form.submit() call does NOT send a submit button's own
-     name/value — that's the bug that silently dropped every order before). -->
+<form method="POST" action="checkout.php" id="checkoutForm" autocomplete="off" novalidate>
 <input type="hidden" name="place_order" value="1">
 <div class="checkout-layout">
     <div class="form-card">
-
-        <div class="section-label">Customer Details</div>
-
-        <?php if ($isLoggedIn): ?>
-            <!-- Naka-login user -->
-            <div class="field-row">
-                <label>Name</label>
-                <input type="text" value="<?= $userName ?>" readonly style="color:var(--green-lt)">
-            </div>
-            <div style="background:rgba(74,122,58,0.06);border:1px solid rgba(74,122,58,0.2);border-radius:3px;padding:10px 14px;font-size:12.5px;color:var(--green-lt);margin-bottom:18px;display:flex;align-items:center;gap:8px">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                Ordering as <strong style="margin-left:4px"><?= $userName ?></strong>
-            </div>
-
-        <?php else: ?>
-            <!-- Guest -->
-            <div style="background:rgba(201,168,76,0.06);border:1px solid var(--gold-dim);border-radius:3px;padding:10px 14px;font-size:12.5px;color:var(--muted);margin-bottom:18px;line-height:1.6">
-                Ordering as guest. <a href="log-in.php" style="color:var(--gold);text-decoration:none;font-weight:500">Login</a> to track your orders.
-            </div>
-            <div class="field-row">
-                <label>Your Name <span style="color:var(--red);margin-left:2px">*</span></label>
-                <input type="text" name="guest_name" required maxlength="100" placeholder="Enter your full name" value="<?= htmlspecialchars($_POST['guest_name'] ?? '') ?>">
-            </div>
-            <div class="field-row">
-                <label>Phone Number <span style="color:var(--muted);font-size:10px;text-transform:none;letter-spacing:0">(optional)</span></label>
-                <input type="tel" name="guest_phone" placeholder="e.g. 09XX-XXX-XXXX" maxlength="20" value="<?= htmlspecialchars($_POST['guest_phone'] ?? '') ?>">
-            </div>
-        <?php endif; ?>
-
-        <div class="section-label" style="margin-top:28px">Payment Method</div>
-        <div class="pay-methods">
-            <label class="pay-method">
-                <input type="radio" name="payment" value="cash" checked>
-                <div class="pay-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
-                Cash on Pickup
-            </label>
-            <label class="pay-method">
-                <input type="radio" name="payment" value="gcash">
-                <div class="pay-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 2a10 10 0 0 1 10 10"/></svg></div>
-                GCash
-            </label>
-            <label class="pay-method">
-                <input type="radio" name="payment" value="card">
-                <div class="pay-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
-                Credit / Debit
-            </label>
+        <div class="section-label">Your Order</div>
+        <div class="info">
+            <div><span class="k">Order type</span><span class="v"><?= $h($osvc['label']) ?></span></div>
+            <div><span class="k">Branch</span><span class="v"><?= $h(ucfirst($branch)) ?></span></div>
+            <?php if ($isDelivery): ?>
+            <div class="full"><span class="k">Deliver to</span><span class="v"><?= $h($osvc['address']) ?></span></div>
+            <div><span class="k">Contact</span><span class="v"><?= $h($osvc['phone']) ?></span></div>
+            <div><span class="k">Scheduled for</span><span class="v"><?= $h($whenLabel) ?></span></div>
+            <?php endif; ?>
+            <div class="full"><a href="cart.php">Change order type / items</a></div>
         </div>
 
-        <div class="field-row" style="margin-top:24px">
-            <label>Order Notes <span style="color:var(--muted);text-transform:none;letter-spacing:0">(optional)</span></label>
-            <textarea name="notes" placeholder="Any special requests? E.g. less ice, extra sugar..."><?= htmlspecialchars($_POST['notes'] ?? '') ?></textarea>
+        <?php if (!$isLoggedIn): ?>
+        <div class="section-label">Your Details</div>
+        <div class="field-row"><label for="gName">Name</label><input type="text" id="gName" name="guest_name" maxlength="100" value="<?= $h($gName) ?>" placeholder="Full name"></div>
+        <div class="field-row"><label for="gPhone">Phone number</label><input type="tel" id="gPhone" name="guest_phone" maxlength="20" value="<?= $h($gPhone) ?>" placeholder="09XX-XXX-XXXX"></div>
+        <?php endif; ?>
+
+        <div class="section-label" style="margin-top:8px">Payment Method</div>
+        <div class="pay-methods">
+        <?php foreach ($methods as $key => $label): ?>
+            <label class="pay-method">
+                <input type="radio" name="payment" value="<?= $h($key) ?>" <?= $payKey === $key ? 'checked' : '' ?> onchange="showPanel()">
+                <div class="pay-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><?= $payIcons[$key] ?></svg></div>
+                <?= $h($label) ?>
+            </label>
+        <?php endforeach; ?>
+        </div>
+
+        <div class="pay-panel" id="panelCash" <?= $payKey === 'cash' ? '' : 'hidden' ?>>
+            <div class="field-row">
+                <label for="cashAmount">Cash amount (₱)</label>
+                <input type="text" id="cashAmount" name="cash_amount" inputmode="decimal" value="<?= $h($cashValue) ?>" oninput="updateChange()">
+                <p class="hint"><?= $isDelivery ? 'Cash on delivery: enter the amount you will hand to the rider.' : 'Enter the amount you will hand over at the counter.' ?> It must cover the total.</p>
+            </div>
+            <div class="change-line"><span>Change</span><strong id="changeAmt">₱0.00</strong></div>
+        </div>
+        <div class="pay-panel" id="panelRef" <?= ($payKey === 'gcash' || $payKey === 'maya') ? '' : 'hidden' ?>>
+            <div class="field-row">
+                <label for="payRef" id="refLabel"><?= $payKey === 'maya' ? 'Maya' : 'GCash' ?> Ref. No.</label>
+                <input type="text" id="payRef" name="pay_ref" maxlength="26" value="<?= $h($refValue) ?>" placeholder="e.g. 1234 567 890123" style="text-transform:uppercase">
+                <p class="hint">Send the exact total of ₱<?= number_format($total, 2) ?> in your app, then type the reference number from the receipt.</p>
+            </div>
+        </div>
+        <div class="pay-panel" id="panelCard" <?= $payKey === 'card' ? '' : 'hidden' ?>>
+            <div class="field-row"><label for="cardNumber">Card number</label><input type="text" id="cardNumber" name="card_number" inputmode="numeric" maxlength="23" placeholder="0000 0000 0000 0000" autocomplete="off"></div>
+            <div class="field-row"><label for="cardPin">Card PIN</label><input type="password" id="cardPin" name="card_pin" inputmode="numeric" maxlength="6" placeholder="4 or 6 digits" autocomplete="new-password"></div>
+            <p class="hint" style="margin:-4px 0 14px">Only the last 4 digits of the card are saved. The PIN and full number are never stored.</p>
+        </div>
+        <div class="pay-error" id="payError" role="alert"></div>
+
+        <div class="field-row" style="margin-top:22px">
+            <label for="payNotes">Order Notes <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+            <textarea id="payNotes" name="notes" maxlength="400" placeholder="Any special requests?"><?= $h($_POST['notes'] ?? '') ?></textarea>
         </div>
     </div>
 
-    <!-- ORDER SUMMARY -->
     <div class="summary-card">
         <div class="summary-title">Order Summary</div>
-
-        <?php foreach ($cartRows as $item): ?>
-        <div class="order-item-row">
-            <span class="name"><?= htmlspecialchars($item['name']) ?></span>
-            <span class="qty">×<?= $item['qty'] ?></span>
-            <span class="price">₱<?= number_format($item['subtotal'], 2) ?></span>
-        </div>
-        <?php if (!empty($item['addon_names'])): ?>
-        <div class="order-item-addons">+ <?= htmlspecialchars(implode(', ', array_column($item['addon_names'], 'name'))) ?></div>
-        <?php endif; ?>
+        <?php foreach ($cartRows as $r): ?>
+        <div class="oi"><span><?= $h($r['name']) ?> <span class="q">×<?= (int)$r['qty'] ?></span></span><span class="p">₱<?= number_format($r['subtotal'], 2) ?></span></div>
+        <?php $sub = trim($r['spec'] . ($r['addon_names'] ? ' · + ' . implode(', ', array_column($r['addon_names'], 'name')) : ''), ' ·');
+              if ($sub !== ''): ?><div class="oi-sub"><?= $h($sub) ?></div><?php endif; ?>
+        <?php if ($r['note'] !== ''): ?><div class="oi-sub">“<?= $h($r['note']) ?>”</div><?php endif; ?>
         <?php endforeach; ?>
-
         <div class="divider"></div>
-        <div class="summary-row">
-            <span>Subtotal</span>
-            <span class="val">₱<?= number_format($total, 2) ?></span>
-        </div>
-        <div class="summary-row">
-            <span>Delivery fee</span>
-            <span class="val" style="color:var(--green-lt);font-size:14px;">Free</span>
-        </div>
-        <div class="summary-row total">
-            <span>Total</span>
-            <span class="val">₱<?= number_format($total, 2) ?></span>
-        </div>
-
-        <button type="submit" name="place_order" value="1" class="place-btn" id="placeOrderBtn" onclick="return startBrewThenSubmit(event)">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Place Order
+        <div class="summary-row"><span>Subtotal</span><span class="val">₱<?= number_format($subtotal, 2) ?></span></div>
+        <div class="summary-row"><span>Delivery fee</span><span class="val" style="font-size:15px"><?= $isDelivery && $fee > 0 ? '₱' . number_format($fee, 2) : ($isDelivery ? 'Free' : '—') ?></span></div>
+        <div class="summary-row total"><span>Total</span><span class="val">₱<?= number_format($total, 2) ?></span></div>
+        <button type="submit" class="place-btn" id="placeBtn" <?= !empty($mixed) ? 'disabled' : '' ?>>
+            <?= $isDelivery ? 'Place order for approval' : 'Place order' ?> · ₱<?= number_format($total, 2) ?>
         </button>
-        <a href="cart.php" class="back-link">← Edit cart</a>
-        <p class="summary-note">🔒 Secure checkout &nbsp;·&nbsp; Orders prepared fresh upon confirmation.</p>
+        <a href="cart.php" class="back-link">← Back to cart</a>
+        <p class="summary-note"><?= $isDelivery ? 'Delivery orders are approved by the staff first. You will see the estimated time right after.' : 'Your order is prepared fresh once confirmed.' ?></p>
     </div>
 </div>
 </form>
 
-<!-- ══ 3D BREWING OVERLAY ══ -->
-<div id="checkoutBrewOverlay">
-    <div class="brew-stage">
-        <div class="brew-ring-wrap">
-            <div class="brew-ring"></div>
-            <div class="brew-ring r2"></div>
-            <svg id="brewSvg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.6"></svg>
-        </div>
-        <div id="brewItemName">Preparing your order…</div>
-        <div id="brewStepText"></div>
-        <div id="brewDots"></div>
-    </div>
-</div>
-
-<script src="brew-icons.js"></script>
 <script>
-// One entry per cart item: { name, category } — drives the sequential brew animation
-const CHECKOUT_ITEMS = <?= json_encode($brewQueue) ?>;
-let brewSubmitting = false;
-
-// Returning false from the button's onclick would block the native form
-// submit entirely, so instead we intercept once, run the animation, then
-// programmatically submit the real form — the button stays type="submit"
-// so the flow still works even if this script fails to load.
-function startBrewThenSubmit(evt){
-    if (brewSubmitting) return true;      // second click after animation: let it through
-    if (!CHECKOUT_ITEMS.length || typeof BREW_ICON_PATHS === 'undefined') return true;
-
-    evt.preventDefault();
-    brewSubmitting = true;
-
-    const form = document.getElementById('checkoutForm');
-    const btn  = document.getElementById('placeOrderBtn');
-    btn.disabled = true;
-
-    const overlay = document.getElementById('checkoutBrewOverlay');
-    overlay.classList.add('show');
-
-    const svg    = document.getElementById('brewSvg');
-    const nameEl = document.getElementById('brewItemName');
-    const stepEl = document.getElementById('brewStepText');
-    const dotsWrap = document.getElementById('brewDots');
-    dotsWrap.innerHTML = CHECKOUT_ITEMS.map(function(){ return '<span class="brew-dot"></span>'; }).join('');
-    const dots = [].slice.call(dotsWrap.children);
-
-    // Local safety-net cleanup (mirrors cleanName() on the success page) —
-    // this script block runs on the checkout FORM page, a separate <script>
-    // scope from the success page, so it needs its own copy.
-    function cleanBrewName(s){
-        if (s === null || s === undefined) return s;
-        s = String(s);
-        s = s.replace(/^[\s'"<>\u2018\u2019\u201C\u201D]+/, '');
-        s = s.replace(/[\s'"<>\u2018\u2019\u201C\u201D]+$/, '');
-        return s;
-    }
-
-    function renderStep(idx){
-        const item = CHECKOUT_ITEMS[idx];
-        const icon = iconFor(item.category);
-        svg.innerHTML = BREW_ICON_PATHS[icon] || '';
-        nameEl.textContent = cleanBrewName(item.name);
-        stepEl.textContent = BREW_LABELS[icon] || 'Preparing…';
-        dots.forEach(function(d, di){ d.classList.toggle('active', di <= idx); });
-    }
-    renderStep(0);
-
-    const perItemMs = Math.max(700, Math.min(1200, 3200 / CHECKOUT_ITEMS.length));
-    let i = 0;
-    const iv = setInterval(function(){
-        i++;
-        if (i >= CHECKOUT_ITEMS.length) { clearInterval(iv); return; }
-        renderStep(i);
-    }, perItemMs);
-
-    const totalMs = perItemMs * CHECKOUT_ITEMS.length + 500;
-    setTimeout(function(){
-        clearInterval(iv);
-        form.submit();
-    }, totalMs);
-
-    return false;
+var TOTAL = <?= json_encode($total) ?>, GUEST = <?= $isLoggedIn ? 'false' : 'true' ?>, submitting = false;
+function $(i){return document.getElementById(i)}
+function peso(v){return '₱'+Number(v).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function method(){var r=document.querySelector('input[name="payment"]:checked');return r?r.value:'cash'}
+function showPanel(){
+    var m=method();
+    $('panelCash').hidden=(m!=='cash'); $('panelRef').hidden=!(m==='gcash'||m==='maya'); $('panelCard').hidden=(m!=='card');
+    $('refLabel').textContent=(m==='maya'?'Maya':'GCash')+' Ref. No.'; $('payError').classList.remove('show');
+    if(m==='cash') updateChange();
 }
+function updateChange(){
+    var v=parseFloat(String($('cashAmount').value).replace(/[^0-9.]/g,'')), el=$('changeAmt');
+    if(isNaN(v)){el.textContent=peso(0);el.classList.remove('short');return}
+    var d=v-TOTAL;
+    if(d>=-0.001){el.textContent=peso(Math.max(0,d));el.classList.remove('short')} else {el.textContent='Short by '+peso(-d);el.classList.add('short')}
+}
+$('cardNumber').addEventListener('input',function(){this.value=this.value.replace(/\D/g,'').slice(0,19).replace(/(.{4})/g,'$1 ').trim()});
+$('cardPin').addEventListener('input',function(){this.value=this.value.replace(/\D/g,'').slice(0,6)});
+$('payRef').addEventListener('input',function(){this.value=this.value.toUpperCase().replace(/[^A-Z0-9 ]/g,'')});
+function validate(){
+    if(GUEST){
+        if(!$('gName').value.trim()) return 'Please enter your name.';
+        if(!/^[0-9+\-\s()]{7,20}$/.test($('gPhone').value.trim())) return 'Please enter a valid phone number.';
+    }
+    var m=method();
+    if(m==='cash'){var v=parseFloat(String($('cashAmount').value).replace(/[^0-9.]/g,'')); if(isNaN(v)) return 'Enter the cash amount you will pay.'; if(v+0.001<TOTAL) return 'The cash amount is less than the total ('+peso(TOTAL)+').'}
+    else if(m==='gcash'||m==='maya'){if(!/^[A-Za-z0-9]{8,20}$/.test($('payRef').value.replace(/\s+/g,''))) return 'Enter a valid reference number (8 to 20 letters or numbers).'}
+    else {var n=$('cardNumber').value.replace(/\D/g,''); if(n.length<13||n.length>19) return 'Enter a valid card number (13 to 19 digits).'; if(!/^(\d{4}|\d{6})$/.test($('cardPin').value)) return 'Enter your 4 or 6 digit card PIN.'}
+    return '';
+}
+$('checkoutForm').addEventListener('submit',function(e){
+    if(submitting){e.preventDefault();return}
+    var msg=validate(), box=$('payError');
+    if(msg){e.preventDefault();box.textContent=msg;box.classList.add('show');box.scrollIntoView({behavior:'smooth',block:'center'});return}
+    submitting=true; $('placeBtn').disabled=true; $('placeBtn').textContent='Placing your order…';
+});
+showPanel();
 </script>
 <?php endif; ?>
 
-<footer><p>© 2026 <span>My AyosCoffeeNegosyo</span> — All rights reserved.</p></footer>
+<footer><p>© 2026 <span>SIPPERÉ Café</span> — All rights reserved.</p></footer>
 </body>
 </html>

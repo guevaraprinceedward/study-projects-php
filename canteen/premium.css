@@ -1,0 +1,58 @@
+/* ==========================================================================
+   premium.css — extra Greco-Roman polish for menu.php (load AFTER style.css)
+   Put at: assets/css/premium.css
+   ========================================================================== */
+
+/* ── CMDI logo in the header brand mark (works with includes/header.php) ── */
+.brand-mark{position:relative;width:46px;height:46px;padding:3px;overflow:hidden}
+.brand-mark svg{position:absolute;inset:0;margin:auto}
+.brand-mark img{position:relative;width:100%;height:100%;border-radius:50%;object-fit:cover;background:#fff;display:block}
+
+/* ── school scene life (clouds, smoke, flag) ── */
+.school-scene{display:block;width:100%;height:auto}
+.school-scene .cloud{animation:scCloud 70s linear infinite alternate}
+.school-scene .cloud.c2{animation-duration:90s}
+.school-scene .cloud.c3{animation-duration:110s}
+.school-scene .smoke{animation:scSmoke 5s ease-out infinite}
+.school-scene .flag{transform-box:fill-box;transform-origin:left center;animation:scFlag 2.8s ease-in-out infinite alternate}
+@keyframes scCloud{from{transform:translateX(-26px)}to{transform:translateX(46px)}}
+@keyframes scSmoke{0%{opacity:.95;transform:translateY(0)}100%{opacity:0;transform:translateY(-26px)}}
+@keyframes scFlag{from{transform:skewY(-3deg) scaleX(1)}to{transform:skewY(3deg) scaleX(.94)}}
+
+/* ── Menu hero: campus banner + gilded title card ── */
+.menu-hero.menu-hero-scene{padding:0;background:none;text-align:center}
+.menu-banner{position:relative;height:clamp(190px,26vw,300px);overflow:hidden;border-bottom:3px solid var(--gold)}
+.menu-banner .school-scene{width:100%;height:100%}
+.menu-banner::after{content:'';position:absolute;inset:auto 0 0 0;height:70px;background:linear-gradient(180deg,transparent,rgba(250,248,242,.9));pointer-events:none}
+.menu-card{position:relative;max-width:740px;margin:-64px auto 0;padding:60px 34px 30px;background:linear-gradient(180deg,#fff,#fbf8ef);box-shadow:var(--shadow-2);z-index:2}
+.menu-crest{position:absolute;left:50%;top:-46px;transform:translateX(-50%);width:92px;height:92px;padding:4px;border-radius:50%;background:var(--gold-metal);box-shadow:0 0 0 4px #fff,0 0 0 5px var(--gold),0 18px 28px -14px rgba(122,92,25,.8)}
+.menu-crest img{width:100%;height:100%;border-radius:50%;object-fit:cover;background:#fff}
+.menu-kicker{font-family:var(--display);font-size:11.5px;font-weight:600;letter-spacing:.24em;color:var(--gold-ink);margin-bottom:10px}
+.menu-card h1{font-size:clamp(28px,4vw,44px);margin-bottom:10px}
+.menu-card p.sub{color:var(--muted);max-width:52ch;margin:0 auto}
+.menu-hero-scene .meander{margin-top:26px;opacity:.9}
+
+/* ── Product cards: arch-topped niche, like a temple alcove ── */
+.product-card{background:linear-gradient(180deg,#fff,#fbf9f3);box-shadow:var(--shadow-1),inset 0 0 0 4px #fff,inset 0 0 0 5px rgba(176,141,60,.25)}
+.product-card::after{display:none}
+.product-card .pv{margin:12px 12px 0;aspect-ratio:1/.82;border:1px solid var(--line-strong);border-radius:150px 150px 2px 2px / 120px 120px 2px 2px}
+.product-card .pv::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 62%,rgba(19,41,75,.18));pointer-events:none}
+.product-card .pv-badge{left:50%;transform:translateX(-50%);top:auto;bottom:10px}
+.product-card .pc-body{text-align:center}
+.product-card .pc-meta{justify-content:space-between}
+.product-card .pc-name{font-size:25px}
+.line .pv{margin:0;border:0;border-radius:2px;aspect-ratio:1}
+.line .pv::after{display:none}
+
+/* ── Category headings with a small Greek-key mark ── */
+.cat-section>h2{font-size:27px}
+.cat-section>h2::before{content:'';width:26px;height:14px;flex:none;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><path d='M0 13H16M13 13V3H3V10H10V6' fill='none' stroke='%23b08d3c' stroke-width='1.5'/></svg>") repeat-x center/14px 14px}
+
+/* ── Toolbar a bit more marble ── */
+.toolbar{background:rgba(255,255,255,.92);box-shadow:0 14px 24px -22px rgba(19,41,75,.5)}
+
+@media(max-width:700px){
+    .menu-card{margin:-52px 14px 0;padding:56px 20px 24px}
+    .product-card .pv{border-radius:110px 110px 2px 2px / 90px 90px 2px 2px}
+}
+@media (prefers-reduced-motion:reduce){.school-scene .cloud,.school-scene .smoke,.school-scene .flag{animation:none}}

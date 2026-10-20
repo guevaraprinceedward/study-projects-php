@@ -1,0 +1,66 @@
+/* ==========================================================================
+   cops-school.css — styles for the CMDI school/canteen scene (includes/school-art.php)
+   Used by: index.php, menu.php, log-in.php / admin-login.php (via auth-temple.php)
+   ========================================================================== */
+
+.school-scene{display:block;width:100%;height:auto}
+
+/* ── gold-and-marble frame around the scene ── */
+.scene-frame{position:relative;margin-bottom:52px;padding:12px;
+    background:linear-gradient(180deg,#fffefb,#efe6cf);border:1px solid #b08d3c;
+    box-shadow:0 0 0 6px rgba(255,255,255,.85),0 0 0 7px rgba(176,141,60,.55),
+               0 50px 70px -36px rgba(19,41,75,.6),0 18px 30px -20px rgba(19,41,75,.35)}
+.scene-frame::before{content:'';position:absolute;inset:5px;border:1px solid rgba(176,141,60,.55);pointer-events:none;z-index:2}
+.scene-frame-in{position:relative;overflow:hidden;border:1px solid #8a6a1f;line-height:0;background:#cfe3f4}
+/* glass sheen + soft vignette so the drawing feels like a lit photograph */
+.scene-frame-in::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:1;
+    background:
+      linear-gradient(115deg,rgba(255,255,255,.3) 0,rgba(255,255,255,0) 30%),
+      radial-gradient(ellipse at 50% 58%,transparent 58%,rgba(19,41,75,.24) 100%)}
+.scene-corner{position:absolute;width:18px;height:18px;border:2px solid #b08d3c;z-index:3;pointer-events:none}
+.scene-corner.tl{top:-3px;left:-3px;border-right:none;border-bottom:none}
+.scene-corner.tr{top:-3px;right:-3px;border-left:none;border-bottom:none}
+.scene-corner.bl{bottom:-3px;left:-3px;border-right:none;border-top:none}
+.scene-corner.br{bottom:-3px;right:-3px;border-left:none;border-top:none}
+
+/* CMDI seal hanging off the bottom edge of the frame */
+.scene-seal{position:absolute;left:50%;bottom:-46px;transform:translateX(-50%);z-index:4;width:92px;height:92px;border-radius:50%;
+    background:#fff;padding:5px;
+    box-shadow:0 0 0 3px #d9b45a,0 0 0 5px #fff,0 0 0 6px rgba(176,141,60,.7),0 18px 28px -10px rgba(19,41,75,.6)}
+.scene-seal img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover}
+.scene-caption{position:absolute;left:0;right:0;bottom:-30px;text-align:center;z-index:3;pointer-events:none;
+    font-family:'Cinzel',serif;font-size:10.5px;letter-spacing:.3em;color:#8a6a1f}
+
+/* ── life in the scene ── */
+.school-scene .cloud{animation:scCloud 52s ease-in-out infinite alternate}
+.school-scene .cloud.c2{animation-duration:66s;animation-direction:alternate-reverse}
+.school-scene .cloud.c3{animation-duration:74s}
+@keyframes scCloud{to{transform:translateX(46px)}}
+.school-scene .smoke circle{transform-box:fill-box;transform-origin:center;animation:scSmoke 5.5s ease-in infinite}
+.school-scene .smoke circle:nth-child(2){animation-delay:1.8s}
+.school-scene .smoke circle:nth-child(3){animation-delay:3.6s}
+@keyframes scSmoke{from{transform:translate(0,6px) scale(.8);opacity:.75}to{transform:translate(8px,-30px) scale(1.35);opacity:0}}
+.school-scene .flag{transform-box:fill-box;transform-origin:0 50%;animation:scWave 3.4s ease-in-out infinite}
+@keyframes scWave{50%{transform:scaleX(.9) skewY(3deg)}}
+@media (prefers-reduced-motion:reduce){.school-scene *{animation:none!important}}
+
+/* ── login pages: scene sits at the foot of the navy panel and fades up into it ── */
+.temple-art .school-scene{
+    -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 22%);
+            mask-image:linear-gradient(180deg,transparent 0,#000 22%)}
+.temple-art .school-scene-wrap{position:relative}
+.temple-art .login-seal{position:absolute;left:50%;top:6px;transform:translateX(-50%);width:64px;height:64px;border-radius:50%;background:#fff;padding:3px;z-index:3;
+    box-shadow:0 0 0 2px #d9b45a,0 0 0 4px rgba(255,255,255,.85),0 12px 22px -8px rgba(0,0,0,.6)}
+.temple-art .login-seal img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover}
+
+/* ── menu.php hero: copy on the left, school on the right ── */
+.menu-hero.is-school .container{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:44px;align-items:center;text-align:left}
+.menu-hero.is-school .hero-copy .hero-logo{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.menu-hero.is-school .hero-copy .hero-logo img{width:56px;height:56px;border-radius:50%;background:#fff;padding:3px;box-shadow:0 0 0 2px #d9b45a,0 8px 16px -8px rgba(19,41,75,.5)}
+.menu-hero.is-school .hero-copy .hero-logo span{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.24em;color:#8a6a1f;line-height:1.5}
+.menu-hero.is-school .hero-copy h1{margin-bottom:10px}
+.menu-hero.is-school .scene-frame{margin-bottom:50px}
+@media(max-width:900px){
+    .menu-hero.is-school .container{grid-template-columns:1fr;gap:30px}
+    .scene-seal{width:76px;height:76px;bottom:-38px}
+}

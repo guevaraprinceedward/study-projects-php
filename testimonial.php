@@ -333,7 +333,7 @@ footer p span{color:var(--gold-dim)}
             <div class="sb-brand-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
             </div>
-            <div class="sb-brand-name">AyosCoffeeNegosyo<span>Est. 2026</span></div>
+            <div class="sb-brand-name">SIPPERÉ Café<span>Est. 2026</span></div>
         </div>
         <button class="sb-close" id="sidebarClose" aria-label="Close sidebar">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -423,7 +423,7 @@ footer p span{color:var(--gold-dim)}
                 <div class="brand-icon">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
                 </div>
-                <span class="brand-name">My <span>AyosCoffeeNegosyo</span></span>
+                <span class="brand-name">SIPPERÉ <span>Café</span></span>
             </a>
         </div>
         <div class="header-right">
@@ -509,7 +509,7 @@ footer p span{color:var(--gold-dim)}
     <div class="section-hd">
         <div class="section-eyebrow">Community Reviews</div>
         <h2>From Our <em>Guests</em></h2>
-        <p>Reviews shared by everyday visitors who love AyosCoffeeNegosyo.</p>
+        <p>Reviews shared by everyday visitors who love SIPPERÉ Café.</p>
     </div>
 
     <!-- Filter tabs -->
@@ -526,7 +526,7 @@ footer p span{color:var(--gold-dim)}
         <div class="empty-community" style="grid-column:1/-1">
             <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             <h3>No community reviews yet.</h3>
-            <p>Be the first to share your experience with AyosCoffeeNegosyo!<br>Your review helps others discover something great.</p>
+            <p>Be the first to share your experience with SIPPERÉ Café!<br>Your review helps others discover something great.</p>
         </div>
         <?php else: ?>
         <?php foreach ($testimonials as $i => $t):
@@ -586,7 +586,7 @@ footer p span{color:var(--gold-dim)}
 
         <div id="reviewForm">
             <div class="review-modal-title">Share Your <em>Experience</em></div>
-            <div class="review-modal-sub">Real reviews from real guests. Your feedback makes AyosCoffeeNegosyo better for everyone.</div>
+            <div class="review-modal-sub">Real reviews from real guests. Your feedback makes SIPPERÉ Café better for everyone.</div>
 
             <div class="r-error" id="rError"></div>
 
@@ -636,7 +636,7 @@ footer p span{color:var(--gold-dim)}
     <span id="toastMsg">Review submitted!</span>
 </div>
 
-<footer><p>© 2026 <span>My AyosCoffeeNegosyo</span> — All rights reserved.</p></footer>
+<footer><p>© 2026 <span>SIPPERÉ Café</span> — All rights reserved.</p></footer>
 
 <script>
 // Sidebar
