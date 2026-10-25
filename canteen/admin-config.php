@@ -51,10 +51,15 @@ $conn = $adminConn;
 function ensureAdminTables(mysqli $db): void
 {
     if (!empty($_SESSION['admin_tables_ok'])) {
+
         return;
+
     }
+
     try {
+
         $db->query(
+
             "CREATE TABLE IF NOT EXISTS `admin_users` (
                 `id`         int(11)      NOT NULL AUTO_INCREMENT,
                 `staff_id`   varchar(20)  NOT NULL,
@@ -69,8 +74,11 @@ function ensureAdminTables(mysqli $db): void
                 UNIQUE KEY `uq_admin_staff_id` (`staff_id`),
                 UNIQUE KEY `uq_admin_username` (`username`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+
         );
+
         $db->query(
+
             "CREATE TABLE IF NOT EXISTS `admin_logs` (
                 `id`         int(11)      NOT NULL AUTO_INCREMENT,
                 `admin_id`   int(11)      DEFAULT NULL,
@@ -83,14 +91,20 @@ function ensureAdminTables(mysqli $db): void
                 KEY `idx_logs_admin` (`admin_id`),
                 KEY `idx_logs_created` (`created_at`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+
         );
+
         // If an older admin_users table already existed, add any column the login needs but it lacks.
         $have = [];
         $cr = $db->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS
                           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'admin_users'");
+
         while ($c = $cr->fetch_assoc()) {
+
             $have[$c['COLUMN_NAME']] = true;
+
         }
+
         $need = [
             'staff_id'   => "varchar(20) NOT NULL DEFAULT ''",
             'username'   => "varchar(50) NOT NULL DEFAULT ''",
@@ -100,14 +114,22 @@ function ensureAdminTables(mysqli $db): void
             'is_active'  => "tinyint(1) NOT NULL DEFAULT 1",
             'last_login' => "datetime DEFAULT NULL",
         ];
+
         foreach ($need as $col => $def) {
+
             if (!isset($have[$col])) {
+
                 $db->query("ALTER TABLE `admin_users` ADD COLUMN `$col` $def");
+
             }
         }
+
         $_SESSION['admin_tables_ok'] = true;
+
     } catch (Throwable $e) {
+
         error_log('COPS could not create staff tables: ' . $e->getMessage());
+        
     }
 }
 ensureAdminTables($adminConn);

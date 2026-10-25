@@ -448,7 +448,7 @@ footer .frieze{padding:8px 0 0}
         <div class="foot-links">
             <a href="index.php">HOME</a>
             <a href="menu.php">MENU</a>
-            <a href="#how">HOW IT WORKS</a>
+            <a href="about-us.php">ABOUT US</a>
             <?php if ($isLoggedIn): ?><a href="log-out.php">LOG OUT</a><?php else: ?><a href="log-in.php">LOG IN</a><?php endif; ?>
         </div>
     </div>

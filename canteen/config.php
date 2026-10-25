@@ -20,26 +20,36 @@ const COPS_INFO                   = ['location' => '', 'hours' => 'Open 6:00 AM 
 
 // ── Session ───────────────────────────────────────────────────────────────
 if (PHP_SAPI !== 'cli' && session_status() === PHP_SESSION_NONE) {
-    $https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
-    ini_set('session.use_strict_mode', '1');
-    session_name(COPS_AREA === 'staff' ? 'COPS_STAFF' : 'COPS_SID');
-    session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax', 'secure' => $https]);
+
+    $https = !empty ($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+    ini_set ('session.use_strict_mode', '1');
+    session_name (COPS_AREA === 'staff' ? 'COPS_STAFF' : 'COPS_SID');
+    session_set_cookie_params (
+        ['httponly' => true, 'samesite' => 'Lax', 'secure' => $https]
+    );
+
     session_start();
+
 }
 
 date_default_timezone_set('Asia/Manila');
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 // ── Database ──────────────────────────────────────────────────────────────
-try {
-    $conn = new mysqli('localhost', 'root', '', 'canteen_cmdi_db');
-    $conn->set_charset('utf8mb4');
-    $conn->query("SET time_zone = '+08:00'");   // same clock as PHP (Asia/Manila)
-} catch (mysqli_sql_exception $e) {
+    
+    try {
+
+        $conn = new mysqli('localhost', 'root', '', 'canteen_cmdi_db');
+        $conn->set_charset('utf8mb4');
+        $conn->query("SET time_zone = '+08:00'");   // same clock as PHP (Asia/Manila)
+    } catch (mysqli_sql_exception $e) {
+
     error_log('COPS database connection failed: ' . $e->getMessage());
     http_response_code(503);
+    
     die('The canteen system is temporarily unavailable. Please try again shortly.');
-}
+
+    }
 
 // ── Shared code ───────────────────────────────────────────────────────────
 require_once __DIR__ . '/includes/db.php';

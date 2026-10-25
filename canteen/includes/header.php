@@ -21,7 +21,7 @@ $cartCount = (int)($page['cart_count'] ?? 0);
 <script>document.documentElement.classList.remove('js-off');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
 <?= $page['head'] ?? '' ?>
 </head>
@@ -31,15 +31,15 @@ $cartCount = (int)($page['cart_count'] ?? 0);
 <header class="site-header" id="siteHeader">
     <div class="container header-inner">
         <a href="index.php" class="brand" aria-label="COPS — home">
-            <span class="brand-mark"><?= icon('shield', 20) ?></span>
+            <span class="brand-mark" style="width:52px;height:52px;padding:3px;overflow:hidden;background:linear-gradient(145deg,#f6e7b0,#c9a24a 40%,#8a6a1f 68%,#e2c46c);box-shadow:0 8px 16px -8px rgba(122,92,25,.7)"><img src="assets/img/cmdi-logo.jpg" alt="CMDI logo" width="52" height="52" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;background:#fff"></span>
             <span class="brand-text"><span class="brand-name">COPS</span><span class="brand-tag">Canteen reservations</span></span>
         </a>
 
         <nav class="nav" id="mainNav" aria-label="Main">
-            <a href="index.php" <?= $active === 'home' ? 'aria-current="page"' : '' ?>>Home</a>
-            <a href="menu.php" <?= $active === 'menu' ? 'aria-current="page"' : '' ?>>Menu</a>
-            <a href="index.php#how">How it works</a>
-            <?php if (!$user): ?><a href="log-in.php">Log in</a><?php endif; ?>
+            <a href="index.php" <?= $active === 'home' ? 'aria-current="page"' : '' ?>>HOME</a>
+            <a href="menu.php" <?= $active === 'menu' ? 'aria-current="page"' : '' ?>>MENU</a>
+            <a href="index.php#how">HOW IT WORKS</a>
+            <?php if (!$user): ?><a href="log-in.php">LOG IN</a><?php endif; ?>
         </nav>
 
         <div class="header-actions">
@@ -53,7 +53,7 @@ $cartCount = (int)($page['cart_count'] ?? 0);
             <?php if ($user): ?>
                 <a class="btn btn-outline btn-sm" href="log-out.php">Log out</a>
             <?php else: ?>
-                <a class="btn btn-dark btn-sm" href="menu.php">Order now</a>
+                <a class="btn btn-primary btn-sm" href="menu.php">Order now</a>
             <?php endif; ?>
             <button class="icon-btn nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mainNav"><?= icon('menu', 22) ?></button>
         </div>
