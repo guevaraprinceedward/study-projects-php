@@ -143,7 +143,7 @@ $disabled = $lockSeconds > 0;
     <aside class="temple">
         <div class="moon" aria-hidden="true"></div>
         <a href="index.php" class="brand">
-            <span class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#241a00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10M19 21V10M9 21V10M15 21V10M2 10l10-7 10 7z"/></svg></span>
+            <span class="brand-mark" style="width:52px;height:52px;padding:3px;overflow:hidden;background:linear-gradient(145deg,#f6e7b0,#c9a24a 40%,#8a6a1f 68%,#e2c46c);box-shadow:0 8px 16px -8px rgba(0,0,0,.55)"><img src="assets/img/cmdi-logo.jpg" alt="CMDI logo" width="52" height="52" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;background:#fff"></span>
             <span class="brand-name">COPS<span class="brand-sub">Staff portal</span></span>
         </a>
         <div class="temple-copy">
@@ -159,10 +159,12 @@ $disabled = $lockSeconds > 0;
         <div class="meander m top" aria-hidden="true"></div>
         <div class="scroll-in">
             <svg class="crest" viewBox="-40 -40 80 80" aria-hidden="true">
+                <defs><clipPath id="crestLogoClip"><circle r="14"/></clipPath></defs>
                 <g data-wreath="32" data-pairs="8"></g>
                 <circle r="17" fill="url(#gG)" stroke="#8a6a1f" stroke-width=".8"/>
-                <circle r="14" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width=".8"/>
-                <g transform="translate(-9.6 -9.6) scale(.8)" fill="none" stroke="#241a00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/></g>
+                <circle r="14.4" fill="#fff"/>
+                <image href="assets/img/cmdi-logo.jpg" x="-14" y="-14" width="28" height="28" clip-path="url(#crestLogoClip)" preserveAspectRatio="xMidYMid slice"/>
+                <circle r="14" fill="none" stroke="#8a6a1f" stroke-opacity=".5" stroke-width=".5"/>
             </svg>
             <p class="eyebrow"><span lang="grc">ΕΙΣΟΔΟΣ</span> &middot; <span>Hall of staff</span></p>
             <h1>Staff login</h1>

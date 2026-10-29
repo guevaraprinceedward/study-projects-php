@@ -271,6 +271,9 @@ body.revealed .index-rail{opacity:1}
 .collab-card:hover .collab-emblem img{transform:scale(1.06)}
 .collab-emblem.is-compact img{width:86%;height:86%}
 .collab-emblem.is-zoomed img{width:200%;height:200%}
+.collab-emblem.is-white{background:#fff}
+.collab-emblem-wrap .collab-emblem.is-bleed{padding:0 !important;background:transparent !important;display:block !important}
+.collab-emblem-wrap .collab-emblem.is-bleed img{display:block !important;width:100% !important;height:100% !important;max-width:none !important;object-fit:cover !important;border-radius:50%}
 .collab-emblem-tag{position:absolute;left:50%;transform:translateX(-50%);bottom:-14px;z-index:2;font-family:var(--f-disp);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:#fff;background:var(--gold);padding:6px 14px;white-space:nowrap}
 .collab-eyebrow{font-family:var(--f-ui);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
 .collab-copy h3{font-family:var(--f-disp);font-size:30px;letter-spacing:.04em;margin-bottom:3px;color:var(--navy)}
@@ -280,7 +283,8 @@ body.revealed .index-rail{opacity:1}
 .collab-story p{color:var(--ink)}
 .collab-owner-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-top:20px;border-top:1px solid var(--stone)}
 .collab-owner-id{display:flex;align-items:center;gap:12px}
-.collab-owner-avatar{width:42px;height:42px;border-radius:50%;border:1px solid var(--gold);color:var(--gold);font-family:var(--f-disp);font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;background:#fffdf8}
+.collab-owner-avatar{width:48px;height:48px;border-radius:50%;border:1px solid var(--gold);color:var(--gold);font-family:var(--f-disp);font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;background:#fffdf8;overflow:hidden;flex-shrink:0;box-shadow:0 0 0 3px #f6f1e3}
+.collab-owner-avatar img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
 .ow-name{font-family:var(--f-disp);font-size:14px;color:var(--navy)}
 .ow-role{font-family:var(--f-ui);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
 .collab-owner-row .btn-line{margin-left:auto;padding:10px 20px;font-size:10.5px}
@@ -335,6 +339,8 @@ body.revealed .index-rail{opacity:1}
 .contact-panel{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--stone);border:1px solid var(--stone)}
 .contact-cell{background:#fffdf9;padding:34px 26px;display:flex;flex-direction:column;gap:12px;text-decoration:none;color:var(--ink);transition:background .35s}
 .contact-cell:hover{background:var(--m2)}
+.contact-cell:last-child:nth-child(3n+2){grid-column:span 2}
+@media(max-width:820px){.contact-cell:last-child:nth-child(3n+2){grid-column:auto}}
 .cc-icon{width:44px;height:44px;border:1px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--gold);transition:background .35s,color .35s,transform .5s var(--ease)}
 .contact-cell:hover .cc-icon{background:var(--gold);color:#fff;transform:rotate(-8deg) scale(1.08)}
 .cc-label{font-family:var(--f-ui);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
@@ -482,7 +488,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
     <div class="dh-inner">
         <div class="arch-wrap">
             <div class="dh-photo">
-                <img src="images/about-profile.jpeg" alt="Prince Edward Guevara">
+                <img src="assets/img/about-profile.jpg" alt="Prince Edward Guevara">
                 <span class="dh-photo-tag">San Pablo City, Laguna</span>
             </div>
         </div>
@@ -553,7 +559,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 
     <div class="family-grid">
         <div class="bust">
-            <img src="images/about-father.jpeg" alt="Rogelio Calderon Guevara">
+            <img src="assets/img/about-father.jpeg" alt="Rogelio Calderon Guevara">
             <span class="bust-cap">Rogelio C. Guevara</span>
         </div>
         <div class="fam-copy">
@@ -604,7 +610,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 
         <div class="fam-legacy">
             <h5>How He Shaped Me</h5>
-            <p class="intro">Among his children is his son, Prince Edward Guevara — affectionately known as <em>"Dokdok."</em> My father personally mentored me across the areas below, always insisting that true leadership begins with humility, integrity, and inspiring others through action rather than words. Every principle I carry into AyosCoffeeNegosyo, Noctrune, and my work at Monte Carlo Technologies traces back to lessons he taught me long before I ever wrote a line of code.</p>
+            <p class="intro">Among his children is his son, Prince Edward Guevara — affectionately known as <em>"Dokdok."</em> My father personally mentored me across the areas below, always insisting that true leadership begins with humility, integrity, and inspiring others through action rather than words. Every principle I carry into SIPPERÉ CAFÉ, Noctrune, The Atelier Noir, Kislap Booth, Canteen Ordering Platform System, and my work at Monte Carlo Technologies traces back to lessons he taught me long before I ever wrote a line of code.</p>
             <div class="fam-mentor-grid">
                 <div class="fam-mentor-card">Humanitarian &amp; Great Leadership</div>
                 <div class="fam-mentor-card">Professional Communication</div>
@@ -633,14 +639,18 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
                 <h4>Professional Skills</h4>
                 <div class="chip-wrap">
                     <span class="chip">Fast &amp; Adaptive Learner</span><span class="chip">Leadership</span><span class="chip">Critical Thinking</span><span class="chip">Tech Strategy</span>
-                    <span class="chip">Front-End Development</span><span class="chip">Back-End Development</span><span class="chip">UI/UX Design (Trainee)</span><span class="chip">Web App Development</span>
-                    <span class="chip">Video Editing</span><span class="chip">Digital Media Production</span><span class="chip">Team Collaboration</span><span class="chip">Project Planning</span>
+                    <span class="chip">Front-End Development</span><span class="chip">Back-End Development</span><span class="chip">UI/UX Design (Moderate)</span><span class="chip">Web App Development</span>
+                    <span class="chip">Video Editing &amp; Advertisement</span><span class="chip">Digital Media Production</span><span class="chip">Team Collaboration</span><span class="chip">Project Planning</span>
+                    <span class="chip">Problem Solving</span><span class="chip">Database Management</span><span class="chip">System Architecture</span><span class="chip">SEO</span><span class="chip">Social Media Marketing</span>
+                    <span class="chip">DevOps</span><span class="chip">API Intergration</span><span class="chip">Version Control (Git &amp; GitHub)</span>
                 </div>
             </div>
             <div class="skill-block">
                 <h4>Programming Languages</h4>
                 <div class="chip-wrap">
                     <span class="chip lang">HTML</span><span class="chip lang">CSS</span><span class="chip lang">JavaScript</span><span class="chip lang">PHP</span><span class="chip lang">jQuery</span><span class="chip lang">SQL</span><span class="chip lang">JAVA</span>
+                    <span class="chip lang">Bootstrap</span><span class="chip lang">Tailwind</span><span class="chip lang">React</span><span class="chip lang">Node.js</span><span class="chip lang">Database Management</span><span class="chip lang">Git &amp; GitHub</span>
+                    <span class="chip lang">SQL &amp; MySQL</span>
                 </div>
             </div>
         </div>
@@ -664,15 +674,15 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
     <div class="ds-body">
     <div class="lead-grid">
         <div class="lead-photo">
-            <img src="images/about-leadership.jpeg" alt="Mapping out system wireframes and UI flows">
+            <img src="assets/img/about-leaderships.jpeg" alt="Mapping out system wireframes and UI flows">
             <div class="lead-photo-cap">
                 <div class="lc-eyebrow">On Site</div>
                 <div class="lc-text">Mapping wireframes and system flows — leadership shown in the details.</div>
             </div>
         </div>
         <div class="org-list">
-            <div class="org-item"><div class="org-role">Founder &amp; CEO</div><div class="org-body"><h5>AyosCoffeeNegosyo &amp; Noctrune</h5><p>Founder and Chief Executive Officer of both platforms — overseeing planning, system architecture, and continuous development.</p></div></div>
-            <div class="org-item"><div class="org-role">Tech Lead / Main Programmer</div><div class="org-body"><h5>AyosCoffeeNegosyo &amp; Noctrune </h5><p>Leading system architecture, front-end and back-end development, database structure, and continuous feature planning.</p></div></div>
+            <div class="org-item"><div class="org-role">Founder &amp; CEO</div><div class="org-body"><h5>SIPPERÉ Café &amp; Noctrune</h5><p>Founder and Chief Executive Officer of both platforms — overseeing planning, system architecture, and continuous development.</p></div></div>
+            <div class="org-item"><div class="org-role">Tech Lead / Main Programmer</div><div class="org-body"><h5>SIPPERÉ Café &amp; Noctrune </h5><p>Leading system architecture, front-end and back-end development, database structure, and continuous feature planning.</p></div></div>
             <div class="org-item"><div class="org-role">Editor Trainee</div><div class="org-body"><h5>Monte Carlo Technologies</h5><p>Video editing, advertisement production, marketing and social media content, and corporate branding videos.</p></div></div>
             <div class="org-item"><div class="org-role">Boxing Trainee</div><div class="org-body"><h5>Monte Carlo Fitness Gym</h5><p>Active member building physical fitness, discipline, endurance, and personal resilience.</p></div></div>
             <div class="org-item"><div class="org-role">Head Member</div><div class="org-body"><h5>Stoicism Society</h5><p>Promoting continuous learning, discipline, resilience, and philosophical thinking among members.</p></div></div>
@@ -695,7 +705,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 
         <div class="collab-card">
             <div class="collab-emblem-wrap">
-                <div class="collab-emblem"><img src="images/collab-axlrose-cafe.jpg" alt="Axl Rose Café logo"></div>
+                <div class="collab-emblem is-white"><img src="assets/img/collab-axlrose-cafe-img.jpg" alt="Axl Rose Café logo"></div>
                 <span class="collab-emblem-tag">Brand Identity</span>
             </div>
             <div class="collab-copy">
@@ -705,7 +715,10 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
                 <p>Axl Rose Café is a coffee house built around sound as much as flavor — a place where live bands and spontaneous jam sessions are a near-daily occurrence, and guests are welcomed to sing along rather than simply watch. Even on quieter days, there is always someone filling the room with music and easy conversation, the kind of atmosphere that lets a visitor slow down and stay a while. The coffee holds to the same standard: the sort that settles into your taste and keeps pulling you back for another cup.</p>
                 <div class="collab-story"><p>I helped Axl Rose Café grow from its earliest days at Paseo, back when the shop was still finding its footing. I encouraged Mr. Felix to keep pushing — to treat every hard week as proof the business was worth the effort, and to think bigger about what it could become. Mr. Felix has been one of the kindest people in our circle in return, never leaving us behind and always pushing us to do our best. It was with his encouragement that we set out to build a coffee-themed digital platform of our own, carrying the Axl Rose name into a business idea of its own.</p></div>
                 <div class="collab-owner-row">
-                    <div class="collab-owner-id"><span class="collab-owner-avatar">F</span><div><div class="ow-name">Mr. Felix</div><div class="ow-role">Owner, Axl Rose Café</div></div></div>
+                    <div class="collab-owner-id">
+                        <span class="collab-owner-avatar"><img src="assets/img/collab-felix-avatar.jpg" alt="Mr. Felix Kilakiga" onerror="this.replaceWith(document.createTextNode('F'))"></span>
+                        <div><div class="ow-name">Mr. Felix Kilakiga</div><div class="ow-role">Owner, Axl Rose Café</div></div>
+                    </div>
                     <a href="#" class="btn-line">Visit Axl Rose Café</a>
                 </div>
             </div>
@@ -713,7 +726,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 
         <div class="collab-card reverse">
             <div class="collab-emblem-wrap">
-                <div class="collab-emblem is-compact"><img src="images/collab-busybrees-manju.jpg" alt="Busy Bree's Manju logo"></div>
+                <div class="collab-emblem is-bleed"><img src="assets/img/collab-busy-brees-img.png" alt="Busy Bree's Manju logo"></div>
                 <span class="collab-emblem-tag">Brand Identity</span>
             </div>
             <div class="collab-copy">
@@ -723,15 +736,17 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
                 <p>Busy Bree's Manju, founded by Mr. Brylle Balbuena, turns a familiar fish-shaped waffle into a small catalog of flavor — Chocolate, Mango, Ube, Strawberry, Cookies and Cream, and more — built with the tourists and locals around San Pablo Lake in mind. Mr. Brylle's instinct was never just to make a product; it was to make one worth stopping for, something that earns a second visit on taste alone.</p>
                 <div class="collab-story"><p>Busy Bree's Manju was the very first client of AyosNegosyoPH, the all-in-one point-of-sale platform we built — complete with a staff monitoring system that tracks time-in and time-out, alongside a wider set of operational features. We spent nearly a month alongside Mr. Brylle, thinking carefully through how the product would sell and what would make it work for his customers. Our team mapped out every likely problem around the business, strategized around each one, and timed the launch with care. We're glad to say it took off well.</p></div>
                 <div class="collab-owner-row">
-                    <div class="collab-owner-id"><span class="collab-owner-avatar">B</span><div><div class="ow-name">Mr. Brylle Balbuena</div><div class="ow-role">Owner, Busy Bree's Manju</div></div></div>
-                    <a href="#" class="btn-line">Visit Busy Bree's Manju</a>
+                    <div class="collab-owner-id">
+                        <span class="collab-owner-avatar"><img src="assets/img/collab-brylle-avatar.jpg" alt="Mr. Brylle Balbuena" onerror="this.replaceWith(document.createTextNode('B'))"></span>
+                        <div><div class="ow-name">Mr. Brylle Balbuena</div><div class="ow-role">Owner, Busy Bree's Manju</div></div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="collab-card">
             <div class="collab-emblem-wrap">
-                <div class="collab-emblem"><img src="images/collab-hotel-101.png" alt="Hotel 101 logo"></div>
+                <div class="collab-emblem is-bleed"><img src="assets/img/collab-hotel-101-img.png" alt="Hotel 101 logo"></div>
                 <span class="collab-emblem-tag">Brand Identity</span>
             </div>
             <div class="collab-copy">
@@ -749,7 +764,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 
         <div class="collab-card reverse">
             <div class="collab-emblem-wrap">
-                <div class="collab-emblem is-zoomed"><img src="images/collab-ca-phe.jpg" alt="Cà Phê Vietnam Style logo"></div>
+                <div class="collab-emblem is-zoomed"><img src="assets/img/collab-ca-phe-img.jpg" alt="Cà Phê Vietnam Style logo"></div>
                 <span class="collab-emblem-tag">Brand Identity</span>
             </div>
             <div class="collab-copy">
@@ -782,12 +797,12 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 
         <div class="venture">
             <div class="venture-shot"><div class="browser-frame">
-                <div class="browser-bar"><span class="browser-dot r"></span><span class="browser-dot y"></span><span class="browser-dot g"></span><span class="browser-url">ayoscoffeenegosyo.com/menu</span></div>
-                <img class="browser-shot" src="images/about-ayoscoffee.png" alt="AyosCoffeeNegosyo menu interface">
+                <div class="browser-bar"><span class="browser-dot r"></span><span class="browser-dot y"></span><span class="browser-dot g"></span><span class="browser-url">sipperé.com/homepage</span></div>
+                <img class="browser-shot" src="assets/img/about-sippre-cafe-img.jpg" alt="SIPPERÉ Café menu interface">
             </div></div>
             <div class="venture-copy">
                 <div class="venture-eyebrow">Project I <span class="venture-role">&middot; Founder &amp; Tech Lead</span></div>
-                <h3>AyosCoffeeNegosyo</h3>
+                <h3>SIPPERÉ Café</h3>
                 <p>A centralized coffee business management platform built to replace fragmented manual processes with one integrated system — designed for owners who need real visibility into daily operations.</p>
                 <ul class="venture-features"><li>User account management</li><li>Inventory &amp; stock tracking</li><li>Employee attendance</li><li>Payroll processing</li><li>Online product showcase</li><li>Centralized operations data</li></ul>
             </div>
@@ -796,11 +811,11 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
         <div class="venture reverse">
             <div class="venture-shot"><div class="browser-frame">
                 <div class="browser-bar"><span class="browser-dot r"></span><span class="browser-dot y"></span><span class="browser-dot g"></span><span class="browser-url">nocturnemanilabay.com</span></div>
-                <img class="browser-shot" src="images/about-noctrune.png" alt="Noctrune hotel management homepage">
+                <img class="browser-shot" src="assets/img/about-the-nocturne-hotel.jpg" alt="TheNoctrune hotel management homepage">
             </div></div>
             <div class="venture-copy">
                 <div class="venture-eyebrow">Project II <span class="venture-role">&middot; Founder &amp; Tech Lead</span></div>
-                <h3>Noctrune</h3>
+                <h3>The Noctrune</h3>
                 <p>A comprehensive hotel management system streamlining operations through one centralized platform — from reservations to housekeeping, replacing fragmented manual workflows with organized, reliable software.</p>
                 <ul class="venture-features"><li>Guest reservations &amp; check-in/out</li><li>Room availability &amp; housekeeping</li><li>Employee &amp; payroll management</li><li>Inventory &amp; supply tracking</li><li>Occupancy &amp; revenue reporting</li><li>Guest records &amp; booking history</li></ul>
             </div>
@@ -809,7 +824,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
         <div class="venture">
             <div class="venture-shot"><div class="browser-frame">
                 <div class="browser-bar"><span class="browser-dot r"></span><span class="browser-dot y"></span><span class="browser-dot g"></span><span class="browser-url">ayoscoffeenegosyo.com/menu</span></div>
-                <img class="browser-shot" src="images/about-the-atelier-noir.png" alt="The Atelier Noir menu interface">
+                <img class="browser-shot" src="assets/img/about-the-atelier-noir-img.jpg" alt="The Atelier Noir menu interface">
             </div></div>
             <div class="venture-copy">
                 <div class="venture-eyebrow">Project III <span class="venture-role">&middot; Founder &amp; Tech Lead</span></div>
@@ -834,7 +849,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
     <div class="mc-panel slab">
         <div class="mc-shot"><div class="browser-frame">
             <div class="browser-bar"><span class="browser-dot r"></span><span class="browser-dot y"></span><span class="browser-dot g"></span><span class="browser-url">montecarlotechnologies.com</span></div>
-            <img class="browser-shot" src="images/about-montecarlo.png" alt="Monte Carlo Technologies website featuring Prince Edward as Editor Trainee">
+            <img class="browser-shot" src="assets/img/about-montecarlo-technologies.png" alt="Monte Carlo Technologies website featuring Prince Edward as Editor Trainee">
         </div></div>
         <div class="mc-lower">
             <div class="mc-copy"><div class="mc-eyebrow">Currently Serving As</div><h3>Editor Trainee &amp; UI/UX Trainee</h3></div>
@@ -949,6 +964,14 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
             <span class="cc-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg></span>
             <span class="cc-label">Instagram</span><span class="cc-handle">@_thepresence.noir</span><span class="cc-sub">instagram.com/_thepresence.noir</span>
         </a>
+        <a href="mailto:guevaraprinceedward@gmail.com" class="contact-cell">
+            <span class="cc-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></svg></span>
+            <span class="cc-label">Gmail</span><span class="cc-handle">guevaraprinceedward</span><span class="cc-sub">guevaraprinceedward@gmail.com</span>
+        </a>
+        <a href="tel:+639910654627" class="contact-cell">
+            <span class="cc-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg></span>
+            <span class="cc-label">Contact Number</span><span class="cc-handle">0991 065 4627</span><span class="cc-sub">Call or text</span>
+        </a>
     </div>
     </div>
 </section>
@@ -1028,12 +1051,12 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
                 
                 requestAnimationFrame(function() { 
             
-                gate.classList.add('go ');
+                gate.classList.add('go');
         
                 }
             
             ); 
-        });
+        }); 
 
     var loaded = new Promise(function(r) { 
         
