@@ -648,7 +648,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
             <div class="skill-block">
                 <h4>Programming Languages</h4>
                 <div class="chip-wrap">
-                    <span class="chip lang">HTML</span><span class="chip lang">CSS</span><span class="chip lang">JavaScript</span><span class="chip lang">PHP</span><span class="chip lang">jQuery</span><span class="chip lang">SQL</span><span class="chip lang">JAVA</span>
+                    <span class="chip lang">HTML5</span><span class="chip lang">CSS3</span><span class="chip lang">JavaScript</span><span class="chip lang">PHP</span><span class="chip lang">jQuery</span><span class="chip lang">SQL</span><span class="chip lang">JAVA</span>
                     <span class="chip lang">Bootstrap</span><span class="chip lang">Tailwind</span><span class="chip lang">React</span><span class="chip lang">Node.js</span><span class="chip lang">Database Management</span><span class="chip lang">Git &amp; GitHub</span>
                     <span class="chip lang">SQL &amp; MySQL</span>
                 </div>
@@ -683,10 +683,12 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
         <div class="org-list">
             <div class="org-item"><div class="org-role">Founder &amp; CEO</div><div class="org-body"><h5>SIPPERÉ Café &amp; Noctrune</h5><p>Founder and Chief Executive Officer of both platforms — overseeing planning, system architecture, and continuous development.</p></div></div>
             <div class="org-item"><div class="org-role">Tech Lead / Main Programmer</div><div class="org-body"><h5>SIPPERÉ Café &amp; Noctrune </h5><p>Leading system architecture, front-end and back-end development, database structure, and continuous feature planning.</p></div></div>
-            <div class="org-item"><div class="org-role">Editor Trainee</div><div class="org-body"><h5>Monte Carlo Technologies</h5><p>Video editing, advertisement production, marketing and social media content, and corporate branding videos.</p></div></div>
+            <div class="org-item"><div class="org-role">Editor Trainee / Web Developer</div><div class="org-body"><h5>Monte Carlo Technologies</h5><p>Video editing, advertisement production, digital marketing, social media management, corporate branding videos, custom web development, responsive website design, UI/UX design, e-commerce development, web application development, business management systems, database integration, software development, and AI-powered solutions.</p></div></div>
             <div class="org-item"><div class="org-role">Boxing Trainee</div><div class="org-body"><h5>Monte Carlo Fitness Gym</h5><p>Active member building physical fitness, discipline, endurance, and personal resilience.</p></div></div>
             <div class="org-item"><div class="org-role">Head Member</div><div class="org-body"><h5>Stoicism Society</h5><p>Promoting continuous learning, discipline, resilience, and philosophical thinking among members.</p></div></div>
             <div class="org-item"><div class="org-role">Former Member</div><div class="org-body"><h5>LEO Club</h5><p>Affiliated with Lions Clubs International — community-oriented initiatives and leadership development.</p></div></div>
+            <div class="org-item"><div class="org-role">Former Member</div><div class="org-body"><h5>Fraternal Order of Eagles</h5><p>Community service, humanitarian initiatives, and leadership development through fraternal engagement.</p></div></div>
+            <div class="org-item"><div class="org-role">The Last Sucessor</div><div class="org-body"><h5>Monte Carlo Group of Companies</h5><p>Carrying forward the legacy of the founder, with a commitment to innovation, technology, strategic growth, and generational leadership. Preserving the foundations built through decades of dedication while advancing new opportunities, strengthening business operations, and transforming visionary ideas into sustainable ventures.</p></div></div>
         </div>
     </div>
     </div>
