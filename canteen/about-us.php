@@ -514,7 +514,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
                 <div class="dh-meta-item"><div class="mk">Age</div><div class="mv">17</div></div>
                 <div class="dh-meta-item"><div class="mk">Birthdate</div><div class="mv">July 15, 2009</div></div>
                 <div class="dh-meta-item"><div class="mk">Based In</div><div class="mv">Philippines</div></div>
-                <div class="dh-meta-item"><div class="mk">Ventures</div><div class="mv">AyosCoffeeNegosyo &middot; Noctrune</div></div>
+                <div class="dh-meta-item"><div class="mk">Ventures</div><div class="mv">SIPPERÉ Café  &middot; The Noctrune &middot; Kislap Booth &middot; The Atelier Noir &middot; COPS</div></div>
             </div>
         </div>
     </div>
@@ -643,6 +643,10 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
                     <span class="chip">Video Editing &amp; Advertisement</span><span class="chip">Digital Media Production</span><span class="chip">Team Collaboration</span><span class="chip">Project Planning</span>
                     <span class="chip">Problem Solving</span><span class="chip">Database Management</span><span class="chip">System Architecture</span><span class="chip">SEO</span><span class="chip">Social Media Marketing</span>
                     <span class="chip">DevOps</span><span class="chip">API Intergration</span><span class="chip">Version Control (Git &amp; GitHub)</span>
+                    <span class="chip">Software Development</span><span class="chip">E-Commerce Development</span><span class="chip">AI-Powered Solutions</span>
+                    <span class="chip">FIGMA</span><span class="chip">System Project Researcher</span>
+                    <span class="chip">Data Analytics</span><span class="chip">Technology Consulting</span><span class="chip">Business Intelligence</span><span class="chip">Progressive Web App Development (PWA)</span>
+                    <span class="chip">Graphic Design (Moderate)</span><span class="chip">Content Creation</span><span class="chip">Marketing Campaign Development</span>
                 </div>
             </div>
             <div class="skill-block">
@@ -650,7 +654,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
                 <div class="chip-wrap">
                     <span class="chip lang">HTML5</span><span class="chip lang">CSS3</span><span class="chip lang">JavaScript</span><span class="chip lang">PHP</span><span class="chip lang">jQuery</span><span class="chip lang">SQL</span><span class="chip lang">JAVA</span>
                     <span class="chip lang">Bootstrap</span><span class="chip lang">Tailwind</span><span class="chip lang">React</span><span class="chip lang">Node.js</span><span class="chip lang">Database Management</span><span class="chip lang">Git &amp; GitHub</span>
-                    <span class="chip lang">SQL &amp; MySQL</span>
+                    <span class="chip lang">MySQL &amp; MariaDB</span><span class="chip lang">SASS / SCSS</span><span class="chip lang">JSON</span>
                 </div>
             </div>
         </div>
@@ -681,8 +685,8 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
             </div>
         </div>
         <div class="org-list">
-            <div class="org-item"><div class="org-role">Founder &amp; CEO</div><div class="org-body"><h5>SIPPERÉ Café &amp; Noctrune</h5><p>Founder and Chief Executive Officer of both platforms — overseeing planning, system architecture, and continuous development.</p></div></div>
-            <div class="org-item"><div class="org-role">Tech Lead / Main Programmer</div><div class="org-body"><h5>SIPPERÉ Café &amp; Noctrune </h5><p>Leading system architecture, front-end and back-end development, database structure, and continuous feature planning.</p></div></div>
+            <div class="org-item"><div class="org-role">Founder &amp; CEO</div><div class="org-body"><h5>SIPPERÉ Café &amp; The Noctrune</h5><p>Founder and Chief Executive Officer of both platforms — overseeing planning, system architecture, and continuous development.</p></div></div>
+            <div class="org-item"><div class="org-role">Tech Lead / Main Programmer</div><div class="org-body"><h5>SIPPERÉ Café &amp; The Noctrune </h5><p>Leading system architecture, front-end and back-end development, database structure, and continuous feature planning.</p></div></div>
             <div class="org-item"><div class="org-role">Editor Trainee / Web Developer</div><div class="org-body"><h5>Monte Carlo Technologies</h5><p>Video editing, advertisement production, digital marketing, social media management, corporate branding videos, custom web development, responsive website design, UI/UX design, e-commerce development, web application development, business management systems, database integration, software development, and AI-powered solutions.</p></div></div>
             <div class="org-item"><div class="org-role">Boxing Trainee</div><div class="org-body"><h5>Monte Carlo Fitness Gym</h5><p>Active member building physical fitness, discipline, endurance, and personal resilience.</p></div></div>
             <div class="org-item"><div class="org-role">Head Member</div><div class="org-body"><h5>Stoicism Society</h5><p>Promoting continuous learning, discipline, resilience, and philosophical thinking among members.</p></div></div>
@@ -836,6 +840,41 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
             </div>
         </div>
 
+        <div class="venture">
+            <div class="venture-shot"><div class="browser-frame">
+                <div class="browser-bar"><span class="browser-dot r"></span><span class="browser-dot y"></span><span class="browser-dot g"></span><span class="browser-url">sipperé.com/homepage</span></div>
+                <img class="browser-shot" src="assets/img/about-the-kislap-booth.jpg" alt="Kislap Photobooth menu interface">
+            </div></div>
+            <div class="venture-copy">
+                <div class="venture-eyebrow">Project IV <span class="venture-role">&middot; Founder &amp; Tech Lead</span></div>
+                <h3>Kislap Photobooth</h3>
+                <p>A comprehensive photobooth management platform streamlining event bookings, photo sessions, digital galleries, and customer experiences through one centralized system — replacing fragmented manual processes with an organized, seamless, and reliable digital solution.</p>
+                <ul class="venture-features">
+                    
+                <li>Photobooth reservations & event bookings</li><li>Booth availability &amp; session scheduling</li><li>Digital photo gallaries &amp; downloads</li><li>Photo package &amp; service management</li><li>Payment processing &amp; transaction tracking</li><li>Photo session monitoring & reports</li></ul>
+            </div>
+        </div>
+
+        <div class="venture reverse">
+            <div class="venture-shot"><div class="browser-frame">
+                <div class="browser-bar"><span class="browser-dot r"></span><span class="browser-dot y"></span><span class="browser-dot g"></span><span class="browser-url">nocturnemanilabay.com</span></div>
+                <img class="browser-shot" src="assets/img/about-the-canteen-ordering-platform-system.jpg" alt="The Canteen Ordering System CMDI homepage">
+            </div></div>
+            <div class="venture-copy">
+                <div class="venture-eyebrow">Project II <span class="venture-role">&middot; Founder &amp; Tech Lead</span></div>
+                <h3>The CMDI's COPS (Canteen Ordering Platform System)</h3>
+                <p>A modern school canteen ordering and management platform designed to streamline food services through one centralized digital experience — allowing students to explore available meals, browse menus, place orders, and manage reservations while providing canteen staff with an organized system for handling orders, monitoring inventory, and managing daily operations.</p>
+                <ul class="venture-features">
+                    <li>Digital Canteen Menu &amp; Product Catalog</li>
+                    <li>Online Food Ordering &amp; Reservations</li>
+                    <li>Real-Time Order Status Tracking</li>
+                    <li>Student Ordering &amp; Reservation History</li>
+                    <li>Order Processing &amp; Staff Dashboard</li>
+                    <li>Sales &amp; Transaction Monitoring</li>
+                </ul>
+            </div>
+        </div>
+
     </div><!-- /paginate ventures -->
     </div>
 </section>
@@ -854,12 +893,13 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
             <img class="browser-shot" src="assets/img/about-montecarlo-technologies.png" alt="Monte Carlo Technologies website featuring Prince Edward as Editor Trainee">
         </div></div>
         <div class="mc-lower">
-            <div class="mc-copy"><div class="mc-eyebrow">Currently Serving As</div><h3>Editor Trainee &amp; UI/UX Trainee</h3></div>
+            <div class="mc-copy"><div class="mc-eyebrow">Currently Serving As</div><h3>Editor Trainee &amp; UI/UX Trainee &amp; Web App Developer</h3></div>
             <div class="mc-copy">
                 <p>Working within a professional environment at Monte Carlo Technologies has strengthened both technical and creative abilities — from video editing techniques to professional work ethics, communication, and a sharper understanding of business branding.</p>
                 <div class="mc-roles">
                     <div class="mc-role-line"><b>Editor Trainee</b><span>Video editing, advertisements, marketing &amp; social content, corporate branding.</span></div>
                     <div class="mc-role-line"><b>UI/UX Trainee</b><span>Front-end development and user experience improvements for responsive web design.</span></div>
+                    <div class="mc-role-line"><b> Web App Developer</b><span>Building and maintaining web applications, ensuring functionality, performance, and user experience.</span></div>
                     <div class="mc-role-line"><b>Member</b><span>Contributing to technology-related projects across the organization.</span></div>
                 </div>
             </div>
