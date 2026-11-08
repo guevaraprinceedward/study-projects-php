@@ -25,6 +25,63 @@ try {
 } catch (Throwable $e) {
     $testimonials = [];
 }
+
+// ── "WHAT PEOPLE SAY" conveyor ────────────────────────────────────────────
+// Real rows come from `personal_testimonials`. If the table is empty, SAMPLE people are shown instead.
+// To use a photo for someone, set their avatar_url in the table (or add 'avatar' => 'assets/img/people/x.jpg' below).
+$usingSampleTestimonials = empty($testimonials);
+if ($usingSampleTestimonials) {
+    $testimonials = [
+        ['name' => 'Marian Dela Cruz',     'role' => 'Class Adviser, Grade 12',   'rating' => 5, 'avatar' => '', 'text' => 'Prince treats every school project like a real client job. He plans it, builds it, and keeps improving it long after the deadline.'],
+        ['name' => 'Joshua Ramirez',       'role' => 'Grade 12 Classmate',        'rating' => 5, 'avatar' => '', 'text' => 'He explained the whole canteen system to our class in ten minutes and it finally made sense. He is patient with people who are not techy.'],
+        ['name' => 'Mrs. Teresita Alonzo', 'role' => 'School Administrator',      'rating' => 5, 'avatar' => '', 'text' => 'COPS gave our canteen a clear record of every order. Our staff spend less time on paperwork and more time serving students.'],
+        ['name' => 'Carlo Mendoza',        'role' => 'Café Owner · Client',       'rating' => 5, 'avatar' => '', 'text' => 'He asked about my daily routine before writing a single line of code. The system fits how my shop actually runs.'],
+        ['name' => 'Anica Villareal',      'role' => 'Hotel Operations Manager',  'rating' => 4, 'avatar' => '', 'text' => 'Fast, tidy, and honest about timelines. The reservation flow cut the back-and-forth at our front desk noticeably.'],
+        ['name' => 'Engr. Lito Bautista',  'role' => 'Senior Developer · Mentor', 'rating' => 5, 'avatar' => '', 'text' => 'For his age, his grasp of system structure is unusual. He reads the documentation, tests his own work, and takes feedback well.'],
+        ['name' => 'Bea Santiago',         'role' => 'UI/UX Peer',                'rating' => 5, 'avatar' => '', 'text' => 'His layouts are clean and consistent, and he cares about spacing and detail. Working with him in Figma was easy.'],
+        ['name' => 'Mr. Ramon Cabrera',    'role' => 'Business Consultant',       'rating' => 5, 'avatar' => '', 'text' => 'He pairs technical skill with business sense. He asks what a system should earn or save, not just what it should show.'],
+    ];
+} else {
+    // normalise the database rows into the same shape
+    $testimonials = array_map(function ($t) {
+        $parts = array_filter([trim($t['client_location'] ?? ''), trim($t['venture'] ?? '')]);
+        return ['name' => $t['client_name'], 'role' => implode(' · ', $parts), 'rating' => (int)$t['rating'],
+                'avatar' => $t['avatar_url'] ?? '', 'text' => $t['testimonial']];
+    }, $testimonials);
+}
+$row2 = array_reverse($testimonials);   // second row runs the other way, in reverse order
+
+function aboutInitials(string $name): string {
+    $name  = preg_replace('/^(Mr|Mrs|Ms|Engr|Dr|Ate|Kuya)\.?\s+/i', '', trim($name));
+    $parts = preg_split('/\s+/', $name);
+    return mb_strtoupper(mb_substr($parts[0] ?? '', 0, 1) . (count($parts) > 1 ? mb_substr(end($parts), 0, 1) : ''));
+}
+/** One row of cards, printed twice (the second copy is aria-hidden) so the loop is seamless. */
+function aboutTestimonialTrack(array $items): string {
+    $tones = ['linear-gradient(135deg,#2a4d82,#13294b)', 'linear-gradient(135deg,#d1ac55,#8a6a1f)', 'linear-gradient(135deg,#7fa6dc,#2c5aa0)',
+              'linear-gradient(135deg,#b08d3c,#6e5318)', 'linear-gradient(135deg,#1f3d6e,#0d1c36)', 'linear-gradient(135deg,#e2c06c,#a9822c)'];
+    $set = $items;
+    while ($items && count($set) < 8) $set = array_merge($set, $items);   // always wide enough to fill big screens
+    $html = '';
+    for ($copy = 0; $copy < 2; $copy++) {
+        $html .= '<div class="t-set"' . ($copy ? ' aria-hidden="true"' : '') . '>';
+        foreach (array_values($set) as $i => $t) {
+            $r = max(1, min(5, (int)$t['rating']));
+            $html .= '<article class="tcard">'
+                  . '<svg class="t-q" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6C6.5 7 4 9.8 4 13.5V18h6v-6H7c0-2 1-3.2 3-4zM19.5 6c-3 1-5.5 3.8-5.5 7.5V18h6v-6h-3c0-2 1-3.2 3-4z"/></svg>'
+                  . '<p class="t-text">' . htmlspecialchars($t['text']) . '</p>'
+                  . '<div class="t-foot">'
+                  . '<div class="t-stars" role="img" aria-label="' . $r . ' out of 5 stars">' . str_repeat('&#9733;', $r) . ($r < 5 ? '<span class="off">' . str_repeat('&#9733;', 5 - $r) . '</span>' : '') . '</div>'
+                  . '<div class="t-person"><span class="t-av" style="background:' . $tones[$i % count($tones)] . '">' . htmlspecialchars(aboutInitials($t['name']))
+                  . (!empty($t['avatar']) ? '<img src="' . htmlspecialchars($t['avatar']) . '" alt="" loading="lazy" onerror="this.remove()">' : '') . '</span>'
+                  . '<div><span class="t-name">' . htmlspecialchars($t['name']) . '</span>'
+                  . ($t['role'] !== '' ? '<span class="t-role">' . htmlspecialchars($t['role']) . '</span>' : '') . '</div></div>'
+                  . '</div></article>';
+        }
+        $html .= '</div>';
+    }
+    return $html;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -348,28 +405,37 @@ body.revealed .index-rail{opacity:1}
 .cc-sub{font-size:15px;color:var(--mute);word-break:break-word}
 @media(max-width:820px){.contact-panel{grid-template-columns:1fr}}
 
-/* testimonials */
-.testi-wrap{max-width:none}
-.testi-track-wrap{overflow:hidden}
-.testi-track{display:flex;transition:transform .8s cubic-bezier(.65,0,.2,1)}
-.testi-slide{flex:0 0 100%;min-width:0;text-align:left;padding:0 6px}
-.testi-stars{display:flex;gap:4px;margin-bottom:22px}
-.testi-stars svg{width:17px;height:17px}
-.testi-stars .filled{color:var(--gold)}.testi-stars .empty{color:var(--stone)}
-.testi-quote{font-style:italic;font-size:clamp(22px,2.4vw,28px);line-height:1.6;margin-bottom:28px;color:var(--navy)}
-.testi-quote::before,.testi-quote::after{content:'"';color:var(--gold)}
-.testi-person{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
-.testi-avatar{width:52px;height:52px;border-radius:50%;border:1px solid var(--gold);color:var(--gold);font-family:var(--f-disp);font-size:18px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fffdf8}
-.testi-avatar img{width:100%;height:100%;object-fit:cover}
-.testi-name{font-family:var(--f-disp);font-size:15px;color:var(--navy)}
-.testi-loc{font-family:var(--f-ui);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
-.testi-venture{font-style:italic;color:var(--mute);font-size:15px}
-.testi-nav{display:flex;align-items:center;gap:22px;margin-top:34px}
-.testi-arrow{width:40px;height:40px;border-radius:50%;border:1px solid var(--stone);background:#fffdf9;color:var(--mute);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;padding:0}
-.testi-arrow:hover{border-color:var(--gold);color:#fff;background:var(--gold)}
-.testi-dots{display:flex;gap:9px;align-items:center}
-.testi-dots span{width:7px;height:7px;background:var(--stone);transform:rotate(45deg);cursor:pointer;transition:all .3s}
-.testi-dots span.active{background:var(--gold);transform:rotate(45deg) scale(1.35)}
+/* testimonials: two-row conveyor, full width, opposite directions */
+.tsection{position:relative;z-index:1;padding:100px 0 90px}
+.ts-head{text-align:center;max-width:680px;margin:0 auto 46px;padding:0 24px}
+.ts-head .ds-num{font-size:clamp(54px,6vw,84px);margin-bottom:6px}
+.ts-head h2{font-family:var(--f-disp);font-size:clamp(28px,3.4vw,42px);font-weight:600;color:var(--navy);letter-spacing:.04em;line-height:1.2;text-shadow:0 1px 0 #fff}
+.ts-head .ds-lede{margin-top:12px}
+.ts-head::after{content:'';display:block;width:170px;height:14px;margin:22px auto 0;background:var(--key) repeat-x center/14px 14px;opacity:.8}
+.marquee{position:relative;overflow:hidden;padding:12px 0;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.marquee .track{display:flex;width:max-content;animation:tMarq var(--dur,75s) linear infinite;will-change:transform}
+.marquee+.marquee .track{animation-direction:reverse}
+.marquee:hover .track,.marquee:focus-within .track{animation-play-state:paused}
+.t-set{display:flex;gap:22px;padding-right:22px}
+@keyframes tMarq{to{transform:translateX(-50%)}}
+.tcard{position:relative;width:360px;flex:none;display:flex;flex-direction:column;padding:26px 26px 22px;background:linear-gradient(155deg,#fffdf9,var(--m2));
+    border:1px solid var(--stone);border-top:2px solid var(--gold2);box-shadow:inset 0 1px 0 #fff,0 18px 36px -24px rgba(19,41,75,.4);transition:transform .45s var(--ease),box-shadow .45s}
+.tcard::before{content:'';position:absolute;inset:5px;border:1px solid rgba(176,141,60,.18);pointer-events:none}
+.tcard:hover{transform:translateY(-4px);box-shadow:inset 0 1px 0 #fff,0 28px 44px -24px rgba(19,41,75,.5)}
+.t-q{width:30px;height:30px;fill:var(--gold2);margin-bottom:12px;flex:none}
+.t-text{font-size:19px;line-height:1.5;color:var(--ink);margin-bottom:22px}
+.t-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--stone)}
+.t-stars{font-size:16px;letter-spacing:.14em;color:var(--gold2);line-height:1;margin-bottom:12px}
+.t-stars .off{color:var(--stone)}
+.t-person{display:flex;align-items:center;gap:12px}
+.t-av{position:relative;overflow:hidden;width:46px;height:46px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-family:var(--f-disp);font-size:14px;font-weight:700;letter-spacing:.04em;color:#fff;box-shadow:0 0 0 2px #f6f1e3,0 0 0 3px rgba(176,141,60,.6)}
+.t-av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.t-name{display:block;font-family:var(--f-disp);font-size:14px;color:var(--navy);letter-spacing:.03em;line-height:1.3}
+.t-role{display:block;font-family:var(--f-ui);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);line-height:1.4;margin-top:2px}
+.t-note{text-align:center;font-style:italic;font-size:15px;color:var(--mute);margin-top:18px;padding:0 24px}
+@media(max-width:560px){.tcard{width:300px}.t-text{font-size:18px}.tsection{padding:72px 0 64px}}
+/* reduced motion: no moving belt (the page-wide rule would otherwise make it strobe); scroll it by hand instead */
+@media(prefers-reduced-motion:reduce){.tsection .track{animation:none!important;transform:none!important}.marquee{overflow-x:auto;-webkit-mask-image:none;mask-image:none}.t-set[aria-hidden="true"]{display:none}}
 
 .closing-line{text-align:center;padding:70px 32px 30px;font-style:italic;font-size:22px;color:var(--mute);max-width:720px;margin:0 auto}
 
@@ -476,8 +542,8 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
     <a href="#collaborations" data-target="collaborations"><span class="ir-num">V</span><span class="ir-bar"></span><span class="ir-label">Collaborations</span></a>
     <a href="#ventures" data-target="ventures"><span class="ir-num">VI</span><span class="ir-bar"></span><span class="ir-label">Ventures</span></a>
     <a href="#montecarlo" data-target="montecarlo"><span class="ir-num">VII</span><span class="ir-bar"></span><span class="ir-label">Monte Carlo</span></a>
-    <a href="#vision" data-target="vision"><span class="ir-num">VIII</span><span class="ir-bar"></span><span class="ir-label">Vision</span></a>
-    <a href="#testimonials" data-target="testimonials"><span class="ir-num">IX</span><span class="ir-bar"></span><span class="ir-label">Testimonials</span></a>
+    <a href="#testimonials" data-target="testimonials"><span class="ir-num">VIII</span><span class="ir-bar"></span><span class="ir-label">What People Say</span></a>
+    <a href="#vision" data-target="vision"><span class="ir-num">IX</span><span class="ir-bar"></span><span class="ir-label">Vision</span></a>
     <a href="#contact" data-target="contact"><span class="ir-num">X</span><span class="ir-bar"></span><span class="ir-label">Contact</span></a>
 </nav>
 
@@ -499,8 +565,11 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
                 <span class="dh-role-pill">Founder</span>
                 <span class="dh-role-pill">Technology Leader</span>
                 <span class="dh-role-pill">Tech Prodigy</span>
-                <span class="dh-role-pill">Programmer Developer</span>
-                <span class="dh-role-pill">Editor Trainee</span>
+                <span class="dh-role-pill">Web App Developer</span>
+                <span class="dh-role-pill">Editor (Moderate)</span>
+                <span class="dh-role-pill">Entrepreneur</span>
+                <span class="dh-role-pill">Graphic Designer</span>
+                <span class="dh-role-pill">UI/UX Designer</span>
             </div>
             <p class="dh-quote">"Technology is not only about writing code — it is about creating solutions that improve lives, empower businesses, and inspire continuous innovation."</p>
             <div class="dh-cta">
@@ -653,7 +722,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
                 <h4>Programming Languages</h4>
                 <div class="chip-wrap">
                     <span class="chip lang">HTML5</span><span class="chip lang">CSS3</span><span class="chip lang">JavaScript</span><span class="chip lang">PHP</span><span class="chip lang">jQuery</span><span class="chip lang">SQL</span><span class="chip lang">JAVA</span>
-                    <span class="chip lang">Bootstrap</span><span class="chip lang">Tailwind</span><span class="chip lang">React</span><span class="chip lang">Node.js</span><span class="chip lang">Database Management</span><span class="chip lang">Git &amp; GitHub</span>
+                    <span class="chip lang">Bootstrap</span><span class="chip lang">Tailwind</span><span class="chip lang">React</span><span class="chip lang">Node.js</span><span class="chip lang">Database Management System (DBMS)</span><span class="chip lang">Git &amp; GitHub</span>
                     <span class="chip lang">MySQL &amp; MariaDB</span><span class="chip lang">SASS / SCSS</span><span class="chip lang">JSON</span>
                 </div>
             </div>
@@ -851,7 +920,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
                 <p>A comprehensive photobooth management platform streamlining event bookings, photo sessions, digital galleries, and customer experiences through one centralized system — replacing fragmented manual processes with an organized, seamless, and reliable digital solution.</p>
                 <ul class="venture-features">
                     
-                <li>Photobooth reservations & event bookings</li><li>Booth availability &amp; session scheduling</li><li>Digital photo gallaries &amp; downloads</li><li>Photo package &amp; service management</li><li>Payment processing &amp; transaction tracking</li><li>Photo session monitoring & reports</li></ul>
+                <li>Photobooth reservations &amp; event bookings</li><li>Booth availability &amp; session scheduling</li><li>Digital photo gallaries &amp; downloads</li><li>Photo package &amp; service management</li><li>Payment processing &amp; transaction tracking</li><li>Photo session monitoring &amp; reports</li></ul>
             </div>
         </div>
 
@@ -909,10 +978,35 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 </section>
 <div class="frieze"></div>
 
-<!-- ══════════ VIII. VISION & PHILOSOPHY ══════════ -->
+</div><!-- /.dossier (closed here so the conveyor can run edge to edge) -->
+
+<!-- ══════════ VIII. WHAT PEOPLE SAY (two-row conveyor) ══════════
+     Cards come from `personal_testimonials` (is_active = 1). While that table is empty, SAMPLE people are shown. -->
+<section class="tsection" id="testimonials" aria-labelledby="tTitle">
+    <div class="ts-head">
+        <span class="ds-num">VIII</span>
+        <span class="ds-eyebrow">Voices</span>
+        <h2 id="tTitle">What People Say</h2>
+        <p class="ds-lede">Teachers, classmates, clients, and mentors on working with Prince.</p>
+    </div>
+    <div class="marquee" role="region" aria-label="Feedback from teachers, classmates, clients and mentors" tabindex="0">
+        <div class="track" style="--dur:75s"><?= aboutTestimonialTrack($testimonials) ?></div>
+    </div>
+    <div class="marquee" aria-hidden="true">
+        <div class="track" style="--dur:95s"><?= aboutTestimonialTrack($row2) ?></div>
+    </div>
+    <?php if ($usingSampleTestimonials): ?>
+        <p class="t-note">Sample feedback shown until real testimonials are added.</p>
+    <?php endif; ?>
+</section>
+
+<div class="dossier"><!-- reopened for the remaining chapters -->
+<div class="frieze"></div>
+
+<!-- ══════════ IX. VISION & PHILOSOPHY ══════════ -->
 <section class="dossier-section" id="vision">
     <div class="ds-head">
-        <span class="ds-num">VIII</span><span class="ds-eyebrow">Looking Ahead</span><h2>Vision &amp; Philosophy</h2>
+        <span class="ds-num">IX</span><span class="ds-eyebrow">Looking Ahead</span><h2>Vision &amp; Philosophy</h2>
         <p class="ds-lede">Success built through discipline, consistency, humility, and continuous self-improvement.</p>
     </div>
     <div class="ds-body">
@@ -932,58 +1026,6 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
     </div>
     </div>
 </section>
-
-<!-- ══════════ IX. TESTIMONIALS ══════════ -->
-<?php if (!empty($testimonials)): ?>
-<div class="frieze"></div>
-<section class="dossier-section" id="testimonials">
-    <div class="ds-head">
-        <span class="ds-num">IX</span><span class="ds-eyebrow">Client Voices</span><h2>Testimonials</h2>
-        <p class="ds-lede">A few words from the people and businesses this work was built for.</p>
-    </div>
-    <div class="ds-body">
-    <div class="testi-wrap">
-        <div class="testi-track-wrap">
-            <div class="testi-track" id="testiTrack">
-                <?php foreach ($testimonials as $t):
-                    $initial = strtoupper(mb_substr(trim($t['client_name']), 0, 1));
-                ?>
-                <div class="testi-slide">
-                    <div class="testi-stars">
-                        <?php for ($i = 1; $i <= 5; $i++): ?>
-                        <svg viewBox="0 0 24 24" fill="currentColor" class="<?= $i <= $t['rating'] ? 'filled' : 'empty' ?>"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.8L6 21l1.6-7L2.2 9.2l7.1-.6z"/></svg>
-                        <?php endfor; ?>
-                    </div>
-                    <p class="testi-quote"><?= htmlspecialchars($t['testimonial']) ?></p>
-                    <div class="testi-person">
-                        <span class="testi-avatar">
-                            <?php if (!empty($t['avatar_url'])): ?>
-                                <img src="<?= htmlspecialchars($t['avatar_url']) ?>" alt="<?= htmlspecialchars($t['client_name']) ?>">
-                            <?php else: ?>
-                                <?= htmlspecialchars($initial) ?>
-                            <?php endif; ?>
-                        </span>
-                        <span class="testi-name"><?= htmlspecialchars($t['client_name']) ?></span>
-                        <span class="testi-loc"><?= htmlspecialchars($t['client_location']) ?></span>
-                        <?php if (!empty($t['venture'])): ?><span class="testi-venture"><?= htmlspecialchars($t['venture']) ?></span><?php endif; ?>
-                    </div>
-                </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-        <?php if (count($testimonials) > 1): ?>
-        <div class="testi-nav">
-            <button class="testi-arrow" id="testiPrev" aria-label="Previous testimonial"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
-            <div class="testi-dots" id="testiDots">
-                <?php foreach ($testimonials as $di => $_): ?><span class="<?= $di === 0 ? 'active' : '' ?>"></span><?php endforeach; ?>
-            </div>
-            <button class="testi-arrow" id="testiNext" aria-label="Next testimonial"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
-        </div>
-        <?php endif; ?>
-    </div>
-    </div>
-</section>
-<?php endif; ?>
 <div class="frieze"></div>
 
 <!-- ══════════ X. CONTACT ══════════ -->
@@ -1042,29 +1084,20 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 
 // ── Laurel wreath (generated leaves) ──
 (function() {
-    
     var svg = document.getElementById('wreath'), ns = 'http://www.w3.org/2000/svg';
-    
     [-1, 1].forEach(function(s) {
-
         for (var i = 0; i < 11; i++) {
-
             var phi = (8 + i * 15.5) * Math.PI / 180, R = 33;
             var x = 50 + s * R * Math.sin(phi), y = 52 + R * Math.cos(phi);
             var tang = Math.atan2(-Math.sin(phi), s * Math.cos(phi)) * 180 / Math.PI;
-
             [-1, 1].forEach(function(side) {
-
                 var l = document.createElementNS(ns, 'ellipse');
                 var off = side * 3.2, nx = Math.sin(phi) * s, ny = Math.cos(phi);
-
                 l.setAttribute('cx', x + nx * off); l.setAttribute('cy', y + ny * off);
                 l.setAttribute('rx', 7 - i * .25); l.setAttribute('ry', 2.4);
                 l.setAttribute('transform', 'rotate(' + (tang + side * 28) + ' ' + (x + nx * off) + ' ' + (y + ny * off) + ')');
                 l.setAttribute('fill', 'url(#lg)'); l.setAttribute('opacity', '.95');
-
                 svg.appendChild(l);
-
             });
         }
     });
@@ -1072,63 +1105,32 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
 
 // ── Temple gate: load bar → hinged doors swing open → camera walks through → page rises ──
 (function() {
-
     var gate = document.getElementById('gate'), body = document.body;
     var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    function finish() { 
-        
-        gate.classList.add('done'); body.classList.remove('gate-lock'); body.classList.add('revealed'); 
-    
+    function finish() {
+        gate.classList.add('done'); body.classList.remove('gate-lock'); body.classList.add('revealed');
     }
 
-    if (calm) { 
-            
-        finish(); return; 
-    
-    }
-    
-        setTimeout(finish, 12000); // safety net
-        requestAnimationFrame(function() { 
-                
-                requestAnimationFrame(function() { 
-            
-                gate.classList.add('go');
-        
-                }
-            
-            ); 
-        }); 
+    if (calm) { finish(); return; }
 
-    var loaded = new Promise(function(r) { 
-        
-        if (document.readyState === 'complete') r(); else window.addEventListener('load', r); 
-    
-    }
+    setTimeout(finish, 12000); // safety net
+    requestAnimationFrame(function() {
+        requestAnimationFrame(function() { gate.classList.add('go'); });
+    });
 
-    );
-
-    var minimum = new Promise(function(r) {
-        
-        setTimeout(r, 2700); 
-    
-    }
-
-    );
+    var loaded = new Promise(function(r) {
+        if (document.readyState === 'complete') r(); else window.addEventListener('load', r);
+    });
+    var minimum = new Promise(function(r) { setTimeout(r, 2700); });
 
     Promise.all([loaded, minimum]).then(function() {
-
         gate.classList.add('open');
         setTimeout(function(){ gate.classList.add('enter'); }, 2000);
         setTimeout(function(){ body.classList.add('revealed'); }, 2700);
         setTimeout(finish, 4400);
-
-    }
-
-    );
-}
-
-)();
+    });
+})();
 
 // ── Header gets solid once you scroll ──
 (function(){ var h=document.getElementById('siteHeader'); function f(){h.classList.toggle('scrolled',window.scrollY>30);} window.addEventListener('scroll',f,{passive:true}); f(); })();
@@ -1194,30 +1196,6 @@ railLinks.forEach(a => a.addEventListener('click', e => {
     e.preventDefault();
     document.getElementById(a.dataset.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }));
-
-// ── Testimonials carousel ──
-(function(){
-    const track = document.getElementById('testiTrack');
-    if (!track) return;
-    const total = track.children.length;
-    if (total <= 1) return;
-    const dots = document.querySelectorAll('#testiDots span');
-    const wrap = track.closest('.testi-wrap');
-    let idx = 0, auto;
-    function go(n){
-        idx = (n + total) % total;
-        track.style.transform = `translateX(-${idx * 100}%)`;
-        dots.forEach((d, i) => d.classList.toggle('active', i === idx));
-    }
-    function startAuto(){ auto = setInterval(() => go(idx + 1), 6000); }
-    function stopAuto(){ clearInterval(auto); }
-    document.getElementById('testiPrev')?.addEventListener('click', () => { go(idx - 1); stopAuto(); startAuto(); });
-    document.getElementById('testiNext')?.addEventListener('click', () => { go(idx + 1); stopAuto(); startAuto(); });
-    dots.forEach((d, i) => d.addEventListener('click', () => { go(i); stopAuto(); startAuto(); }));
-    wrap?.addEventListener('mouseenter', stopAuto);
-    wrap?.addEventListener('mouseleave', startAuto);
-    go(0); startAuto();
-})();
 
 // ── Generic paginator: Collaborations = 2/page, Ventures = 3/page ──
 document.querySelectorAll('[data-paginate]').forEach(function(box){
