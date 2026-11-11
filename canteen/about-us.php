@@ -716,6 +716,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offse
                     <span class="chip">FIGMA</span><span class="chip">System Project Researcher</span>
                     <span class="chip">Data Analytics</span><span class="chip">Technology Consulting</span><span class="chip">Business Intelligence</span><span class="chip">Progressive Web App Development (PWA)</span>
                     <span class="chip">Graphic Design (Moderate)</span><span class="chip">Content Creation</span><span class="chip">Marketing Campaign Development</span>
+                    <span class="chip">WorkFLow Optimization &amp; Automation</span>
                 </div>
             </div>
             <div class="skill-block">
