@@ -2759,6 +2759,7 @@ function catIcon(string $cat): string {
 <main class="wrap">
 
 <!-- HERO -->
+
 <section class="hero">
 
     <div class="hero-copy">
@@ -2887,21 +2888,28 @@ function catIcon(string $cat): string {
 
         <div class="tp-frieze" aria-hidden="true"><div class="meander"></div></div>
         <span class="pil l" aria-hidden="true"></span><span class="pil r" aria-hidden="true"></span>
+
         <div class="tp-body">
             <div class="sc-viewport">
+
                 <div class="sc-track">
+
                 <?php foreach ($slides as $i => $s): $act = ($i === 0); ?>
+
                     <section class="slide<?= $act ? ' is-active' : '' ?>" id="slide-<?= $s['key'] ?>" role="tabpanel" aria-labelledby="tab-<?= $s['key'] ?>"<?= $act ? '' : ' inert' ?>>
+                        
                         <div class="sl-head">
                             <div class="sl-kicker"><?= htmlspecialchars($s['kicker']) ?></div>
                             <h3 class="sl-title"><?= htmlspecialchars($s['title']) ?></h3>
                         </div>
 
                         <div class="sl-art">
+
                             <div class="art-frame">
                                 <?php if ($s['src']): ?>
                                     <img src="<?= htmlspecialchars($s['src']) ?>" alt="<?= htmlspecialchars($s['title']) ?> from the CMDI canteen" width="900" height="1125"<?= $act ? '' : ' loading="lazy"' ?> decoding="async" onerror="this.remove()">
                                 <?php else: ?>
+
                                     <!-- PLACEHOLDER: add your image at the path shown below and this box fills itself -->
                                     <div class="art-ph">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1"/><circle cx="9" cy="10" r="1.6"/><path d="M3 17l5-5 4 4 3-3 6 6"/></svg>
@@ -2909,66 +2917,126 @@ function catIcon(string $cat): string {
                                         <code><?= htmlspecialchars($s['img']) ?>.png</code>
                                         <small>4:5 portrait, about 900 &times; 1125 px</small>
                                     </div>
+
                                 <?php endif; ?>
                             </div>
+
                         </div>
 
                         <div class="sl-copy">
+
                             <p><?= htmlspecialchars($s['blurb']) ?></p>
                             <?php if ($s['n'] > 0): ?>
+
                                 <div class="sl-meta"><?= (int)$s['n'] ?> item<?= $s['n'] === 1 ? '' : 's' ?><?= $s['min'] !== null ? ' &middot; from &#8369;' . number_format($s['min'], 0) : '' ?></div>
+                            
                             <?php endif; ?>
+
                             <a href="menu.php?cat=<?= urlencode($s['key']) ?>" class="btn btn-navy">EXPLORE <?= htmlspecialchars(strtoupper($s['title'])) ?></a>
                         </div>
 
                         <div class="sl-cards">
                             <?php if (empty($s['items'])): ?>
+
                                 <p class="sl-empty">Dishes for this category are coming soon.</p>
                             <?php else: foreach ($s['items'] as $it): ?>
+                    
                                 <a class="fcard" href="menu.php?cat=<?= urlencode($s['key']) ?>">
+
                                     <span class="fic"><?= catIcon($s['key']) ?></span>
                                     <span class="fbody"><b><?= htmlspecialchars($it['name']) ?></b><small><?= htmlspecialchars(mb_strimwidth($it['description'] ?? '', 0, 80, '…')) ?></small></span>
+                                    
                                     <span class="fp">&#8369;<?= number_format((float)$it['price'], 2) ?></span>
                                 </a>
-                            <?php endforeach; endif; ?>
+                            
+                                <?php endforeach; endif; ?>
                         </div>
                     </section>
+
                 <?php endforeach; ?>
+
                 </div>
             </div>
         </div>
 
         <div class="sc-plinth">
-            <button type="button" class="sc-arrow" id="scPrev" aria-label="Previous category"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+
+            <button type="button" class="sc-arrow" id="scPrev" aria-label="Previous category">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+            </button>
+            
             <div class="sc-tabs" role="tablist" aria-label="Choose a category">
                 <?php foreach ($slides as $i => $s): ?>
                     <button type="button" class="sc-tab" role="tab" id="tab-<?= $s['key'] ?>" aria-controls="slide-<?= $s['key'] ?>" aria-selected="<?= $i === 0 ? 'true' : 'false' ?>" tabindex="<?= $i === 0 ? '0' : '-1' ?>" data-i="<?= $i ?>"><b><?= $s['numeral'] ?></b><span><?= htmlspecialchars($s['title']) ?></span></button>
                 <?php endforeach; ?>
             </div>
-            <button type="button" class="sc-arrow" id="scNext" aria-label="Next category"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+
+            <button type="button" class="sc-arrow" id="scNext" aria-label="Next category">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+            </button>
+
         </div>
+
         <p class="sr-only" id="scLive" aria-live="polite"></p>
         <div class="tp-base" aria-hidden="true"></div>
+
     </div>
     
 </section>
 
 <!-- HOW IT WORKS -->
+
 <section class="section" id="how" style="padding-top:20px">
+
     <div class="sec-hd">
+
         <h2>Three steps to lunch</h2>
         <p>No shouting over the counter. No wrong orders.</p>
-        <div class="orn"><span></span><svg viewBox="-17 -17 34 34"><g data-wreath="12" data-pairs="6"></g></svg><span></span></div>
+
+        <div class="orn">
+            
+            <span></span><svg viewBox="-17 -17 34 34"><g data-wreath="12" data-pairs="6"></g></svg><span></span>
+        
+        </div>
+
     </div>
+
     <div class="steps">
-        <div class="step"><div class="step-n">I</div><h3>Read the menu</h3><div class="la">Lege</div><p>See what&rsquo;s available today, with prices, before you leave your seat.</p></div>
-        <div class="step"><div class="step-n">II</div><h3>Reserve your order</h3><div class="la">Posce</div><p>Choose your items and a pickup time, then send your request to the canteen.</p></div>
-        <div class="step"><div class="step-n">III</div><h3>Pick it up</h3><div class="la">Cape</div><p>Staff prepare it and mark it ready. Claim it with your code and pay at the counter.</p></div>
+        <div class="step">
+            
+            <div class="step-n">I</div>
+            
+                 <h3>Read the menu</h3>
+                <div class="la">Lege</div>
+                <p>See what&rsquo;s available today, with prices, before you leave your seat.</p>
+            
+            </div>
+
+        <div class="step">
+            
+            <div class="step-n">II</div>
+            
+                <h3>Reserve your order</h3>
+                <div class="la">Posce</div>
+                <p>Choose your items and a pickup time, then send your request to the canteen.</p>
+            
+            </div>
+
+        <div class="step">
+            
+            <div class="step-n">III</div>
+            <h3>Pick it up</h3>
+            <div class="la">Cape</div>
+            <p>Staff prepare it and mark it ready. Claim it with your code and pay at the counter.</p>
+        </div>
     </div>
+
 </section>
 
 <!-- WHY COPS -->
+
 <div class="band" id="why">
+
     <div class="frieze"><div class="dentil"></div><div class="meander"></div></div>
     <section class="section">
         <div class="sec-hd">
@@ -2983,235 +3051,534 @@ function catIcon(string $cat): string {
             <div class="why-item"><h3>Records that keep themselves</h3><p>Every transaction is saved, so staff can follow daily sales and stock without paper tallies.</p></div>
         </div>
     </section>
-    <div class="frieze"><div class="meander"></div><div class="dentil" style="border-top:none;border-bottom:1px solid var(--gold-dim)"></div></div>
+    
+    <div class="frieze">
+        <div class="meander"></div>
+        <div class="dentil" style="border-top:none;border-bottom:1px solid var(--gold-dim)"></div>
+    </div>
+
 </div>
 
 <!-- TESTIMONIALS: two-row conveyor.
      Cards come from `personal_testimonials` (is_active = 1). While that table is empty, SAMPLE text is shown. -->
+
 <section class="tsection" aria-labelledby="tTitle">
+
     <div class="sec-hd">
+
         <h2 id="tTitle">What students say</h2>
         <p>Kind words from the CMDI community.</p>
         <div class="orn"><span></span><svg viewBox="-17 -17 34 34"><g data-wreath="12" data-pairs="6"></g></svg><span></span></div>
+    
     </div>
+
     <div class="marquee" role="region" aria-label="Feedback from students and staff" tabindex="0">
         <div class="track" style="--dur:75s"><?= testimonialTrack($testimonials) ?></div>
     </div>
+
     <div class="marquee" aria-hidden="true">
         <div class="track" style="--dur:95s"><?= testimonialTrack($row2) ?></div>
     </div>
+
     <?php if ($usingSampleTestimonials): ?>
         <p class="t-note">Sample feedback shown until real testimonials are added.</p>
     <?php endif; ?>
+
 </section>
 
 <!-- SKIP THE LINE: queue image on the left (YOUR IMAGE), message + live counters on the right.
      Add the photo as assets/img/canteen-queue.jpg (or .jpeg / .webp / .png); the placeholder disappears on its own. -->
+
 <section class="skip" id="skip" aria-labelledby="skipTitle">
+
     <svg class="skip-pediment" viewBox="0 0 440 74" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+
         <polygon points="0,70 220,4 440,70" fill="#ffffff" stroke="url(#gG)" stroke-width="2"/>
         <polygon points="44,66 220,18 396,66" fill="none" stroke="#c9b373" stroke-width="1" stroke-dasharray="2 4"/>
+
         <path d="M220,30 l7,9 l-7,9 l-7,-9z" fill="url(#gG)"/>
         <rect x="0" y="68" width="440" height="6" fill="url(#gG)"/>
+
     </svg>
+
     <div class="skip-temple">
+
         <span class="pil l" aria-hidden="true"></span><span class="pil r" aria-hidden="true"></span>
+        
         <div class="skip-inner">
+
             <div class="skip-grid">
+
                 <figure class="skip-fig">
+
                     <div class="wide-frame">
+
                         <?php if ($queueImg): ?>
                             <img src="<?= htmlspecialchars($queueImg) ?>" alt="Students lining up at the school canteen counter during break" width="1600" height="900" loading="lazy" decoding="async">
                         <?php else: ?>
+
                             <!-- PLACEHOLDER for the queue image (landscape 16:9) -->
                             <div class="art-ph">
+
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1"/><circle cx="9" cy="10" r="1.6"/><path d="M3 17l5-5 4 4 3-3 6 6"/></svg>
                                 <b>QUEUE IMAGE</b>
                                 <code>assets/img/canteen-queue.jpg</code>
                                 <small>Landscape 16:9, about 1600 &times; 900 px</small>
+                            
                             </div>
+
                         <?php endif; ?>
                     </div>
-                    <div class="skip-seal"><img src="<?= SCHOOL_LOGO ?>" alt="" loading="lazy"></div>
+
+                    <div class="skip-seal">
+                        <img src="<?= SCHOOL_LOGO ?>" alt="" loading="lazy">
+                    </div>
+
                 </figure>
 
                 <div class="skip-copy">
+
                     <div class="skip-eyebrow">ORDER AHEAD</div>
                     <h2 id="skipTitle"><span>Skip the line.</span> <span>Keep your break.</span></h2>
                     <p>Make every break more convenient with a smarter way to order. Browse the canteen menu, reserve your favorite meals, and secure your order before you reach the counter. Spend less time waiting in line and more time enjoying your break.</p>
+                    
                     <ul class="skip-points">
                         <li>Reserve from your phone before the bell</li>
                         <li>Pick the break slot that suits you</li>
                         <li>Collect with your code and pay at the counter</li>
                     </ul>
+
                 </div>
+            
             </div>
 
             <!-- live counts from the `reservations` table (see PHP at the top of this file) -->
+
             <div class="skip-band">
+
                 <div class="skip-stats">
-                    <div><div class="stat-n" data-count="<?= (int)$resv['total'] ?>"><?= number_format($resv['total']) ?></div><div class="stat-l">Student Reservations</div></div>
-                    <div><div class="stat-n" data-count="<?= (int)$resv['confirmed'] ?>"><?= number_format($resv['confirmed']) ?></div><div class="stat-l">Confirmed Transactions</div></div>
+                    
+                    <div>
+                        <div class="stat-n" data-count="<?= (int)$resv['total'] ?>"><?= number_format($resv['total']) ?></div>
+                        <div class="stat-l">Student Reservations</div>
+                    </div>
+
+                    <div>
+                        <div class="stat-n" data-count="<?= (int)$resv['confirmed'] ?>"><?= number_format($resv['confirmed']) ?></div>
+                        <div class="stat-l">Confirmed Transactions</div>
+                    </div>
+
                 </div>
+
                 <?php if ($isLoggedIn): ?>
                     <a href="menu.php" class="btn btn-gold">BROWSE THE MENU</a>
                 <?php else: ?>
                     <a href="log-in.php" class="btn btn-gold">LOG IN TO ORDER</a>
                 <?php endif; ?>
+            
             </div>
+        
         </div>
+
         <div class="tp-base" aria-hidden="true"></div>
+   
     </div>
+
 </section>
 
 </main>
 
 <footer>
-    <div class="frieze"><div class="dentil"></div><div class="meander"></div></div>
+
+    <div class="frieze">
+
+        <div class="dentil"></div>
+        <div class="meander"></div>
+
+    </div>
+
     <div class="foot">
-        <div class="foot-brand"><img src="<?= SCHOOL_LOGO ?>" alt="CMDI logo"><span>COPS<small>Canteen Ordering Platform System &middot; CARD-MRI Development Institute</small></span></div>
+
+        <div class="foot-brand">
+            <img src="<?= SCHOOL_LOGO ?>" alt="CMDI logo">
+            <span>COPS<small>Canteen Ordering Platform System &middot; CARD-MRI Development Institute</small></span>
+        </div>
+
         <div class="foot-links">
             <a href="index.php">HOME</a>
             <a href="menu.php">MENU</a>
             <a href="about-us.php">ABOUT US</a>
             <?php if ($isLoggedIn): ?><a href="log-out.php">LOG OUT</a><?php else: ?><a href="log-in.php">LOG IN</a><?php endif; ?>
+        
         </div>
+    
     </div>
+
     <div class="foot-bottom">&copy; 2026 COPS. A CARD-MRI Development Institute canteen ordering project.</div>
 </footer>
 
+
 <script>
+
 /* Laurel wreath: builds two mirrored branches of leaf pairs into every [data-wreath] group */
+
 (function () {
+
     var NS = 'http://www.w3.org/2000/svg';
-    function el(n, a) { var e = document.createElementNS(NS, n); for (var k in a) e.setAttribute(k, a[k]); return e; }
-    function wreath(g, R, pairs) {
-        var rx = R * .23, ry = R * .095;
-        [-1, 1].forEach(function (s) {
-            var d = '';
-            for (var i = 0; i <= 24; i++) {
-                var th = (16 + (152 - 16) * i / 24) * Math.PI / 180;
-                d += (i ? 'L' : 'M') + (s * R * Math.sin(th)).toFixed(2) + ' ' + (R * Math.cos(th)).toFixed(2);
-            }
-            g.appendChild(el('path', { d: d, fill: 'none', stroke: '#8a6a1f', 'stroke-width': Math.max(.5, R * .045), 'stroke-linecap': 'round' }));
-            for (var j = 0; j < pairs; j++) {
-                var th2 = (22 + (150 - 22) * j / (pairs - 1)) * Math.PI / 180;
-                var px = s * R * Math.sin(th2), py = R * Math.cos(th2);
-                var tan = Math.atan2(-Math.sin(th2), s * Math.cos(th2)) * 180 / Math.PI;
-                [1, -1].forEach(function (o) {
-                    var cx = px + s * Math.sin(th2) * o * R * .1, cy = py + Math.cos(th2) * o * R * .1;
-                    g.appendChild(el('ellipse', {
-                        cx: cx.toFixed(2), cy: cy.toFixed(2), rx: rx.toFixed(2), ry: ry.toFixed(2),
-                        transform: 'rotate(' + (tan + o * s * 34).toFixed(1) + ' ' + cx.toFixed(2) + ' ' + cy.toFixed(2) + ')', fill: 'url(#gG)'
-                    }));
-                });
-            }
-            g.appendChild(el('circle', { cx: (s * R * Math.sin(.2)).toFixed(2), cy: (R * Math.cos(.2) + R * .1).toFixed(2), r: (R * .07).toFixed(2), fill: '#d9b45a' }));
-        });
+
+    function el(n, a) {
+        
+        var e = document.createElementNS(NS, n);
+
+        for (var k in a) e.setAttribute(k, a[k]);
+
+        return e;
+
     }
+
+    function wreath(g, R, pairs) {
+
+        var rx = R * .23, ry = R * .095;
+
+        [-1, 1].forEach(function (s) {
+
+            var d = '';
+
+            for (var i = 0; i <= 24; i++) {
+
+                var th = (16 + (152 - 16) * i / 24) * Math.PI / 180;
+
+                d += (i ? 'L' : 'M') + (s * R * Math.sin(th)).toFixed(2) + ' ' + (R * Math.cos(th)).toFixed(2);
+
+            }
+
+            g.appendChild(el('path', { d: d, fill: 'none', stroke: '#8a6a1f', 'stroke-width': Math.max(.5, R * .045), 'stroke-linecap': 'round' }));
+
+            for (var j = 0; j < pairs; j++) {
+
+                var th2 = (22 + (150 - 22) * j / (pairs - 1)) * Math.PI / 180;
+
+                var px = s * R * Math.sin(th2), py = R * Math.cos(th2);
+
+                var tan = Math.atan2(-Math.sin(th2), s * Math.cos(th2)) * 180 / Math.PI;
+
+                [1, -1].forEach(function (o) {
+
+                    var cx = px + s * Math.sin(th2) * o * R * .1, cy = py + Math.cos(th2) * o * R * .1;
+
+                    g.appendChild(el('ellipse', {
+
+                        cx: cx.toFixed(2), cy: cy.toFixed(2), rx: rx.toFixed(2), ry: ry.toFixed(2),
+
+                        transform: 'rotate(' + (tan + o * s * 34).toFixed(1) + ' ' + cx.toFixed(2) + ' ' + cy.toFixed(2) + ')', fill: 'url(#gG)'
+
+                    }));
+
+                });
+
+            }
+
+            g.appendChild(el('circle', { cx: (s * R * Math.sin(.2)).toFixed(2), cy: (R * Math.cos(.2) + R * .1).toFixed(2), r: (R * .07).toFixed(2), fill: '#d9b45a' }));
+
+        });
+
+    }
+
     document.querySelectorAll('[data-wreath]').forEach(function (g) {
+
         wreath(g, parseFloat(g.getAttribute('data-wreath')), parseInt(g.getAttribute('data-pairs'), 10) || 7);
+
     });
+
 })();
 
+
 /* header gets a solid background once you scroll */
+
 (function () {
+
     var h = document.getElementById('siteHeader');
-    function f() { h.classList.toggle('scrolled', window.scrollY > 30); }
-    window.addEventListener('scroll', f, { passive: true }); f();
+
+    function f() {
+
+        h.classList.toggle('scrolled', window.scrollY > 30);
+
+    }
+
+    window.addEventListener('scroll', f, { passive: true });
+
+    f();
+
 })();
+
 
 /* count-up for the reservation / transaction numbers once they scroll into view.
    The real number is already in the HTML, so without JS (or with reduced motion) it simply shows. */
+
 (function () {
+
     var els = document.querySelectorAll('[data-count]');
+
     if (!els.length) return;
+
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     if (reduce || !('IntersectionObserver' in window)) return;
-    function fmt(n) { return n.toLocaleString('en-US'); }
-    function run(el) {
-        var target = parseInt(el.getAttribute('data-count'), 10) || 0;
-        if (target === 0) return;
-        var t0 = null, dur = 1500;
-        function step(ts) {
-            if (t0 === null) t0 = ts;
-            var p = Math.min(1, (ts - t0) / dur);
-            el.textContent = fmt(Math.round(target * (1 - Math.pow(1 - p, 3))));
-            if (p < 1) requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
+
+    function fmt(n) {
+
+        return n.toLocaleString('en-US');
+
     }
+
+    function run(el) {
+
+        var target = parseInt(el.getAttribute('data-count'), 10) || 0;
+
+        if (target === 0) return;
+
+        var t0 = null, dur = 1500;
+
+        function step(ts) {
+
+            if (t0 === null) t0 = ts;
+
+            var p = Math.min(1, (ts - t0) / dur);
+
+            el.textContent = fmt(Math.round(target * (1 - Math.pow(1 - p, 3))));
+
+            if (p < 1) requestAnimationFrame(step);
+
+        }
+
+        requestAnimationFrame(step);
+
+    }
+
     var io = new IntersectionObserver(function (entries) {
+
         entries.forEach(function (en) {
+
             if (!en.isIntersecting) return;
+
             io.unobserve(en.target);
+
             run(en.target);
+
         });
+
     }, { threshold: .6 });
-    els.forEach(function (el) { if ((parseInt(el.getAttribute('data-count'), 10) || 0) > 0) el.textContent = '0'; io.observe(el); });
+
+    els.forEach(function (el) {
+
+        if ((parseInt(el.getAttribute('data-count'), 10) || 0) > 0) el.textContent = '0';
+
+        io.observe(el);
+
+    });
+
 })();
 
+
 /* Category showcase: four slides, tabs + arrows + keyboard + swipe. No autoplay. */
+
 (function () {
+
     var root = document.getElementById('showcase');
+
     if (!root) return;
+
     var track = root.querySelector('.sc-track');
+
     var slides = [].slice.call(root.querySelectorAll('.slide'));
+
     var tabs = [].slice.call(root.querySelectorAll('.sc-tab'));
+
     var live = document.getElementById('scLive');
+
     var n = slides.length, cur = 0;
 
     function show(i, focusTab) {
+
         cur = (i + n) % n;
+
         track.style.transform = 'translate3d(' + (-cur * 100) + '%,0,0)';
+
         slides.forEach(function (s, k) {
+
             var on = k === cur;
+
             s.classList.toggle('is-active', on);
+
             if (on) s.removeAttribute('inert'); else s.setAttribute('inert', '');
+
         });
+
         tabs.forEach(function (t, k) {
+
             t.setAttribute('aria-selected', k === cur ? 'true' : 'false');
+
             t.tabIndex = k === cur ? 0 : -1;
+
         });
+
         if (live) live.textContent = tabs[cur].querySelector('span').textContent + ', ' + (cur + 1) + ' of ' + n;
+
         if (focusTab) tabs[cur].focus();
+
     }
+
     tabs.forEach(function (t, k) {
-        t.addEventListener('click', function () { show(k); });
-        t.addEventListener('keydown', function (e) {
-            if (e.key === 'ArrowRight') { e.preventDefault(); show(cur + 1, true); }
-            else if (e.key === 'ArrowLeft') { e.preventDefault(); show(cur - 1, true); }
-            else if (e.key === 'Home') { e.preventDefault(); show(0, true); }
-            else if (e.key === 'End') { e.preventDefault(); show(n - 1, true); }
+
+        t.addEventListener('click', function () {
+
+            show(k);
+
         });
+
+        t.addEventListener('keydown', function (e) {
+
+            if (e.key === 'ArrowRight') {
+
+                e.preventDefault();
+
+                show(cur + 1, true);
+
+            }
+
+            else if (e.key === 'ArrowLeft') {
+
+                e.preventDefault();
+
+                show(cur - 1, true);
+
+            }
+
+            else if (e.key === 'Home') {
+
+                e.preventDefault();
+
+                show(0, true);
+
+            }
+
+            else if (e.key === 'End') {
+
+                e.preventDefault();
+
+                show(n - 1, true);
+
+            }
+
+        });
+
     });
-    document.getElementById('scPrev').addEventListener('click', function () { show(cur - 1); });
-    document.getElementById('scNext').addEventListener('click', function () { show(cur + 1); });
+
+    document.getElementById('scPrev').addEventListener('click', function () {
+
+        show(cur - 1);
+
+    });
+
+    document.getElementById('scNext').addEventListener('click', function () {
+
+        show(cur + 1);
+
+    });
+
 
     /* touch / pen swipe (horizontal intent only, so vertical scrolling is untouched) */
+
     var vp = root.querySelector('.sc-viewport'), x0 = 0, y0 = 0, tracking = false;
-    vp.addEventListener('pointerdown', function (e) { if (e.pointerType === 'mouse') return; tracking = true; x0 = e.clientX; y0 = e.clientY; });
-    vp.addEventListener('pointerup', function (e) {
-        if (!tracking) return; tracking = false;
-        var dx = e.clientX - x0, dy = e.clientY - y0;
-        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) show(cur + (dx < 0 ? 1 : -1));
+
+    vp.addEventListener('pointerdown', function (e) {
+
+        if (e.pointerType === 'mouse') return;
+
+        tracking = true;
+
+        x0 = e.clientX;
+
+        y0 = e.clientY;
+
     });
-    vp.addEventListener('pointercancel', function () { tracking = false; });
+
+    vp.addEventListener('pointerup', function (e) {
+
+        if (!tracking) return;
+
+        tracking = false;
+
+        var dx = e.clientX - x0, dy = e.clientY - y0;
+
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) show(cur + (dx < 0 ? 1 : -1));
+
+    });
+
+    vp.addEventListener('pointercancel', function () {
+
+        tracking = false;
+
+    });
+
 })();
 
+
 /* Reveal on scroll: section headings, the category temple, the skip-the-line temple and its image */
+
 (function () {
+
     document.documentElement.classList.add('js');
+
     var rv = [].slice.call(document.querySelectorAll('.sec-hd, .temple-sc, .skip-temple'));
-    rv.forEach(function (e) { e.classList.add('rv'); });
+
+    rv.forEach(function (e) {
+
+        e.classList.add('rv');
+
+    });
+
     var all = rv.concat([].slice.call(document.querySelectorAll('.skip-fig')));
+
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce || !('IntersectionObserver' in window)) { all.forEach(function (e) { e.classList.add('in'); }); return; }
+
+    if (reduce || !('IntersectionObserver' in window)) {
+
+        all.forEach(function (e) {
+
+            e.classList.add('in');
+
+        });
+
+        return;
+
+    }
+
     var io = new IntersectionObserver(function (es) {
-        es.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+
+        es.forEach(function (en) {
+
+            if (en.isIntersecting) {
+
+                en.target.classList.add('in');
+
+                io.unobserve(en.target);
+
+            }
+
+        });
+
     }, { threshold: .12, rootMargin: '0px 0px -6% 0px' });
-    all.forEach(function (e) { io.observe(e); });
+
+    all.forEach(function (e) {
+
+        io.observe(e);
+
+    });
+
 })();
+
 </script>
+
 </body>
 </html>
