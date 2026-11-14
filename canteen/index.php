@@ -11,15 +11,21 @@ $firstName  = $isLoggedIn ? ($user['first_name'] ?? '') : '';
 $stats = ['items' => 0, 'categories' => 0, 'students' => 0];
 
 $r = $conn->query ( " SELECT COUNT(*) AS n, COUNT(DISTINCT category) AS c FROM products WHERE is_available = 1 " );
-if ($r && ($row = $r->fetch_assoc())) { $stats['items'] = (int)$row['n']; $stats['categories'] = (int)$row['c']; }
+
+    if ($r && ($row = $r->fetch_assoc())) { 
+        
+        $stats['items'] = (int)$row['n']; 
+        $stats['categories'] = (int)$row['c']; 
+        
+    }
 
 $r = $conn->query ( " SELECT COUNT(*) AS n FROM users WHERE role = 'student' AND is_banned = 0 " );
 
-if ($r && ($row = $r->fetch_assoc())) { 
-    
-    $stats['students'] = (int)$row['n']; 
-    
-}
+    if ($r && ($row = $r->fetch_assoc())) { 
+        
+        $stats['students'] = (int)$row['n']; 
+        
+    }
 
 
 // ── RESERVATION / TRANSACTION COUNTS (final section) ──────────────────────
@@ -32,7 +38,12 @@ if ($r && ($row = $r->fetch_assoc())) {
 $resv = ['total' => 0, 'confirmed' => 0];
 $r = $conn->query ( " SELECT COUNT(*) AS total, COALESCE(SUM(status IN ('confirmed','preparing','ready','completed')), 0) AS confirmed FROM reservations " );
 
-if ($r && ($row = $r->fetch_assoc())) { $resv['total'] = (int)$row['total']; $resv['confirmed'] = (int)$row['confirmed']; }
+    if ($r && ($row = $r->fetch_assoc())) { 
+        
+        $resv['total'] = (int)$row['total']; 
+        $resv['confirmed'] = (int)$row['confirmed']; 
+        
+    }
 
 // ── FEATURED ITEMS ("Today's offerings") ──────────────────────────────────
 $featured = [];
@@ -106,38 +117,38 @@ foreach ($slideDefs as $key => $d) {
 
 }
 
-foreach ($categories as $c) { 
-    
-    if (isset($slides[$c['category']])) 
-    
-        $slides[$c['category']]['n'] = (int)$c['n']; 
+    foreach ($categories as $c) { 
         
-}
+        if (isset($slides[$c['category']])) 
+        
+            $slides[$c['category']]['n'] = (int)$c['n']; 
+            
+    }
 
 $r = $conn->query ( " SELECT category, name, description, price FROM products WHERE is_available = 1 ORDER BY category, is_featured DESC, id ASC " );
 
-if ($r) {
+    if ($r) {
 
-    while ($row = $r->fetch_assoc()) {
+        while ($row = $r->fetch_assoc()) {
 
-        $k = $row['category'];
+            $k = $row['category'];
 
-        if (!isset($slides[$k])) 
-            
-        continue;
-        $pr = (float)$row['price'];
+            if (!isset($slides[$k])) 
+                
+            continue;
+            $pr = (float)$row['price'];
 
-        if ($slides[$k]['min'] === null || $pr < $slides[$k]['min']) 
-            
-            $slides[$k]['min'] = $pr;
+            if ($slides[$k]['min'] === null || $pr < $slides[$k]['min']) 
+                
+                $slides[$k]['min'] = $pr;
 
-        if (count($slides[$k]['items']) < 3) 
-            
-            $slides[$k]['items'][] = $row;
+            if (count($slides[$k]['items']) < 3) 
+                
+                $slides[$k]['items'][] = $row;
+
+        }
 
     }
-
-}
 
 $slides = array_values($slides);
 
