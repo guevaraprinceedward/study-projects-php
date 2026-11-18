@@ -129,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $setupError === '') {
         try {
 
             $where = implode(' OR ', array_map(fn($c) => "`$c` = ?", $idCols));   // column names come from a fixed list
-            $sql   = " SELECT id, student_id, username, first_name, last_name, role, is_banned, `$passCol` AS pwFROM users WHERE $where LIMIT 1 ";
+            $sql   = " SELECT id, student_id, username, first_name, last_name, role, is_banned, `$passCol` AS pw FROM users WHERE $where LIMIT 1 ";
             $stmt  = $conn->prepare($sql);
             $args  = array_fill(0, count($idCols), $identifier);
             $stmt->bind_param(str_repeat('s', count($idCols)), ...$args);

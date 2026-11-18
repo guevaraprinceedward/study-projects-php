@@ -9,48 +9,95 @@ const STAFF_MAX_FAILS   = 5;     // failed attempts …
 const STAFF_FAIL_WINDOW = 600;   // … within this many seconds → temporary lock
 
 /** The signed-in staff member, or null. Re-checked against the database on every request. */
-function staff_current(mysqli $c): ?array
-{
-    $s = $_SESSION['staff'] ?? null;
-    if (!is_array($s) || empty($s['id'])) return null;
+    function staff_current(mysqli $c): ?array {
 
-    if (time() - (int)($_SESSION['staff_last_seen'] ?? 0) > COPS_STAFF_IDLE_SECONDS) {
-        staff_clear_session();
-        return null;
+        $s = $_SESSION['staff'] ?? null;
+        
+        if ( !is_array($s) || empty($s['id']) ) 
+            
+            return null;
+
+        if ( time() - (int)($_SESSION['staff_last_seen'] ?? 0) > COPS_STAFF_IDLE_SECONDS ) {
+
+            staff_clear_session();
+            
+            return null;
+        
+        }
+
+        $row = db_one ($c, 
+        
+            " SELECT id, full_name, username, role 
+              FROM staff_accounts 
+              WHERE id = ? 
+              AND status = 'active'", 'i', [(int)$s['id']]
+              
+        );
+
+        if (!$row) { 
+            
+            staff_clear_session(); 
+            
+            return null; 
+            
+        }
+
+        $_SESSION['staff_last_seen'] = time();
+        
+            return $row;
+    
     }
 
-    $row = db_one($c, "SELECT id, full_name, username, role FROM staff_accounts WHERE id = ? AND status = 'active'", 'i', [(int)$s['id']]);
-    if (!$row) { staff_clear_session(); return null; }
-
-    $_SESSION['staff_last_seen'] = time();
-    return $row;
-}
-
 /** Blocks access: JSON clients get 401, browsers are sent to the login page. */
-function staff_require(mysqli $c, bool $json = false): array
-{
-    $staff = staff_current($c);
-    if ($staff) return $staff;
-    if ($json) json_out(['ok' => false, 'login' => true, 'message' => 'Your session has ended. Please log in again.'], 401);
-    redirect('admin-login.php');
-}
+    function staff_require(mysqli $c, bool $json = false): array {
 
-function staff_clear_session(): void
-{
-    unset($_SESSION['staff'], $_SESSION['staff_last_seen']);
-}
+        $staff = staff_current($c);
+        
+        if ($staff) 
+            
+            return $staff;
+        
+        if ($json) json_out ( [
+            
+            'ok' => false, 
+            'login' => true, 
+            'message' => 'Your session has ended. Please log in again.'
+            
+        ], 401);
+
+            redirect('admin-login.php');
+    
+    }
+
+    function staff_clear_session(): void {
+
+        unset ($_SESSION['staff'], 
+              $_SESSION['staff_last_seen']
+              
+        );
+
+    }
 
 /** Seconds the caller must still wait, or 0 if login is allowed. */
-function staff_lock_remaining(mysqli $c, string $username, string $ip): int
-{
-    $row = db_one($c,
-        "SELECT COUNT(*) AS n, UNIX_TIMESTAMP(MAX(attempted_at)) AS last_ts
-         FROM staff_login_attempts
-         WHERE was_success = 0 AND ip_address = ? AND username = ? AND attempted_at > (NOW() - INTERVAL " . STAFF_FAIL_WINDOW . " SECOND)",
-        'ss', [$ip, mb_strtolower($username)]);
-    if ((int)$row['n'] < STAFF_MAX_FAILS) return 0;
-    return max(0, (int)$row['last_ts'] + 60 - time());   // 60 s after the most recent failure
-}
+    function staff_lock_remaining(mysqli $c, string $username, string $ip): int {
+
+        $row = db_one($c,
+            
+            " SELECT COUNT(*) AS n, UNIX_TIMESTAMP(MAX(attempted_at)) AS last_ts
+              FROM staff_login_attempts
+              WHERE was_success = 0 
+              AND ip_address = ? 
+              AND username = ? 
+              AND attempted_at > (NOW() - INTERVAL " . STAFF_FAIL_WINDOW . " SECOND)",
+            'ss', [$ip, mb_strtolower($username)]
+            
+        );
+
+        if ((int)$row['n'] < STAFF_MAX_FAILS) return 0;
+
+        return max(0, (int)$row['last_ts'] + 60 - time());   // 60 s after the most recent failure
+    
+    }
 
 function staff_record_attempt(mysqli $c, string $username, string $ip, bool $ok): void
 {

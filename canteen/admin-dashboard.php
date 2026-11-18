@@ -96,10 +96,12 @@ $admin  = admin_require($adminConn, $action !== '');
     
     }
 
-    function dash_ledger(mysqli $c, string $from, string $to, string $tx): array {
+    function dash_ledger(mysqli $c, string $from, string $to, string $tx, ?int $limit = 200): array {
 
-        $sql = RES_SELECT . "WHERE r.pickup_date BETWEEN ? AND ? " . ($tx === 'completed' ? " AND r.status = 'completed'" : '')
-            . " ORDER BY r.pickup_date DESC, r.updated_at DESC, r.id DESC LIMIT 200";
+        $sql = RES_SELECT . " WHERE r.pickup_date BETWEEN ? AND ? " . ($tx === 'completed' ? " AND r.status = 'completed'" : '')
+            . " ORDER BY r.pickup_date DESC, r.updated_at DESC, r.id DESC";
+
+        if ($limit !== null) $sql .= ' LIMIT ' . max(1, $limit);
 
         $out = [];
 
@@ -364,7 +366,7 @@ $admin  = admin_require($adminConn, $action !== '');
 
     if (($_GET['export'] ?? '') === 'csv') {
 
-        $rows = dash_ledger($adminConn, $rg['from'], $rg['to'], 'all');
+        $rows = dash_ledger($adminConn, $rg['from'], $rg['to'], 'all', null);
         
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="cops-transactions-' . $rg['from'] . '_to_' . $rg['to'] . '.csv"');
@@ -392,7 +394,20 @@ $admin  = admin_require($adminConn, $action !== '');
 
             $items = implode('; ', array_map(fn($i) => $i['qty'] . 'x ' . $i['name'], $r['items']));
 
-            fputcsv($o, array_map('csv_cell', [$r['reference'], $r['pickup_date'], $r['slot'] . ' ' . $r['time'], $r['student'], $r['student_ref'], $items, number_format((float)$r['total'], 2, '.', ''), $r['status'], $r['handled_by']]));
+            fputcsv($o, array_map('csv_cell', [
+                
+                $r['reference'], 
+                $r['pickup_date'], 
+                $r['slot'] . ' ' . $r['time'], 
+                $r['student'], 
+                $r['student_ref'], 
+                $items, number_format((float)$r['total'], 2, '.', ''), 
+                $r['status'], 
+                $r['handled_by']
+                
+            ]
+            
+            ));
 
         }
 
