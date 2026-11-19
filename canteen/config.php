@@ -29,7 +29,9 @@ if (PHP_SAPI !== 'cli' && session_status() === PHP_SESSION_NONE) {
 
     session_name (COPS_AREA === 'staff' ? 'COPS_STAFF' : 'COPS_SID');
     session_set_cookie_params (
+
         ['httponly' => true, 'samesite' => 'Lax', 'secure' => $https]
+
     );
 
     session_start();
@@ -67,8 +69,8 @@ require_once __DIR__ . '/includes/auth.php';
  * The logged-in student (array) or null. Re-checked against the database on every call,
  * so a deleted or banned account is logged out immediately. The cart is kept.
  */
-function getLoggedInUser(mysqli $conn): ?array
-{
+function getLoggedInUser(mysqli $conn): ?array {
+    
     $s = $_SESSION['user'] ?? null;
     if (!is_array($s) || empty($s['id'])) return null;
 

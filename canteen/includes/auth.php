@@ -88,7 +88,7 @@ const STAFF_FAIL_WINDOW = 600;   // … within this many seconds → temporary l
               WHERE was_success = 0 
               AND ip_address = ? 
               AND username = ? 
-              AND attempted_at > (NOW() - INTERVAL " . STAFF_FAIL_WINDOW . " SECOND)",
+              AND attempted_at > (NOW() - INTERVAL " . STAFF_FAIL_WINDOW . " SECOND) ",
             'ss', [$ip, mb_strtolower($username)]
             
         );
@@ -99,59 +99,136 @@ const STAFF_FAIL_WINDOW = 600;   // … within this many seconds → temporary l
     
     }
 
-function staff_record_attempt(mysqli $c, string $username, string $ip, bool $ok): void
-{
-    db_exec($c, "INSERT INTO staff_login_attempts (username, ip_address, was_success) VALUES (?,?,?)", 'ssi', [mb_strtolower(mb_substr($username, 0, 100)), $ip, $ok ? 1 : 0]);
-    if ($ok) {
-        db_exec($c, "DELETE FROM staff_login_attempts WHERE username = ? AND ip_address = ?", 'ss', [mb_strtolower($username), $ip]);
+    function staff_record_attempt(mysqli $c, string $username, string $ip, bool $ok): void {
+
+        db_exec ($c, 
+        
+            " INSERT INTO staff_login_attempts (username, ip_address, was_success) 
+              VALUES (?,?,?)", 'ssi', [mb_strtolower(mb_substr($username, 0, 100)), $ip, $ok ? 1 : 0]
+              
+        );
+
+        if ($ok) {
+            
+            db_exec ($c, 
+            
+                " DELETE FROM staff_login_attempts 
+                  WHERE username = ? 
+                  AND ip_address = ?", 'ss', [mb_strtolower($username), $ip]
+                  
+            );
+
+        }
+
+            db_exec ($c, 
+            
+                " DELETE FROM staff_login_attempts 
+                WHERE attempted_at < (NOW() - INTERVAL 1 DAY)"
+                
+            );
+
     }
-    db_exec($c, "DELETE FROM staff_login_attempts WHERE attempted_at < (NOW() - INTERVAL 1 DAY)");
-}
 
 /**
  * Checks the credentials. Returns [staffRow|null, errorMessage|null].
  * The same message is used for "no such user" and "wrong password".
  */
-function staff_attempt_login(mysqli $c, string $username, string $password): array
-{
-    $ip   = client_ip();
-    $wait = staff_lock_remaining($c, $username, $ip);
-    if ($wait > 0) return [null, "Too many failed attempts. Try again in {$wait} seconds."];
+    function staff_attempt_login(mysqli $c, string $username, string $password): array {
 
-    $row = db_one($c, "SELECT id, full_name, username, role, status, password_hash FROM staff_accounts WHERE username = ? OR email = ? LIMIT 1", 'ss', [$username, $username]);
+        $ip   = client_ip();
+        $wait = staff_lock_remaining($c, $username, $ip);
 
-    // Always run a real hash comparison, so response time does not reveal whether the account exists
-    $hash = $row['password_hash'] ?? password_hash('not-a-real-password', PASSWORD_DEFAULT);
-    $ok   = password_verify($password, $hash) && $row !== null;
+        if ($wait > 0) 
+            
+            return [
+                
+                null, "Too many failed attempts. Try again in {$wait} seconds."
+                
+            ];
 
-    if (!$ok) {
-        staff_record_attempt($c, $username, $ip, false);
-        return [null, 'Incorrect username or password.'];
+        $row = db_one ($c, 
+        
+            " SELECT id, full_name, username, role, status, password_hash 
+              FROM staff_accounts 
+              WHERE username = ? 
+              OR email = ? 
+              LIMIT 1", 'ss', [$username, $username]
+              
+        );
+
+        // Always run a real hash comparison, so response time does not reveal whether the account exists
+        $hash = $row['password_hash'] ?? password_hash('not-a-real-password', PASSWORD_DEFAULT);
+        $ok   = password_verify($password, $hash) && $row !== null;
+
+        if (!$ok) {
+
+            staff_record_attempt ($c, 
+            
+                $username, $ip, false
+                
+            );
+
+                return [
+                    
+                    null, 'Incorrect username or password.'
+                    
+                ];
+            
+        }
+
+        if ($row['status'] !== 'active') {
+
+            return [
+                
+                null, 'This staff account is disabled. Please contact the administrator.'
+                
+            ];
+
+        }
+
+        staff_record_attempt($c, $username, $ip, true);
+
+        if (password_needs_rehash($row['password_hash'], PASSWORD_DEFAULT)) {
+
+            db_exec ($c, 
+            
+                " UPDATE staff_accounts 
+                  SET password_hash = ? 
+                  WHERE id = ?", 'si', [password_hash($password, PASSWORD_DEFAULT), (int)$row['id']]
+                  
+            );
+
+        }
+
+        db_exec ($c, 
+        
+            " UPDATE staff_accounts 
+              SET last_login_at = NOW() 
+              WHERE id = ?", 'i', [(int)$row['id']]
+              
+        );
+
+        session_regenerate_id(true);
+        $_SESSION['staff'] = ['id' => (int)$row['id']];
+        $_SESSION['staff_last_seen'] = time();
+        unset($_SESSION['csrf']);
+
+            return [$row, null];
+
     }
-    if ($row['status'] !== 'active') {
-        return [null, 'This staff account is disabled. Please contact the administrator.'];
-    }
-
-    staff_record_attempt($c, $username, $ip, true);
-    if (password_needs_rehash($row['password_hash'], PASSWORD_DEFAULT)) {
-        db_exec($c, "UPDATE staff_accounts SET password_hash = ? WHERE id = ?", 'si', [password_hash($password, PASSWORD_DEFAULT), (int)$row['id']]);
-    }
-    db_exec($c, "UPDATE staff_accounts SET last_login_at = NOW() WHERE id = ?", 'i', [(int)$row['id']]);
-
-    session_regenerate_id(true);
-    $_SESSION['staff'] = ['id' => (int)$row['id']];
-    $_SESSION['staff_last_seen'] = time();
-    unset($_SESSION['csrf']);
-    return [$row, null];
-}
 
 /** Ends the staff session completely (data, cookie, server-side session). */
-function staff_logout(): void
-{
-    $_SESSION = [];
-    if (ini_get('session.use_cookies')) {
-        $p = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 42000, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
+    function staff_logout(): void {
+
+        $_SESSION = [];
+        
+        if (ini_get('session.use_cookies')) {
+            
+            $p = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
+        
+        }
+        
+            session_destroy();
+
     }
-    session_destroy();
-}
